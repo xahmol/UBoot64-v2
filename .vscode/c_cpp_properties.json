@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${default}",
+                "/home/xahmol/oscar64/include/",
+                "${workspaceFolder}/include/"
+            ],
+            "defines": [],
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-gcc-x86",
+            "compilerPath": "/home/xahmol/oscar64/bin/oscar64"
+        }
+    ],
+    "version": 4
+}
