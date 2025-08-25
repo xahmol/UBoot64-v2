@@ -16,6 +16,7 @@ Patches and pull requests are welcome
 
 // Network functions
 void uii_getipaddress(void)
+// Get IP address
 {
 	char tempTarget = uii_target;
 	char cmd[] = {0x00, NET_CMD_GET_IP_ADDRESS, 0x00}; // interface 0 (theres only one)
@@ -31,6 +32,11 @@ void uii_getipaddress(void)
 }
 
 char uii_connect(char *host, unsigned short port, char cmd)
+// Connect to a host (TCP or UDP)
+// Input: host - the hostname or IP address to connect to
+//        port - the port number to connect to
+//        cmd - the command to use (NET_CMD_TCP_SOCKET_CONNECT or NET_CMD_UDP_SOCKET_CONNECT)
+// Output: the socket ID on success. Status code in uii_status.
 {
 	char tempTarget = uii_target;
 	unsigned x = 0;
@@ -62,16 +68,26 @@ char uii_connect(char *host, unsigned short port, char cmd)
 }
 
 char uii_tcpconnect(char *host, unsigned short port)
+// Connect to a TCP host
+// Input: host - the hostname or IP address to connect to
+//        port - the port number to connect to
+// Output: the socket ID on success. Status code in uii_status.
 {
 	return uii_connect(host, port, NET_CMD_TCP_SOCKET_CONNECT);
 }
 
 char uii_udpconnect(char *host, unsigned short port)
+// Connect to a UDP host
+// Input: host - the hostname or IP address to connect to
+//        port - the port number to connect to
+// Output: the socket ID on success. Status code in uii_status.
 {
 	return uii_connect(host, port, NET_CMD_UDP_SOCKET_CONNECT);
 }
 
 void uii_socketclose(char socketid)
+// Close a socket
+// Input: socketid - the ID of the socket to close
 {
 	char tempTarget = uii_target;
 	char cmd[] = {0x00, NET_CMD_SOCKET_CLOSE, 0x00};
@@ -88,6 +104,10 @@ void uii_socketclose(char socketid)
 }
 
 unsigned uii_socketread(char socketid, unsigned short length)
+// Read data from a socket
+// Input: socketid - the ID of the socket to read from
+//        length - the number of bytes to read
+// Output: the number of bytes read
 {
 	char tempTarget = uii_target;
 	char cmd[] = {0x00, NET_CMD_SOCKET_READ, 0x00, 0x00, 0x00};
@@ -108,6 +128,9 @@ unsigned uii_socketread(char socketid, unsigned short length)
 }
 
 unsigned uii_tcplistenstart(unsigned short port)
+// Start a TCP listener on a port
+// Input: port - the port number to listen on
+// Output: listener state
 {
 	char tempTarget = uii_target;
 	char cmd[] = {0x00, NET_CMD_TCP_LISTENER_START, 0x00, 0x00};
@@ -126,6 +149,8 @@ unsigned uii_tcplistenstart(unsigned short port)
 }
 
 unsigned uii_tcplistenstop()
+// Stop the TCP listener
+// Output: listener state
 {
 	char tempTarget = uii_target;
 	char cmd[] = {0x00, NET_CMD_TCP_LISTENER_STOP};
@@ -142,6 +167,8 @@ unsigned uii_tcplistenstop()
 }
 
 unsigned uii_tcpgetlistenstate()
+// Get the current state of the TCP listener
+// Output: listener state
 {
 	char tempTarget = uii_target;
 	char cmd[] = {0x00, NET_CMD_GET_LISTENER_STATE};
@@ -158,6 +185,8 @@ unsigned uii_tcpgetlistenstate()
 }
 
 char uii_tcpgetlistensocket()
+// Get the socket ID of the TCP listener
+// Output: the socket ID on success. Status code in uii_status.
 {
 	char tempTarget = uii_target;
 	char cmd[] = {0x00, NET_CMD_GET_LISTENER_SOCKET};
@@ -174,6 +203,10 @@ char uii_tcpgetlistensocket()
 }
 
 void uii_socketwrite_convert_parameter(char socketid, char *data, unsigned ascii)
+// Convert parameters for socket write
+// Input: socketid - the ID of the socket to write to
+//        data - the data to write
+//        ascii - whether to convert to ASCII
 {
 	char tempTarget = uii_target;
 	unsigned x;
@@ -216,6 +249,9 @@ void uii_socketwrite_convert_parameter(char socketid, char *data, unsigned ascii
 }
 
 void uii_socketwritechar(char socketid, char one_char)
+// Write a single character to a socket
+// Input: socketid - the ID of the socket to write to
+//        one_char - the character to write
 {
 	temp_string_onechar[0] = one_char;
 	temp_string_onechar[1] = 0;
@@ -224,16 +260,25 @@ void uii_socketwritechar(char socketid, char one_char)
 }
 
 void uii_socketwrite(char socketid, char *data)
+// Write data to a socket
+// Input: socketid - the ID of the socket to write to
+//        data - the data to write
 {
 	uii_socketwrite_convert_parameter(socketid, data, 0);
 }
 
 void uii_socketwrite_ascii(char socketid, char *data)
+// Write ASCII data to a socket
+// Input: socketid - the ID of the socket to write to
+//        data - the data to write
 {
 	uii_socketwrite_convert_parameter(socketid, data, 1);
 }
 
 char uii_tcp_nextchar(char socketid)
+// Get the next character from the TCP stream
+// Input: socketid - the ID of the socket to read from
+// Output: the next character read from the TCP stream
 {
 	char result;
 	if (uii_data_index < uii_data_len)
@@ -256,6 +301,11 @@ char uii_tcp_nextchar(char socketid)
 }
 
 unsigned uii_tcp_nextline_convert_parameter(char socketid, char *result, unsigned swapCase)
+// Get the next line from the TCP stream with option to swap case
+// Input: socketid - the ID of the socket to read from
+//        result - the buffer to store the line
+//        swapCase - whether to swap the case of the characters
+// Output: 1 if a line was read, 0 if EOF
 {
 	unsigned c, count = 0;
 	*result = 0;
@@ -279,6 +329,10 @@ unsigned uii_tcp_nextline_convert_parameter(char socketid, char *result, unsigne
 }
 
 unsigned uii_tcp_nextline(char socketid, char *result)
+// Get the next line from the TCP stream
+// Input: socketid - the ID of the socket to read from
+//        result - the buffer to store the line
+// Output: 1 if a line was read, 0 if EOF
 {
 	return uii_tcp_nextline_convert_parameter(socketid, result, 0);
 }
@@ -289,6 +343,7 @@ unsigned uii_tcp_nextline_ascii(char socketid, char *result)
 }
 
 void uii_reset_uiidata()
+// Reset the UI data
 {
 	uii_data_len = 0;
 	uii_data_index = 0;
@@ -297,6 +352,7 @@ void uii_reset_uiidata()
 }
 
 void uii_tcp_emptybuffer()
+// Empty the TCP buffer
 {
 	uii_data_index = 0;
 }

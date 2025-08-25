@@ -91,6 +91,30 @@ void uii_change_dir(char *directory)
 	uii_accept();
 }
 
+void uii_create_dir(char *directory)
+// Create a new directory
+// Input: directory - the name of the new directory to create
+// The “Create Dir” command creates the specified directory in the current path.
+// This command does not return any data. The status channel will either read “00,OK” or it will contain
+// the appropriate filesystem error message.
+{
+	unsigned x = 0;
+	char *fullcmd = (char *)malloc(strlen(directory) + 2);
+	fullcmd[0] = 0x00;
+	fullcmd[1] = DOS_CMD_CREATE_DIR;
+
+	for (x = 0; x < strlen(directory); x++)
+		fullcmd[x + 2] = directory[x];
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(fullcmd, strlen(directory) + 2);
+
+	free(fullcmd);
+
+	uii_readstatus();
+	uii_accept();
+}
+
 void uii_change_dir_home(void)
 // Change to the home directory
 // The “Copy Home Path” command changes into the user defined home directory specified in the “Home
@@ -276,6 +300,77 @@ void uii_read_file(char length)
 	uii_sendcommand(cmd, 2);
 }
 
+void uii_seek_file(char posL, char posML, char posMH, char posH)
+// Seek to a position in the currently opened file
+// The “File Seek” command places the pointer into the currently opened file at a user-defined position.
+// The command takes one argument: a 32 bit value, which is transferred LSB first.
+// The command never returns any data. When the seek is successful, status returns “00,OK”, or else a
+// message from the file system. If there is no file open, the status channel will read “85,NO FILE OPEN”
+// Input: posL - the low byte of the position
+//        posML - the middle low byte of the position
+//        posMH - the middle high byte of the position
+//        posH - the high byte of the position
+{
+	char cmd[] = {0x00, DOS_CMD_FILE_SEEK, posL, posML, posMH, posH};
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(cmd, 6);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_file_info()
+// Get information about the currently open file
+// The “File Info” command returns a data packet with information about the currently open file. In fact,
+// this command executes a file stat command. The format of the data packet is as follows:
+//  DWORD size; /* File size */
+//  WORD date; /* Last modified date */
+//  WORD time; /* Last modified time */
+//  char extension[3];
+//  BYTE attrib; /* Attribute */
+//  char filename[ ];
+// Ultimate DOS Command Summary
+// Version 1.2, December 16th, 2017 6
+// The status response could either be:
+// “00,OK”, “85,NO FILE OPEN”, or “88,NO INFORMATION AVAILABLE”
+{
+	char cmd[] = {0x00, DOS_CMD_FILE_INFO};
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(cmd, 2);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_file_stat(char *filename)
+// Get information about a file
+// The “File Info” command returns a data packet with information about a file, specified by the ‘filename’
+// parameter. The format of the data packet is the same as for DOS_CMD_FILE_INFO (0x07).
+// The status response could either be:
+// “00,OK”, or “88,FILE NOT FOUND”
+{
+	unsigned x = 0;
+	char *fullcmd = (char *)malloc(strlen(filename) + 2);
+	fullcmd[0] = 0x00;
+	fullcmd[1] = DOS_CMD_FILE_STAT;
+
+	for (x = 0; x < strlen(filename); x++)
+		fullcmd[x + 2] = filename[x];
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(fullcmd, strlen(filename) + 2);
+
+	free(fullcmd);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
 void uii_delete_file(char *filename)
 // Delete a file
 // Input: filename - the name of the file to delete
@@ -300,6 +395,167 @@ void uii_delete_file(char *filename)
 	uii_accept();
 }
 
+void uii_rename_file(char *oldname, char *newname)
+// Rename a file
+// Input: oldname - the current name of the file
+//        newname - the new name for the file
+// The “Rename File” command renames the specified file.
+// This command does not return any data. The status channel will either read “00,OK” or it will contain
+// the appropriate filesystem error message.
+{
+	unsigned x = 0;
+	unsigned count = 0;
+	char *fullcmd = (char *)malloc(strlen(oldname) + strlen(newname) + 3);
+	fullcmd[0] = 0x00;
+	fullcmd[1] = DOS_CMD_RENAME_FILE;
+
+	count = 2;
+
+	for (x = 0; x < strlen(oldname); x++)
+		fullcmd[count++] = oldname[x];
+
+	fullcmd[count++] = 0x00;
+
+	for (x = 0; x < strlen(newname); x++)
+		fullcmd[count++] = newname[x];
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(fullcmd, count);
+
+	free(fullcmd);
+
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_copy_file(char *source, char *destination)
+// Copy a file
+// Input: source - the path of the file to copy
+//        destination - the path of the new file
+// The “Copy File” command copies the file specified by <source> to the file specified by
+// <destination>.
+// This command does not return any data. The status channel will either read “00,OK” or it will contain
+// the appropriate filesystem error message.
+{
+	unsigned x = 0;
+	unsigned count = 0;
+	char *fullcmd = (char *)malloc(strlen(source) + strlen(destination) + 3);
+	fullcmd[0] = 0x00;
+	fullcmd[1] = DOS_CMD_COPY_FILE;
+
+	count = 2;
+
+	for (x = 0; x < strlen(source); x++)
+		fullcmd[count++] = source[x];
+
+	fullcmd[count++] = 0x00;
+
+	for (x = 0; x < strlen(destination); x++)
+		fullcmd[count++] = destination[x];
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(fullcmd, count);
+
+	free(fullcmd);
+
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_get_ramdisk_info(void)
+// Get information about GEOS RAM disks in REU
+// Output: RAM disk information: 8 bytes with 2 bytes for drive 8-10: drive ID and type
+{
+	char cmd[] = {0x00, CTRL_CMD_GET_RAMDISK_INFO};
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, 2);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_loadIntoRamDisk(char id, char *filename, char whatif)
+// Load a file into the RAM disk
+// Input: id - the ID of the RAM disk
+//        filename - the name of the file to load
+//        whatif - if enabled load as trial to check for success (correct size and type)
+{
+	unsigned x = 0;
+	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	fullcmd[0] = 0x00;
+	fullcmd[1] = DOS_CMD_LOAD_INTO_RAMDISK;
+	fullcmd[2] = id + (128 * whatif);
+
+	for (x = 0; x < strlen(filename); x++)
+		fullcmd[x + 3] = filename[x];
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(fullcmd, strlen(filename) + 3);
+
+	free(fullcmd);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_saveRamDisk(char id, char *filename)
+// Save a file from the RAM disk
+// Input: id - the ID of the RAM disk
+//        filename - the name of the file to save
+{
+	unsigned x = 0;
+	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	fullcmd[0] = 0x00;
+	fullcmd[1] = DOS_CMD_SAVE_RAMDISK;
+	fullcmd[2] = id;
+
+	for (x = 0; x < strlen(filename); x++)
+		fullcmd[x + 3] = filename[x];
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(fullcmd, strlen(filename) + 3);
+
+	free(fullcmd);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_save_reu(char size)
+// Save REU memory to REU file
+// Input: size - the size of the REU memory to save
+// Input: size - the size of the REU to load:
+// 					0 = 128 KB
+// 					1 = 256 KB
+// 					2 = 512 KB
+// 					3 = 1 MB
+// 					4 = 2 MB
+// 					5 = 4 MB
+// 					6 = 8 MB
+// 					7 = 16 MB
+//
+// The “Save REU” command can be used to write data to the currently opened file from the REU
+// memory.
+// The status message is either “00,OK”, “02,REQUEST TRUNCATED”, or a message directly from the file
+// system.
+// The data that is returned is a more detailed string, indicating the number of bytes written from which
+// address, such as: “$008000 BYTES SAVED FROM REU $852000”.
+{
+	char cmd[] = {0x00, DOS_CMD_SAVE_REU, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0x01};
+	char sizes[8] = {0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff};
+
+	cmd[8] = sizes[size];
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(cmd, 10);
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
 void uii_load_reu(char size)
 // Load the REU with the specified size
 // Input: size - the size of the REU to load:
@@ -319,7 +575,7 @@ void uii_load_reu(char size)
 // The data that is returned is a more detailed string, indicating the number of bytes read at which
 // address, such as: “$003000 BYTES LOADED TO REU $126800”
 {
-	char cmd[] = {0x00, DOS_CMD_LOAD_REU, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x00};
+	char cmd[] = {0x00, DOS_CMD_LOAD_REU, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x01};
 	char sizes[8] = {0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff};
 
 	cmd[8] = sizes[size];
