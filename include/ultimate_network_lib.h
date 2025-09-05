@@ -22,22 +22,10 @@ unsigned uii_socketread(char socketid, unsigned short length);
 void uii_socketwrite(char socketid, char *data);
 void uii_socketwritechar(char socketid, char one_char);
 void uii_socketwrite_ascii(char socketid, char *data);
-
 unsigned uii_tcplistenstart(unsigned short port);
 unsigned uii_tcplistenstop(void);
 unsigned uii_tcpgetlistenstate(void);
 char uii_tcpgetlistensocket(void);
-
-void uii_logtext(char *text);
-void uii_logstatusreg(void);
-void uii_sendcommand(char *bytes, unsigned count);
-unsigned uii_readdata(void);
-unsigned uii_readstatus(void);
-void uii_accept(void);
-void uii_abort(void);
-unsigned uii_isdataavailable(void);
-unsigned uii_isstatusdataavailable(void);
-
 char uii_tcp_nextchar(char socketid);
 unsigned uii_tcp_nextline(char socketid, char *);
 unsigned uii_tcp_nextline_ascii(char socketid, char *);

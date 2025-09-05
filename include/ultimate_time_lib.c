@@ -14,6 +14,10 @@ Patches and pull requests are welcome
 #include "ultimate_common_lib.h"
 #include "ultimate_time_lib.h"
 
+// Switching code generation to bank 0 common routine section
+#pragma code(code)
+#pragma data(data)
+
 void uii_get_time(void)
 // Get the current time
 // This command returns the current date and time and the status channel will read “00,OK” on success.

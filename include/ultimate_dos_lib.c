@@ -14,6 +14,10 @@ Patches and pull requests are welcome
 #include "ultimate_common_lib.h"
 #include "ultimate_dos_lib.h"
 
+// Switching code generation to bank 0 common routine section
+#pragma code(code)
+#pragma data(data)
+
 void uii_get_path(void)
 // Get the current path
 // The “Get Path” command will return the current path in the file system, starting from the root. The
@@ -688,7 +692,7 @@ char uii_parse_deviceinfo(void)
 	uii_get_deviceinfo();
 
 	// Return with success code = 0 if no success
-	if (!uii_success())
+	if (!UII_SUCCESS)
 	{
 		return 0;
 	}

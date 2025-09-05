@@ -14,6 +14,10 @@ Patches and pull requests are welcome
 #include "ultimate_common_lib.h"
 #include "ultimate_network_lib.h"
 
+// Switching code generation to bank 0 common routine section
+#pragma code(code)
+#pragma data(data)
+
 // Network functions
 void uii_getipaddress(void)
 // Get IP address

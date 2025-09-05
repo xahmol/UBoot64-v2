@@ -17,22 +17,43 @@ Patches and pull requests are welcome
 #include <stdlib.h>
 #include <stdio.h>
 
-								// bit 7    bit 6    bit 5    bit 4    bit 3    bit 2    bit 1    bit 0
-#define CONTROL_REG 0xDF1C 		// --------reserved------ ---------   CLR_ERR   ABORT   DATA_ACC  PUSH_CMD
-#define STATUS_REG 0xDF1C  		// DATA_AV   STAT_AV [    STATE    ]    ERROR    ABORT_P DATA_ACC  CMD_BUSY
-#define CMD_DATA_REG 0xDF1D
-#define ID_REG 0xDF1D
-#define RESP_DATA_REG 0xDF1E
-#define STATUS_DATA_REG 0xDF1F
+// Defines for UCI registers
+struct UII_READ
+// Read only registers
+{
+	volatile char status;
+	volatile char id;
+	volatile char respdata;
+	volatile char statusdata;
+};
 
-#define DATA_QUEUE_SZ 256
+struct UII_WRITE
+// Write only registers
+{
+	volatile char control;
+	volatile char cmddata;
+};
+
+// Mapping the UCI registers
+#define uii_reg_read	(*((struct UII_READ *)0xdf1c))
+#define uii_reg_write	(*((struct UII_WRITE *)0xdf1c))
+
+// Length of data queues
+// The sizes of these queues are important to note, since they define the maximum transfer size per command. 
+// The UCI command queue size is 896 bytes ($380), the response data queue is also 896 bytes ($380),
+// and the status queue is 256 bytes ($100).
+// Buffer size is chosen smaller here to lower memory usage, increase if needed (for example for networking)
+#define DATA_QUEUE_SZ 512
 #define STATUS_QUEUE_SZ 256
 
+// UCI target IDs
 #define TARGET_DOS1 0x01
 #define TARGET_DOS2 0x02
 #define TARGET_NETWORK 0x03
 #define TARGET_CONTROL 0x04
 
+// UCI command IDs
+// DOS layer commands
 #define DOS_CMD_IDENTIFY 0x01
 #define DOS_CMD_OPEN_FILE 0x02
 #define DOS_CMD_CLOSE_FILE 0x03
@@ -60,6 +81,9 @@ Patches and pull requests are welcome
 #define DOS_CMD_SET_TIME 0x27
 #define DOS_CMD_LOAD_INTO_RAMDISK 0x41
 #define DOS_CMD_SAVE_RAMDISK 0x42
+#define DOS_CMD_ECHO 0xf0
+
+// Control layer commands
 #define CTRL_CMD_DEVICE_INFO 0x29
 #define CTRL_CMD_ENABLE_DISK_A 0x30
 #define CTRL_CMD_DISABLE_DISK_A 0x31
@@ -68,8 +92,8 @@ Patches and pull requests are welcome
 #define CTRL_CMD_DRIVE_A_POWER 0x34
 #define CTRL_CMD_DRIVE_B_POWER 0x35
 #define CTRL_CMD_GET_RAMDISK_INFO 0x40
-#define DOS_CMD_ECHO 0xf0
 
+// Network layer commands
 #define NET_CMD_GET_INTERFACE_COUNT 0x02
 #define NET_CMD_GET_IP_ADDRESS 0x05
 #define NET_CMD_TCP_SOCKET_CONNECT 0x07
@@ -81,29 +105,24 @@ Patches and pull requests are welcome
 #define NET_CMD_TCP_LISTENER_STOP 0x13
 #define NET_CMD_GET_LISTENER_STATE 0x14
 #define NET_CMD_GET_LISTENER_SOCKET 0x15
-
 #define NET_LISTENER_STATE_NOT_LISTENEING 0x00
 #define NET_LISTENER_STATE_LISTENING 0x01
 #define NET_LISTENER_STATE_CONNECTED 0x02
 #define NET_LISTENER_STATE_BIND_ERROR 0x03
 #define NET_LISTENER_STATE_PORT_IN_USE 0x04
 
-// #define DEBUG
-#define DISPLAY_READ
+// Uncomment for debug output
+//#define DEBUG
 
-#define uii_success() (uii_status[0] == '0' && uii_status[1] == '0')
+// Macro for checking if last command was successful
+#define UII_SUCCESS (uii_status[0] == '0' && uii_status[1] == '0')
 
-extern char *id_reg;
-extern char *cmddatareg;
-extern char *controlreg;
-extern char *statusreg;
-extern char *respdatareg;
-extern char *statusdatareg;
+// Global variables
 extern char uii_status[STATUS_QUEUE_SZ + 1];
-extern char uii_data[(DATA_QUEUE_SZ * 2) + 1];
+extern char uii_data[DATA_QUEUE_SZ  + 1];
 extern char temp_string_onechar[2];
-extern int uii_data_index;
-extern int uii_data_len;
+extern unsigned uii_data_index;
+extern unsigned uii_data_len;
 extern char uii_target;
 struct DevInfo
 {
@@ -131,16 +150,11 @@ extern struct DevInfo uii_devinfo[4];
 
 // prototypes
 char uii_detect(void);
-
-void uii_logtext(char *text);
-void uii_logstatusreg(void);
-
 void uii_settarget(char id);
 void uii_freeze(void);
 void uii_identify(void);
 void uii_echo(void);
 void uii_getinterfacecount(void);
-
 void uii_sendcommand(char *bytes, unsigned count);
 void uii_accept(void);
 char uii_isdataavailable(void);

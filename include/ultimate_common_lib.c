@@ -12,17 +12,15 @@ Patches and pull requests are welcome
 ******************************************************************/
 
 #include <string.h>
+#include <petscii.h>
 #include "ultimate_common_lib.h"
 
-char *id_reg = (char *)ID_REG;
-char *cmddatareg = (char *)CMD_DATA_REG;
-char *controlreg = (char *)CONTROL_REG;
-char *statusreg = (char *)STATUS_REG;
-char *respdatareg = (char *)RESP_DATA_REG;
-char *statusdatareg = (char *)STATUS_DATA_REG;
+// Switching code generation to bank 0 common routine section
+#pragma code(code)
+#pragma data(data)
 
 char uii_status[STATUS_QUEUE_SZ + 1];
-char uii_data[(DATA_QUEUE_SZ * 2) + 1];
+char uii_data[DATA_QUEUE_SZ + 1];
 char temp_string_onechar[2];
 unsigned uii_data_index;
 unsigned uii_data_len;
@@ -31,13 +29,35 @@ char uii_target = TARGET_DOS1;
 struct DevInfo uii_devinfo[4];
 
 // Core functions
+
+void uii_logtext(const char *text)
+// Log text for debugging
+// Input: text - the text to log
+// Only activated with DEBUG defined
+{
+#ifdef DEBUG
+	printf("%s", text);
+#else
+	text = NULL;
+#endif
+}
+
+void uii_logstatusreg(void)
+// Log the status register for debugging
+// Only activated with DEBUG defined
+{
+#ifdef DEBUG
+	printf("\nstatus reg %4x = %2x", &uii_reg_read.status, uii_reg_read.status);
+#endif
+}
+
 char uii_detect(void)
 // Detect present of UCI via ID_REG. Value should be $C9
 // Output:
 //	1 = detected
 //	0 = not detected
 {
-	if (*id_reg == 0xc9)
+	if (uii_reg_read.id == 0xc9)
 	{
 		// Reset UCI
 		uii_abort();
@@ -50,25 +70,6 @@ char uii_detect(void)
 		// Return 0 for detected = false
 		return 0;
 	}
-}
-
-void uii_logtext(char *text)
-// Log text to the console
-//	Inout: text - the text to log
-{
-#ifdef DEBUG
-	printf("%s", text);
-#else
-	text = 0; // to eliminate the warning in cc65
-#endif
-}
-
-void uii_logstatusreg(void)
-// Log the status register
-{
-#ifdef DEBUG
-	printf("\nstatus reg %p = %d", statusreg, *statusreg);
-#endif
 }
 
 void uii_settarget(char id)
@@ -140,53 +141,52 @@ void uii_sendcommand(char *bytes, unsigned count)
 // Input: bytes - the command bytes to send
 //        count - the number of bytes to send
 {
-	unsigned x = 0;
-	unsigned success = 0;
-
+	unsigned x =0;
+	char success = 0;
+	
 	bytes[0] = uii_target;
-
-	while (success == 0)
+	
+	while(success == 0)
 	{
 		// Wait for idle state
-		uii_logtext("\nwaiting for cmd_busy to clear...");
+		uii_logtext("\nwaiting for cmd-busy to clear...");
 		uii_logstatusreg();
-
-		while (*statusreg & 0x35)
-		{
+		
+		while ( !(((uii_reg_read.status & 32) == 0) && ((uii_reg_read.status & 16) == 0)))  {
 			uii_logtext("\nwaiting...");
 			uii_logstatusreg();
 		};
-
+		
 		// Write byte by byte to data register
 		uii_logtext("\nwriting command...");
-		while (x < count)
-			*cmddatareg = bytes[x++];
-
+		while(x<count)
+			uii_reg_write.cmddata = bytes[x++];
+		
 		// Send PUSH_CMD
 		uii_logtext("\npushing command...");
-		*controlreg |= 0x01;
-
+		uii_reg_write.control |= 0x01;
+		
 		uii_logstatusreg();
-
+		
 		// check ERROR bit.  If set, clear it via ctrl reg, and try again
-		if ((*statusreg & 4) == 4)
+		if ((uii_reg_read.status & 4) == 4)
 		{
 			uii_logtext("\nerror was set. trying again");
-			*controlreg |= 0x08;
+			uii_reg_write.control |= 0x08;
 		}
 		else
 		{
 			uii_logstatusreg();
-
+			
 			// check for cmd busy
-			while (((*statusreg & 32) == 0) && ((*statusreg & 16) == 16))
+			while ( ((uii_reg_read.status & 32) == 0) && ((uii_reg_read.status & 16) == 16) )
 			{
 				uii_logtext("\nstate is busy");
 			}
 			success = 1;
 		}
 	}
-
+	
 	uii_logstatusreg();
 	uii_logtext("\ncommand sent");
 }
@@ -194,12 +194,10 @@ void uii_sendcommand(char *bytes, unsigned count)
 void uii_accept(void)
 // Acknowledge the data
 {
-	// Acknowledge the data
 	uii_logstatusreg();
 	uii_logtext("\nsending ack");
-	*controlreg |= 0x02;
-	while (!(*statusreg & 2) == 0)
-	{
+	uii_reg_write.control |= 0x02;
+	while (!(uii_reg_read.status & 2) == 0)  {
 		uii_logtext("\nwaiting for ack...");
 		uii_logstatusreg();
 	};
@@ -208,7 +206,7 @@ void uii_accept(void)
 char uii_isdataavailable(void)
 // Check if data is available
 {
-	if (((*statusreg & 128) == 128))
+	if (((uii_reg_read.status & 128) == 128))
 		return 1;
 	else
 		return 0;
@@ -217,7 +215,7 @@ char uii_isdataavailable(void)
 char uii_isstatusdataavailable(void)
 // Check if status data is available
 {
-	if (((*statusreg & 64) == 64))
+	if (((uii_reg_read.status & 64) == 64))
 		return 1;
 	else
 		return 0;
@@ -226,10 +224,9 @@ char uii_isstatusdataavailable(void)
 void uii_abort(void)
 // Abort the command
 {
-	// abort the command
 	uii_logstatusreg();
 	uii_logtext("\nsending abort");
-	*controlreg |= 0x04;
+	uii_reg_write.control |= 0x04;
 }
 
 unsigned uii_readdata(void)
@@ -241,9 +238,12 @@ unsigned uii_readdata(void)
 	uii_logstatusreg();
 
 	// If there is data to read
-	while (uii_isdataavailable() && count < DATA_QUEUE_SZ * 2)
+	while (uii_isdataavailable())
 	{
-		uii_data[count++] = *respdatareg;
+		if(count < DATA_QUEUE_SZ)
+		{
+			uii_data[count++] = uii_reg_read.respdata;
+		}
 	}
 	uii_data[count] = 0;
 	return count;
@@ -258,9 +258,12 @@ unsigned uii_readstatus(void)
 	uii_logtext("\n\nreading status...");
 	uii_logstatusreg();
 
-	while (uii_isstatusdataavailable() && count < STATUS_QUEUE_SZ)
+	while (uii_isstatusdataavailable() )
 	{
-		uii_status[count++] = *statusdatareg;
+		if(count < STATUS_QUEUE_SZ)
+		{
+			uii_status[count++] = uii_reg_read.statusdata;
+		}
 	}
 
 	uii_status[count] = 0;

@@ -32,7 +32,7 @@ VERSION_TIMESTAMP = $(shell date "+%Y%m%d-%H%M")
 VERSION = v$(VERSION_MAJOR)$(VERSION_MINOR)-$(VERSION_TIMESTAMP)
 
 # Common compile flags
-CFLAGS  = -i=include -tm=$(SYS) -tf=crt -O2 -dNOFLOAT -dHEAPCHECK -dVERSION="\"$(VERSION)\""
+CFLAGS  = -i=include -tm=$(SYS) -tf=crt16 -cid=3 -csub=1 -cname=$(MAIN) -O2 -dNOFLOAT -dHEAPCHECK -dVERSION="\"$(VERSION)\""
 
 # Sources
 MAINSRC = src/main.c
