@@ -244,6 +244,12 @@ unsigned uii_readdata(void)
 		{
 			uii_data[count++] = uii_reg_read.respdata;
 		}
+		else
+		{
+			// Data buffer full, abort reading
+			uii_logtext("\ndata buffer full, aborting read");
+			break;
+		}
 	}
 	uii_data[count] = 0;
 	return count;
@@ -263,6 +269,12 @@ unsigned uii_readstatus(void)
 		if(count < STATUS_QUEUE_SZ)
 		{
 			uii_status[count++] = uii_reg_read.statusdata;
+		}
+		else
+		{
+			// Status buffer full, abort reading
+			uii_logtext("\nstatus buffer full, aborting read");
+			break;
 		}
 	}
 
