@@ -45,6 +45,7 @@
 #include <c64/cia.h>
 #include <c64/vic.h>
 #include <c64/types.h>
+#include <c64/sprites.h>
 #include <petscii.h>
 #include <stdio.h>
 #include <string.h>
@@ -65,14 +66,20 @@
 
 #pragma region( main, 0x4900, 0x8000, , , { bss, heap, stack } )
 
-// Section and region for FC3 bank zero common routines to be copied to main RAM
+// Section and region for FC3 bank zero start code
 #pragma section(startcode, 0)
-#pragma region(start, 0x8100, 0x8200, , 0, { startcode})
+#pragma section(startdata, 0)
+#pragma region(start, 0x8060, 0x8200, , 0, { startcode, startdata })
+
+// Section and region for FC3 bank zero banking code to go to $C000 in main RAM
+#pragma section(fc3code, 0)
+#pragma section(fc3data, 0)
+#pragma region(fc3control, 0x8200, 0x8300, , 0, { fc3code, fc3data }, 0xc000 )
 
 // Section and region for FC3 bank zero common routines to be copied to main RAM
 #pragma section(code, 0)
 #pragma section(data, 0)
-#pragma region(bank0, 0x8200, 0xc000, , 0, { code, data }, 0x0900 )
+#pragma region(bank0, 0x8300, 0xc000, , 0, { code, data }, 0x0900 )
 
 // Section and region for FC3 bank 1
 #pragma section(bcode1, 0)
@@ -178,9 +185,13 @@ char iec_devices[23];
 // Macro for indirect cross bank call
 #define FCALL(f) fcall(__bankof(f), f)
 
+// Placement of sprite in cassette buffer
+#define SpriteData	((char *)0x0340)
+
 __noinline void mainloop(void)
 {
 	char x;
+	int key;
 
 	SCREENW = 40; // Set flag for 40 column
 	DIRW = 25;
@@ -188,10 +199,20 @@ __noinline void mainloop(void)
 
 	// Init VIC
 	vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);
+	vic.color_border = VCOL_BLACK;
+	vic.color_back = VCOL_BLACK;
 
 	// Prepare output window
 	cwin_init(&cw, (char *)0x0400, 0, 0, 40, 25);
 	cwin_clear(&cw);
+
+	// Initialize the sprite
+	spr_init((char*)0x0400);
+	spr_set(0, true, 300, 50, 0x0340 / 64, VCOL_CYAN, false, false, false);
+
+	cwin_put_string(&cw, "Press key.", 7);
+	cwin_cursor_newline(&cw);
+	cwin_getch();
 
 	if (!fb_selection_made)
 	{
@@ -203,6 +224,7 @@ __noinline void mainloop(void)
 			cwin_put_string(&cw, "Press key to exit.", 7);
 			cwin_cursor_newline(&cw);
 			cwin_getch();
+			fc3_exit();
 		}
 		else
 		{
@@ -232,26 +254,114 @@ __noinline void mainloop(void)
 		fc3_call(1, print1);
 		fc3_call(2, print2);
 		fc3_call(3, print3);
+		cwin_put_string(&cw, "Back in main RAM", 7);
+		cwin_cursor_newline(&cw);
 
 		cwin_getch();
+
+		cwin_put_string(&cw, "Going to exit", 7);
+		cwin_cursor_newline(&cw);
+
+		fc3_exit();
 	}
 }
 
 // Switching code generation to startup section
 #pragma code(startcode)
+#pragma data(startdata)
+
+// Start message
+const char startmessage[42] = "Starting UBoot64.\r\rCopying core to RAM.\r";
+
+// Logo sprite
+const char logo_sprite[64] = {
+	0x00, 0x0F, 0x80, 0x00, 0x10, 0x40, 0x00, 0x10, 0x40, 0x00, 0x13, 0x80, 0x00, 0x12, 0x00, 0x00,
+	0x3F, 0x00, 0x40, 0xC0, 0xC0, 0xA3, 0x00, 0x30, 0x94, 0x00, 0x18, 0x9A, 0xBA, 0x94, 0x92, 0xA2,
+	0xA2, 0x52, 0xBB, 0xA2, 0x22, 0xA8, 0xA1, 0x23, 0xB8, 0xA1, 0x5C, 0x00, 0x22, 0x93, 0x00, 0x22,
+	0x88, 0xC0, 0xD4, 0x94, 0x3F, 0x18, 0x93, 0x00, 0x30, 0xA0, 0xC0, 0xC0, 0x40, 0x3F, 0x00, 0x07};
 
 int main(void)
 {
 	// Enable ROM
 	mmap_set(MMAP_ROM);
 
-	// Init CIAs (no kernal rom was executed so far)
-	cia_init();
+	// FC3 init code
+	__asm
+	{
+		sei // Disable interrrupts
+		ldx #$FF				
+		txs
+		ldx #$05
+		sta $D016 // Turn on VIC for PAL / NTSC check
+		jsr $FDA3 // Init I/O
+		jsr	$FF84 // Prepare IRQ
+
+		// Set Start of Tape Buffer pointer
+    	ldx #$3c
+    	ldy #$03
+    	stx $B2
+    	sty $B3
+
+		// Set IO Start address and OS end of memory pointer
+    	ldx #$00
+    	ldy #$A0
+    	stx $C1
+    	stx $0283
+    	sty $C2
+    	sty $0284
+
+		// Set OS Start of memory and screen memory
+    	lda #$08
+    	sta $0282
+    	lda #$04
+    	sta $0288
+
+		jsr $FD15 // Init I/O
+		jsr $FF5B // Init video
+		cli // Restore interrupts
+
+		// Switch to second charset
+		lda	#14
+		jsr $FFD2 // Call C64 KERNAL BSOUT
+
+		// Set colors
+		lda #$00							// Load value for black
+		sta $D021							// Store as background color (VIC_BG_COLOR0)
+		lda #$07							// Load value for yellow
+		sta $0286							// Store as foreground color (CHARCOLOR)
+
+		// Print start message
+		ldx #$00
+fc3init_loop1:       
+		lda startmessage,x
+    	beq fc3init_next1
+		jsr $FFD2 // Call C64 KERNAL BSOUT
+    	inx
+    	bne fc3init_loop1
+fc3init_next1:
+	}
+
+	// Copy FC3 control routines code and data to high RAM at $C000
+	for (int i = 0; i < 0x100; i++)
+	{
+		((char *)0xc000)[i] = ((char *)0x8200)[i];
+		vic.color_border++; // Border color effect
+	}
 
 	// Copy common routines code and data to main RAM
-	for (int i = 0; i < 0x3e00; i++)
-		((char *)0x0900)[i] = ((char *)0x8200)[i];
-
+	for (int i = 0; i < 0x3d00; i++)
+	{
+		((char *)0x0900)[i] = ((char *)0x8300)[i];
+		vic.color_border++; // Border color effect
+	}
+		
+	// Prepare sprite
+	for (char i = 0; i < 64; i++)
+	{
+		((char *)0x0340)[i] = logo_sprite[i];
+		vic.color_border++; // Border color effect
+	}
+		
 	// Go to main loop, which is now copied to main RAM
 	mainloop();
 
