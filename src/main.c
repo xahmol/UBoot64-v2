@@ -59,6 +59,8 @@
 #include "ultimate_dos_lib.h"
 #include "ultimate_time_lib.h"
 #include "ultimate_network_lib.h"
+#include "core.h"
+#include "fileio.h"
 #include "u-time.h"
 
 // Ram area for copied common routines code and common data, plus bss/heap/stack
@@ -141,8 +143,8 @@ void print3(void)
 BYTE SCREENW;
 BYTE DIRW;
 BYTE MENUX;
-char path[8][51];
-char pathfile[51];
+char path[8][MAXFILENAME];
+char pathfile[MAXFILENAME];
 BYTE pathdevice;
 BYTE pathrunboot;
 BYTE depth = 0;
@@ -155,23 +157,20 @@ BYTE addmountflag = 0;
 BYTE runmountflag = 0;
 BYTE mountflag = 0;
 
-struct SlotStruct *Slot;
-struct SlotStruct *FirstSlot;
-struct SlotStruct *BufferSlot;
-long secondsfromutc = 7200;
-char timeonflag = 1;
-char host[80] = "pool.ntp.org";
-char imagename[51];
-char reufilepath[256];
-char imageaname[51] = "";
-char imageapath[256] = "";
+struct SlotStruct Slot;
+struct SlotStruct BufferSlot;
+struct ConfigStruct cfg;
+
+char imagename[MAXFILENAME];
+char reufilepath[MAXPATHLEN];
+char imageaname[MAXFILENAME] = "";
+char imageapath[MAXPATHLEN] = "";
 char imageaid = 0;
-char imagebname[51] = "";
-char imagebpath[256] = "";
+char imagebname[MAXFILENAME] = "";
+char imagebpath[MAXPATHLEN] = "";
 char imagebid = 0;
 char reusize = 2;
 char reusizelist[8][8] = {"128 KB", "256 KB", "512 KB", "1 MB", "2 MB", "4 MB", "8 MB", "16 MB"};
-char utilbuffer[86];
 char configpath[8] = "/usb*/";
 char configfilename[11] = "dmbcfg.cfg";
 char slotfilename[11] = "dmbslt.cfg";
@@ -186,16 +185,20 @@ char iec_devices[23];
 #define FCALL(f) fcall(__bankof(f), f)
 
 // Placement of sprite in cassette buffer
-#define SpriteData	((char *)0x0340)
+#define SpriteData ((char *)0x0340)
 
 __noinline void mainloop(void)
+// Main loop
 {
 	char x;
 	int key;
+	char input[20] = "Testinput";
 
-	SCREENW = 40; // Set flag for 40 column
-	DIRW = 25;
-	MENUX = 25;
+	// Set config defauklt values
+	cfg.version = CFGVERSION;
+	cfg.timeon = 1;
+	cfg.secondsfromutc = 7200;
+	strcpy(cfg.host, "pool.ntp.org");
 
 	// Init VIC
 	vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);
@@ -207,15 +210,14 @@ __noinline void mainloop(void)
 	cwin_clear(&cw);
 
 	// Initialize the sprite
-	spr_init((char*)0x0400);
-	spr_set(0, true, 300, 50, 0x0340 / 64, VCOL_CYAN, false, false, false);
-
-	cwin_put_string(&cw, "Press key.", 7);
-	cwin_cursor_newline(&cw);
-	cwin_getch();
+	spr_init((char *)0x0400);
+	spr_set(0, true, 320, 70, 0x0340 / 64, VCOL_CYAN, false, false, false);
 
 	if (!fb_selection_made)
 	{
+		headertext("Starting....", 0);
+		cwin_cursor_move(&cw, 0, 3);
+
 		// Is Ultimate Command Interface detected? If no, abort
 		if (!uii_detect())
 		{
@@ -239,17 +241,58 @@ __noinline void mainloop(void)
 
 		// Wait for USB to be present by looping till dirchange to root successful
 		// Times out on 5 secs
-		cia_seconds = 0;
-		cia_tensofsec = 0;
+		cia1.tods = 0;
+		cia1.todt = 0;
 		do
 		{
 			uii_change_dir(configpath);
-		} while (!UII_SUCCESS || cia_seconds > 4);
+		} while (!UII_SUCCESS || cia1.tods > 4);
 		if (!UII_SUCCESS)
 		{
 			cwin_put_string(&cw, "USB storage not found.", 7);
 			cwin_cursor_newline(&cw);
 		}
+
+		// Read config file
+	    readconfigfile();
+
+		delay(1);
+
+		// Read (and print feedback of) drive configuration
+		if (!uii_parse_deviceinfo())
+		{
+			cwin_put_string(&cw, "Getting device info fails.", 7);
+			cwin_cursor_newline(&cw);
+			errorexit();
+		}
+
+		cwin_console_printf(&cw, 7, "\nRecognised Ultimate devices:\n");
+		if (uii_devinfo[0].exist)
+		{
+			cwin_console_printf(&cw, 7,"Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
+		}
+		if (uii_devinfo[1].exist)
+		{
+			cwin_console_printf(&cw, 7, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
+		}
+		if (uii_devinfo[2].exist)
+		{
+			cwin_console_printf(&cw, 7,"SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
+		}
+		if (uii_devinfo[3].exist)
+		{
+			cwin_console_printf(&cw, 7,"Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
+		}
+		cwin_console_printf(&cw, 7,"IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
+		cwin_console_printf(&cw, 7,"Active IEC IDs: ");
+		for (x = 0; x < 23; x++)
+		{
+			if (iec_devices[x])
+			{
+				cwin_console_printf(&cw, 7,"%02d ", (x == 22) ? 4 : x + 8);
+			}
+		}
+		cwin_cursor_newline(&cw);
 
 		fc3_call(1, print1);
 		fc3_call(2, print2);
@@ -296,13 +339,13 @@ int main(void)
 		jsr $FDA3 // Init I/O
 		jsr	$FF84 // Prepare IRQ
 
-		// Set Start of Tape Buffer pointer
+							// Set Start of Tape Buffer pointer
     	ldx #$3c
     	ldy #$03
     	stx $B2
     	sty $B3
 
-		// Set IO Start address and OS end of memory pointer
+									// Set IO Start address and OS end of memory pointer
     	ldx #$00
     	ldy #$A0
     	stx $C1
@@ -310,7 +353,7 @@ int main(void)
     	sty $C2
     	sty $0284
 
-		// Set OS Start of memory and screen memory
+													// Set OS Start of memory and screen memory
     	lda #$08
     	sta $0282
     	lda #$04
@@ -320,17 +363,17 @@ int main(void)
 		jsr $FF5B // Init video
 		cli // Restore interrupts
 
-		// Switch to second charset
+																		// Switch to second charset
 		lda	#14
 		jsr $FFD2 // Call C64 KERNAL BSOUT
 
-		// Set colors
-		lda #$00							// Load value for black
-		sta $D021							// Store as background color (VIC_BG_COLOR0)
-		lda #$07							// Load value for yellow
-		sta $0286							// Store as foreground color (CHARCOLOR)
+																			// Set colors
+		lda #$00 // Load value for black
+		sta $D021 // Store as background color (VIC_BG_COLOR0)
+		lda #$07 // Load value for yellow
+		sta $0286 // Store as foreground color (CHARCOLOR)
 
-		// Print start message
+			// Print start message
 		ldx #$00
 fc3init_loop1:       
 		lda startmessage,x
@@ -354,14 +397,14 @@ fc3init_next1:
 		((char *)0x0900)[i] = ((char *)0x8300)[i];
 		vic.color_border++; // Border color effect
 	}
-		
+
 	// Prepare sprite
 	for (char i = 0; i < 64; i++)
 	{
 		((char *)0x0340)[i] = logo_sprite[i];
 		vic.color_border++; // Border color effect
 	}
-		
+
 	// Go to main loop, which is now copied to main RAM
 	mainloop();
 
