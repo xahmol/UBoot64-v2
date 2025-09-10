@@ -90,6 +90,11 @@ typedef unsigned char BYTE;
 // Define highest device ID allowed
 #define MAXDEVID 30
 
+// Define slot number and REU start location
+#define SLOTS 18
+#define SLOT_REU_START 0
+#define SAVE_BUF_SIZE 500
+
 // Define max length of paths and filenames, plus 1 for zero termination
 #define MAXPATHLEN 256
 #define MAXFILENAME 51
@@ -113,6 +118,7 @@ extern BYTE mountflag;
 extern BYTE reuflag;
 extern BYTE addmountflag;
 extern BYTE runmountflag;
+extern int reudetected;
 struct SlotStruct {
     BYTE cfgvs;
     char path[MAXPATHLEN];

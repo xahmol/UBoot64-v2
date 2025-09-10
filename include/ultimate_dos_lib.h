@@ -1,6 +1,9 @@
 /*****************************************************************
 Ultimate 64/II+ Command Library - DOS functions
+
+Based on Ultimate II Dos Lib
 Scott Hutter, Francesco Sblendorio
+https://github.com/xlar54/ultimateii-dos-lib
 
 Based on ultimate_dos-1.2.docx and command interface.docx
 https://github.com/markusC64/1541ultimate2/tree/master/doc
@@ -27,7 +30,7 @@ void uii_unmount_disk(char id);
 void uii_open_file(char attrib, char *filename);
 void uii_close_file(void);
 void uii_write_file(char *data, unsigned length);
-void uii_read_file(char length);
+void uii_read_file(unsigned length);
 void uii_seek_file(char posL, char posML, char posMH, char posH);
 void uii_file_info();
 void uii_file_stat(char *filename);

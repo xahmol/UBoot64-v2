@@ -1,6 +1,9 @@
 /*****************************************************************
-Ultimate 64/II+ Command Library  - Time functions
+Ultimate 64/II+ Command Library - DOS functions
+
+Based on Ultimate II Dos Lib
 Scott Hutter, Francesco Sblendorio
+https://github.com/xlar54/ultimateii-dos-lib
 
 Based on ultimate_dos-1.2.docx and command interface.docx
 https://github.com/markusC64/1541ultimate2/tree/master/doc

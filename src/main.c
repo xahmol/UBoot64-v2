@@ -46,6 +46,7 @@
 #include <c64/vic.h>
 #include <c64/types.h>
 #include <c64/sprites.h>
+#include <c64/reu.h>
 #include <petscii.h>
 #include <stdio.h>
 #include <string.h>
@@ -140,9 +141,6 @@ void print3(void)
 #pragma data(data)
 
 // Global variables
-BYTE SCREENW;
-BYTE DIRW;
-BYTE MENUX;
 char path[8][MAXFILENAME];
 char pathfile[MAXFILENAME];
 BYTE pathdevice;
@@ -156,6 +154,7 @@ BYTE reuflag = 0;
 BYTE addmountflag = 0;
 BYTE runmountflag = 0;
 BYTE mountflag = 0;
+int reudetected;
 
 struct SlotStruct Slot;
 struct SlotStruct BufferSlot;
@@ -239,6 +238,17 @@ __noinline void mainloop(void)
 		cwin_put_string(&cw, uii_data, 7);
 		cwin_cursor_newline(&cw);
 
+		// Check presence and size of REU
+		reudetected = reu_count_pages();
+		if (reudetected)
+		{
+			cwin_console_printf(&cw, 7, "\nREU detected, size: %d KB\n", reudetected*64);
+		}
+		else
+		{
+			errorexit("No REU detected.");
+		}
+
 		// Wait for USB to be present by looping till dirchange to root successful
 		// Times out on 5 secs
 		cia1.tods = 0;
@@ -249,21 +259,17 @@ __noinline void mainloop(void)
 		} while (!UII_SUCCESS || cia1.tods > 4);
 		if (!UII_SUCCESS)
 		{
-			cwin_put_string(&cw, "USB storage not found.", 7);
-			cwin_cursor_newline(&cw);
+			errorexit("USB storage not found.");
 		}
 
-		// Read config file
+		// Read config and slot files
 	    readconfigfile();
-
-		delay(1);
+		read_slotsfile(1);
 
 		// Read (and print feedback of) drive configuration
 		if (!uii_parse_deviceinfo())
 		{
-			cwin_put_string(&cw, "Getting device info fails.", 7);
-			cwin_cursor_newline(&cw);
-			errorexit();
+			errorexit("Getting device info fails.");
 		}
 
 		cwin_console_printf(&cw, 7, "\nRecognised Ultimate devices:\n");
