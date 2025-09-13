@@ -160,7 +160,8 @@ void read_slotsfile(unsigned char verbose)
 {
   unsigned char x;
   long count = SLOT_REU_START;
-  unsigned bytesread;;
+  long end = SLOT_REU_START + (sizeof(Slot) * SLOTS);
+  unsigned bytesread;
 
   // Go to proper dir
   uii_change_dir(configpath);
@@ -207,21 +208,23 @@ void read_slotsfile(unsigned char verbose)
     return;
   }
 
-  uii_read_file(sizeof(Slot) * SLOTS);
-
-  while (uii_isdataavailable())
+  while (count < end)
   {
-    if (verbose)
-    {
-      cwin_cursor_move(&cw, 0, 8);
-      cwin_console_printf(&cw, 7, "Reading slot data to %lu.", count);
-    }
+    uii_read_file(sizeof(Slot) * SLOTS);
 
-    bytesread = uii_readdata();
-    uii_accept();
-    CheckStatus("reading slots");
-    reu_store(count, uii_data, bytesread);
-    count += bytesread;
+    while (uii_isdataavailable())
+    {
+      bytesread = uii_readdata();
+      uii_accept();
+      CheckStatus("reading slots");
+      reu_store(count, uii_data, bytesread);
+      if (verbose)
+      {
+        cwin_cursor_move(&cw, 0, 8);
+        cwin_console_printf(&cw, 7, "Reading slot data to %lu.", count);
+      }
+      count += bytesread;
+    }
   }
 
   uii_close_file();
