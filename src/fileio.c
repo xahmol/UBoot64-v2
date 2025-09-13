@@ -72,126 +72,172 @@
 
 // Config file I/O functions
 void CheckStatus(const char *message)
+// Function to check UII+ status and print error box if applicable
 {
-  // Function to check UII+ status and print error box if applicable
-
   if (!UII_SUCCESS)
   {
     cwin_console_printf(&cw, 7, "\nI/O error in %s.\n", message);
     cwin_console_printf(&cw, 7, "\nStatus: %s\n", uii_status);
     uii_abort();
-    errorexit();
+    errorexit("");
   }
 }
 
-// void std_write(char *filename, unsigned char verbose)
-// {
-//   unsigned char x;
-// 
-//   // Go to proper dir
-//   uii_change_dir(UCI_CFG_LOC);
-// 
-//   // Delete old config file as I can not (yet) get overwrite to work
-//   uii_delete_file(filename);
-// 
-//   // Save slots via UCI, one slot at a time due to 512 byte limit
-//   uii_open_file(0x06, filename);
-// 
-//   Slot = FirstSlot;
-// 
-//   for (x = 0; x < 18; ++x)
-//   {
-//     if (verbose)
-//     {
-//       gotoxy(0, 5);
-//       cprintf("Writing slot %2d  ", x + 1, Slot);
-//     }
-//     uii_write_file((unsigned char *)Slot, SLOTSIZE);
-//     CheckStatus("writing slots");
-//     Slot++;
-//   }
-// 
-//   uii_close_file();
-// }
-// 
-// void std_read(char *filename, unsigned char verbose)
-// {
-//   // Function to read config file
-//   // Input: file_name is the name of the config file
-// 
-//   unsigned char x;
-//   char *readaddress;
-// 
-//   // Go to proper dir
-//   uii_change_dir(UCI_CFG_LOC);
-// 
-//   Slot = FirstSlot;
-//   readaddress = (char *)FirstSlot;
-// 
-//   uii_open_file(0x01, filename);
-// 
-//   // Check if a file already exists, otherwise create new one
-//   if (strcmp((const char *)uii_status, "00,ok") != 0)
-//   {
-//     for (x = 0; x < 18; ++x)
-//     {
-//       if (verbose)
-//       {
-//         gotoxy(0, 5);
-//         cprintf("Creating slot %2d", x + 1);
-//       }
-//       // sprintf(Slot->menu,"Debug %2d",x);
-//       strcpy(Slot->menu, "");
-//       strcpy(Slot->path, "");
-//       strcpy(Slot->file, "");
-//       strcpy(Slot->cmd, "");
-//       strcpy(Slot->reu_image, "");
-//       Slot->device = 0;
-//       Slot->runboot = 0;
-//       Slot->command = 0;
-//       Slot->cfgvs = CFGVERSION;
-//       strcpy(Slot->image_a_path, "");
-//       strcpy(Slot->image_a_file, "");
-//       Slot->image_a_id = 0;
-//       strcpy(Slot->image_b_path, "");
-//       strcpy(Slot->image_b_file, "");
-//       Slot->image_b_id = 0;
-//       Slot++;
-//     }
-//     std_write(filename, 1);
-//     uii_close_file();
-//     return;
-//   }
-// 
-//   uii_read_file(SLOTSIZE * 18);
-// 
-//   while (uii_isdataavailable())
-//   {
-//     if (verbose)
-//     {
-//       gotoxy(0, 5);
-//       cprintf("Reading slots: %4X", readaddress);
-//     }
-// 
-//     while (uii_isdataavailable())
-//     {
-//       POKE(readaddress++, *respdatareg);
-//     }
-//     uii_accept();
-//     CheckStatus("reading slots");
-//   }
-// 
-//   uii_close_file();
-// 
-//   Slot = FirstSlot;
-//   if (Slot->cfgvs < CFGVERSION)
-//   {
-//     printf("\nOld configuration file format.");
-//     printf("\nRun upgrade tool first.");
-//     printf("\nPress key to exit.\n");
-//     errorexit();
-//   }
-// }
+void get_slot_from_reu(char number)
+// Function to get slot with specified number from REU
+// Input: number - slot number to get
+{
+  unsigned long address;
+
+  if (number > SLOTS - 1)
+  {
+    return;
+  }
+
+  address = number * sizeof(Slot) + SLOT_REU_START;
+
+  reu_load(address, (char *)&Slot, sizeof(Slot));
+}
+
+void save_slot_to_reu(char number)
+// Function to save slot with specified number to REU
+// Input: number - slot number to save
+{
+  unsigned long address;
+
+  if (number > SLOTS - 1)
+  {
+    return;
+  }
+
+  address = number * sizeof(Slot) + SLOT_REU_START;
+
+  reu_store(address, (char *)&Slot, sizeof(Slot));
+}
+
+void write_slotsfile(char verbose)
+// Function to write slots file
+// Input: verbose - if non-zero, print status messages
+{
+  long count = SLOT_REU_START;
+  long end = SLOT_REU_START + (sizeof(Slot) * SLOTS);
+  char save_buffer[SAVE_BUF_SIZE];
+  unsigned save_length = SAVE_BUF_SIZE;
+
+  // Go to proper dir
+  uii_change_dir(configpath);
+
+  // Delete old config file as I can not (yet) get overwrite to work
+  uii_delete_file(slotfilename);
+
+  // Save slots via UCI, one slot at a time due to 512 byte limit
+  uii_open_file(0x06, slotfilename);
+
+  while (count < end)
+  {
+    if (verbose)
+    {
+      cwin_cursor_move(&cw, 0, 8);
+      cwin_console_printf(&cw, 7, "Writing slot data at %lu.", count);
+    }
+    memset(save_buffer, 0, sizeof(save_buffer));
+    if (end - count < SAVE_BUF_SIZE)
+    {
+      save_length = end - count;
+    }
+    reu_load(count, save_buffer, save_length);
+    uii_write_file(save_buffer, save_length);
+    CheckStatus("writing slots");
+    count += SAVE_BUF_SIZE;
+  }
+
+  uii_close_file();
+}
+
+void read_slotsfile(unsigned char verbose)
+// Function to read slots file
+// Input: verbose - if non-zero, print status messages
+{
+  unsigned char x;
+  long count = SLOT_REU_START;
+  long end = SLOT_REU_START + (sizeof(Slot) * SLOTS);
+  unsigned bytesread;
+
+  // Go to proper dir
+  uii_change_dir(configpath);
+
+  uii_open_file(0x01, slotfilename);
+
+  // Check if a file already exists, otherwise create new one
+  if (strcmp((const char *)uii_status, "00,ok") != 0)
+  {
+    // Create slot with default values
+    memset(&Slot, 0, sizeof(Slot));
+    Slot.cfgvs = CFGVERSION;
+
+    for (x = 0; x < SLOTS; ++x)
+    {
+      // Debug
+      sprintf(Slot.path, "Path %2u", x);
+      sprintf(Slot.menu, "Menu %2u", x);
+      sprintf(Slot.file, "File %2u", x);
+      sprintf(Slot.cmd, "Cmd %2u", x);
+      sprintf(Slot.reu_image, "REU %2u", x);
+      sprintf(Slot.reu_path, "REUPath %2u", x);
+      Slot.reusize = x;
+      Slot.runboot = x;
+      Slot.device = x;
+      Slot.command = 0;
+      sprintf(Slot.image_a_path, "ImgAPath %2u", x);
+      sprintf(Slot.image_a_file, "ImgAFile %2u", x);
+      Slot.image_a_id = x;
+      sprintf(Slot.image_b_path, "ImgBPath %2u", x);
+      sprintf(Slot.image_b_file, "ImgBFile %2u", x);
+      Slot.image_b_id = x;
+      // End of debug
+
+      if (verbose)
+      {
+        cwin_cursor_move(&cw, 0, 8);
+        cwin_console_printf(&cw, 7, "Creating slot %2d", x + 1);
+      }
+      save_slot_to_reu(x);
+    }
+    write_slotsfile(1);
+    uii_close_file();
+    return;
+  }
+
+  while (count < end)
+  {
+    uii_read_file(sizeof(Slot) * SLOTS);
+
+    while (uii_isdataavailable())
+    {
+      bytesread = uii_readdata();
+      uii_accept();
+      CheckStatus("reading slots");
+      reu_store(count, uii_data, bytesread);
+      if (verbose)
+      {
+        cwin_cursor_move(&cw, 0, 8);
+        cwin_console_printf(&cw, 7, "Reading slot data to %lu.", count);
+      }
+      count += bytesread;
+    }
+  }
+
+  uii_close_file();
+
+  get_slot_from_reu(0);
+
+  if (Slot.cfgvs < CFGVERSION)
+  {
+    cwin_console_printf(&cw, 7, "\nOld configuration file format.");
+    cwin_console_printf(&cw, 7, "\nRun upgrade tool first.");
+    errorexit("");
+  }
+}
 
 void writeconfigfile()
 // Function to write config file
@@ -199,7 +245,7 @@ void writeconfigfile()
   // Delete old config file as I can not (yet) get overwrite to work
   uii_delete_file(configfilename);
   uii_open_file(0x06, configfilename);
-  uii_write_file((char*)&cfg, sizeof(cfg));
+  uii_write_file((char *)&cfg, sizeof(cfg));
   CheckStatus("writing config");
   uii_close_file();
 }
@@ -222,7 +268,7 @@ void readconfigfile()
   }
 
   uii_read_file(sizeof(cfg));
-  CheckStatus("eading config");
+  CheckStatus("reading config");
   uii_readdata();
   uii_accept();
 
@@ -234,8 +280,7 @@ void readconfigfile()
   {
     cwin_console_printf(&cw, 7, "\nOld configuration file format.");
     cwin_console_printf(&cw, 7, "\nRun upgrade tool first.");
-    cwin_console_printf(&cw, 7, "\nPress key to exit.\n");
-    errorexit();
+    errorexit("");
   }
 
   uii_close_file();

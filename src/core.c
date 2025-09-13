@@ -84,11 +84,10 @@ const char *drivetype[LAST_DRIVE_E] = {"", "Pi1541", "1540", "1541", "1551", "15
 BYTE devicetype[MAXDEVID + 1];
 
 // Generic functions
-void errorexit()
+void errorexit(const char *msg)
 // Function to exit to BASIC on error
 {
-  cwin_put_string(&cw, "Error. Press key to exit to BASIC.", 7);
-  cwin_cursor_newline(&cw);
+  cwin_console_printf(&cw, 7, "\n%s\nPress key to exit to BASIC.\n",msg);
   cwin_getch();
   fc3_exit();
 }
@@ -300,7 +299,7 @@ char CheckActiveIECdevices()
   // First get Ultimate devices
   if (!uii_parse_deviceinfo())
   {
-    errorexit();
+    errorexit("Getting device info fails.");
   }
 
   // Check IDs 8 to 30

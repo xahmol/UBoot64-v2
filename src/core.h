@@ -4,7 +4,7 @@
 #include "defines.h"
 
 // Function prototypes
-void errorexit();
+void errorexit(const char *msg);
 void delay(char seconds);
 void mid(const char *src, char start, char length, char *dst, char dstlen);
 char *pathconcat();
