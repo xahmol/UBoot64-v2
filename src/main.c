@@ -242,7 +242,7 @@ __noinline void mainloop(void)
 		reudetected = reu_count_pages();
 		if (reudetected)
 		{
-			cwin_console_printf(&cw, 7, "\nREU detected, size: %d KB\n", reudetected*64);
+			cwin_console_printf(&cw, 7, "\nREU detected, size: %d KB\n", reudetected * 64);
 		}
 		else
 		{
@@ -263,7 +263,7 @@ __noinline void mainloop(void)
 		}
 
 		// Read config and slot files
-	    readconfigfile();
+		readconfigfile();
 		read_slotsfile(1);
 
 		// Read (and print feedback of) drive configuration
@@ -275,7 +275,7 @@ __noinline void mainloop(void)
 		cwin_console_printf(&cw, 7, "\nRecognised Ultimate devices:\n");
 		if (uii_devinfo[0].exist)
 		{
-			cwin_console_printf(&cw, 7,"Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
+			cwin_console_printf(&cw, 7, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
 		}
 		if (uii_devinfo[1].exist)
 		{
@@ -283,36 +283,45 @@ __noinline void mainloop(void)
 		}
 		if (uii_devinfo[2].exist)
 		{
-			cwin_console_printf(&cw, 7,"SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
+			cwin_console_printf(&cw, 7, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
 		}
 		if (uii_devinfo[3].exist)
 		{
-			cwin_console_printf(&cw, 7,"Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
+			cwin_console_printf(&cw, 7, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
 		}
-		cwin_console_printf(&cw, 7,"IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
-		cwin_console_printf(&cw, 7,"Active IEC IDs: ");
+		cwin_console_printf(&cw, 7, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
+		cwin_console_printf(&cw, 7, "Active IEC IDs: ");
 		for (x = 0; x < 23; x++)
 		{
 			if (iec_devices[x])
 			{
-				cwin_console_printf(&cw, 7,"%02d ", (x == 22) ? 4 : x + 8);
+				cwin_console_printf(&cw, 7, "%02d ", (x == 22) ? 4 : x + 8);
 			}
 		}
 		cwin_cursor_newline(&cw);
 
-		fc3_call(1, print1);
-		fc3_call(2, print2);
-		fc3_call(3, print3);
-		cwin_put_string(&cw, "Back in main RAM", 7);
-		cwin_cursor_newline(&cw);
+		// Set time from NTP server
+        fc3_call(1,time_main);
 
-		cwin_getch();
-
-		cwin_put_string(&cw, "Going to exit", 7);
-		cwin_cursor_newline(&cw);
-
-		fc3_exit();
+		// Uncomment to pause on boot status feedback for debug
+        cwin_getch();
 	}
+	else
+	{
+		if (fb_selection_made == 1)
+		{
+//			pickmenuslot();
+		}
+	}
+
+	// Disable sprite logo
+	spr_show(0, false);
+
+	// Uncomment to pause on boot status feedback for debug
+	cwin_getch();
+
+	// Exit program
+	fc3_exit();
 }
 
 // Switching code generation to startup section

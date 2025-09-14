@@ -6,12 +6,14 @@
 
 typedef long time_t;
 
-unsigned char CheckStatusTime();
+char CheckStatusTime();
 char* UNIX_epoch_to_UII_time(time_t epoch);
 void get_ntp_time();
 void time_main();
 void edittimeconfig();
 
 #define NTP_TIMESTAMP_DELTA 2208988800ul //0x83AA7E80
+
+#pragma compile("time.c")
 
 #endif

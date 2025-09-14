@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "ultimate_common_lib.h": "c",
-        "defines.h": "c"
+        "defines.h": "c",
+        "cia.h": "c"
     }
 }
