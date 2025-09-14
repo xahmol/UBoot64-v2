@@ -218,12 +218,12 @@ void read_slotsfile(unsigned char verbose)
       uii_accept();
       CheckStatus("reading slots");
       reu_store(count, uii_data, bytesread);
+      count += bytesread;
       if (verbose)
       {
         cwin_cursor_move(&cw, 0, 8);
         cwin_console_printf(&cw, 7, "Reading slot data to %lu.", count);
       }
-      count += bytesread;
     }
   }
 
