@@ -316,6 +316,7 @@ __noinline void mainloop(void)
 
 	// Disable sprite logo
 	spr_show(0, false);
+	cwin_clear(&cw);
 
 	// Uncomment to pause on boot status feedback for debug
 	cwin_getch();

@@ -144,33 +144,34 @@ void uii_sendcommand(char *bytes, unsigned count)
 // Input: bytes - the command bytes to send
 //        count - the number of bytes to send
 {
-	unsigned x =0;
+	unsigned x = 0;
 	char success = 0;
-	
+
 	bytes[0] = uii_target;
-	
-	while(success == 0)
+
+	while (success == 0)
 	{
 		// Wait for idle state
 		uii_logtext("\nwaiting for cmd-busy to clear...");
 		uii_logstatusreg();
-		
-		while ( !(((uii_reg_read.status & 32) == 0) && ((uii_reg_read.status & 16) == 0)))  {
+
+		while (!(((uii_reg_read.status & 32) == 0) && ((uii_reg_read.status & 16) == 0)))
+		{
 			uii_logtext("\nwaiting...");
 			uii_logstatusreg();
 		};
-		
+
 		// Write byte by byte to data register
 		uii_logtext("\nwriting command...");
-		while(x<count)
+		while (x < count)
 			uii_reg_write.cmddata = bytes[x++];
-		
+
 		// Send PUSH_CMD
 		uii_logtext("\npushing command...");
 		uii_reg_write.control |= 0x01;
-		
+
 		uii_logstatusreg();
-		
+
 		// check ERROR bit.  If set, clear it via ctrl reg, and try again
 		if ((uii_reg_read.status & 4) == 4)
 		{
@@ -180,16 +181,16 @@ void uii_sendcommand(char *bytes, unsigned count)
 		else
 		{
 			uii_logstatusreg();
-			
+
 			// check for cmd busy
-			while ( ((uii_reg_read.status & 32) == 0) && ((uii_reg_read.status & 16) == 16) )
+			while (((uii_reg_read.status & 32) == 0) && ((uii_reg_read.status & 16) == 16))
 			{
 				uii_logtext("\nstate is busy");
 			}
 			success = 1;
 		}
 	}
-	
+
 	uii_logstatusreg();
 	uii_logtext("\ncommand sent");
 }
@@ -200,7 +201,8 @@ void uii_accept(void)
 	uii_logstatusreg();
 	uii_logtext("\nsending ack");
 	uii_reg_write.control |= 0x02;
-	while (!(uii_reg_read.status & 2) == 0)  {
+	while (!(uii_reg_read.status & 2) == 0)
+	{
 		uii_logtext("\nwaiting for ack...");
 		uii_logstatusreg();
 	};
@@ -210,9 +212,20 @@ char uii_isdataavailable(void)
 // Check if data is available
 {
 	if (((uii_reg_read.status & 128) == 128))
+	{
 		return 1;
+	}
 	else
-		return 0;
+	{
+		if (((uii_reg_read.status & 48) == 48))
+		{
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
 }
 
 char uii_isstatusdataavailable(void)
@@ -243,7 +256,7 @@ unsigned uii_readdata(void)
 	// If there is data to read
 	while (uii_isdataavailable())
 	{
-		if(count < DATA_QUEUE_SZ)
+		if (count < DATA_QUEUE_SZ)
 		{
 			uii_data[count++] = uii_reg_read.respdata;
 		}
@@ -267,9 +280,9 @@ unsigned uii_readstatus(void)
 	uii_logtext("\n\nreading status...");
 	uii_logstatusreg();
 
-	while (uii_isstatusdataavailable() )
+	while (uii_isstatusdataavailable())
 	{
-		if(count < STATUS_QUEUE_SZ)
+		if (count < STATUS_QUEUE_SZ)
 		{
 			uii_status[count++] = uii_reg_read.statusdata;
 		}
