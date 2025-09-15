@@ -217,14 +217,20 @@ char uii_isdataavailable(void)
 	}
 	else
 	{
-		if (((uii_reg_read.status & 48) == 48))
-		{
-			return 1;
-		}
-		else
-		{
-			return 0;
-		}
+		return 0;
+	}
+}
+
+char uii_ismoredataavailable(void)
+// Check if more data is available
+{
+	if (((uii_reg_read.status & 48) == 48))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
 	}
 }
 

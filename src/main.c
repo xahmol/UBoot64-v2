@@ -63,6 +63,7 @@
 #include "core.h"
 #include "fileio.h"
 #include "u-time.h"
+#include "slotmenu.h"
 
 // Ram area for copied common routines code and common data, plus bss/heap/stack
 // Common routine code and data will be copied on startup from ROM bank 0
@@ -242,7 +243,7 @@ __noinline void mainloop(void)
 		reudetected = reu_count_pages();
 		if (reudetected)
 		{
-			cwin_console_printf(&cw, 7, "\nREU detected, size: %d KB\n", reudetected * 64);
+			cwin_console_printf(&cw, COL_TEXT, "\nREU detected, size: %d KB\n", reudetected * 64);
 		}
 		else
 		{
@@ -272,54 +273,89 @@ __noinline void mainloop(void)
 			errorexit("Getting device info fails.");
 		}
 
-		cwin_console_printf(&cw, 7, "\nRecognised Ultimate devices:\n");
+		cwin_console_printf(&cw, COL_TEXT, "\nRecognised Ultimate devices:\n");
 		if (uii_devinfo[0].exist)
 		{
-			cwin_console_printf(&cw, 7, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
+			cwin_console_printf(&cw, COL_TEXT, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
 		}
 		if (uii_devinfo[1].exist)
 		{
-			cwin_console_printf(&cw, 7, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
+			cwin_console_printf(&cw, COL_TEXT, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
 		}
 		if (uii_devinfo[2].exist)
 		{
-			cwin_console_printf(&cw, 7, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
+			cwin_console_printf(&cw, COL_TEXT, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
 		}
 		if (uii_devinfo[3].exist)
 		{
-			cwin_console_printf(&cw, 7, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
+			cwin_console_printf(&cw, COL_TEXT, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
 		}
-		cwin_console_printf(&cw, 7, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
-		cwin_console_printf(&cw, 7, "Active IEC IDs: ");
+		cwin_console_printf(&cw, COL_TEXT, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
+		cwin_console_printf(&cw, COL_TEXT, "Active IEC IDs: ");
 		for (x = 0; x < 23; x++)
 		{
 			if (iec_devices[x])
 			{
-				cwin_console_printf(&cw, 7, "%02d ", (x == 22) ? 4 : x + 8);
+				cwin_console_printf(&cw, COL_TEXT, "%02d ", (x == 22) ? 4 : x + 8);
 			}
 		}
 		cwin_cursor_newline(&cw);
 
 		// Set time from NTP server
-        fc3_call(1,time_main);
+		fc3_call(1, time_main);
 
 		// Uncomment to pause on boot status feedback for debug
-        cwin_getch();
+		// cwin_getch();
 	}
 	else
 	{
 		if (fb_selection_made == 1)
 		{
-//			pickmenuslot();
+			//			pickmenuslot();
 		}
 	}
 
 	// Disable sprite logo
 	spr_show(0, false);
-	cwin_clear(&cw);
+
+	do
+	{
+		fc3_call(1, mainmenu);
+
+		if ((menuselect > 47 && menuselect < 58) || (menuselect > 64 && menuselect < 91))
+		// Menuslots 0-9, a-z
+		{
+			//runbootfrommenu(keytomenuslot(menuselect));
+		}
+
+		switch (menuselect)
+		{
+		case CH_F1:
+			// Filebrowser
+			//bankrun(1); // Jump to bank of filebrowser and start entry point
+			break;
+
+		case CH_F2:
+			// Information and credits
+			fc3_call(1, information);
+			break;
+
+		case CH_F3:
+			// Edit / re-order and delete menuslots
+			//editmenuoptions();
+			break;
+
+		case CH_F5:
+			//edittimeconfig();
+			break;
+
+		default:
+			break;
+		}
+	} while (menuselect != CH_F7);
 
 	// Uncomment to pause on boot status feedback for debug
-	cwin_getch();
+	// cwin_getch();
 
 	// Exit program
 	fc3_exit();

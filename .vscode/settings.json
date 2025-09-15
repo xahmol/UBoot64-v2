@@ -2,6 +2,8 @@
     "files.associations": {
         "ultimate_common_lib.h": "c",
         "defines.h": "c",
-        "cia.h": "c"
+        "cia.h": "c",
+        "charwin.h": "c",
+        "u-time.h": "c"
     }
 }

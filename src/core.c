@@ -87,7 +87,7 @@ BYTE devicetype[MAXDEVID + 1];
 void errorexit(const char *msg)
 // Function to exit to BASIC on error
 {
-  cwin_console_printf(&cw, 7, "\n%s\nPress key to exit to BASIC.\n",msg);
+  cwin_console_printf(&cw, COL_TEXT, "\n%s\nPress key to exit to BASIC.\n",msg);
   cwin_getch();
   fc3_exit();
 }
@@ -431,12 +431,12 @@ void DoDemoMode()
   if (uii_devinfo[0].exist && uii_devinfo[0].power && uii_devinfo[0].id != 8)
   {
     uii_disable_drive_a();
-    cwin_console_printf(&cw, 7, "Power off drive A: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
+    cwin_console_printf(&cw, COL_TEXT, "Power off drive A: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
   }
   if (uii_devinfo[1].exist && uii_devinfo[1].power && uii_devinfo[1].id != 8)
   {
     uii_disable_drive_b();
-    cwin_console_printf(&cw, 7, "Power off drive B: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
+    cwin_console_printf(&cw, COL_TEXT, "Power off drive B: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
   }
 
   // Ask user to disable other drives if needed
@@ -447,7 +447,7 @@ void DoDemoMode()
     {
       if (iec_devices[x] && iec_devices[x] < 4)
       {
-        cwin_console_printf(&cw, 7, "%02d ", (x == 22) ? 4 : x + 8);
+        cwin_console_printf(&cw, COL_TEXT, "%02d ", (x == 22) ? 4 : x + 8);
       }
     }
     cwin_put_string(&cw, " and press key.", 7);

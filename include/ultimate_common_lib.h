@@ -161,6 +161,7 @@ void uii_getinterfacecount(void);
 void uii_sendcommand(char *bytes, unsigned count);
 void uii_accept(void);
 char uii_isdataavailable(void);
+char uii_ismoredataavailable(void);
 char uii_isstatusdataavailable(void);
 void uii_abort(void);
 unsigned uii_readdata(void);
