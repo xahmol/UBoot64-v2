@@ -76,8 +76,8 @@ void CheckStatus(const char *message)
 {
   if (!UII_SUCCESS)
   {
-    cwin_console_printf(&cw, COL_TEXT, "\nI/O error in %s.\n", message);
-    cwin_console_printf(&cw, COL_TEXT, "\nStatus: %s\n", uii_status);
+    cwin_console_printf(&cw, cfg.colors.text, "\nI/O error in %s.\n", message);
+    cwin_console_printf(&cw, cfg.colors.text, "\nStatus: %s\n", uii_status);
     uii_abort();
     errorexit("");
   }
@@ -138,7 +138,7 @@ void write_slotsfile(char verbose)
     if (verbose)
     {
       cwin_cursor_move(&cw, 0, 8);
-      cwin_console_printf(&cw, COL_TEXT, "Writing slot data at %lu.", count);
+      cwin_console_printf(&cw, cfg.colors.text, "Writing slot data at %lu.", count);
     }
     memset(save_buffer, 0, sizeof(save_buffer));
     if (end - count < SAVE_BUF_SIZE)
@@ -199,7 +199,7 @@ void read_slotsfile(unsigned char verbose)
       if (verbose)
       {
         cwin_cursor_move(&cw, 0, 8);
-        cwin_console_printf(&cw, COL_TEXT, "Creating slot %2d", x + 1);
+        cwin_console_printf(&cw, cfg.colors.text, "Creating slot %2d", x + 1);
       }
       save_slot_to_reu(x);
     }
@@ -222,7 +222,7 @@ void read_slotsfile(unsigned char verbose)
       if (verbose)
       {
         cwin_cursor_move(&cw, 0, 8);
-        cwin_console_printf(&cw, COL_TEXT, "Reading slot data to %lu.", count);
+        cwin_console_printf(&cw, cfg.colors.text, "Reading slot data to %lu.", count);
       }
     }
   }
@@ -233,8 +233,8 @@ void read_slotsfile(unsigned char verbose)
 
   if (Slot.cfgvs < CFGVERSION)
   {
-    cwin_console_printf(&cw, COL_TEXT, "\nOld configuration file format.");
-    cwin_console_printf(&cw, COL_TEXT, "\nRun upgrade tool first.");
+    cwin_console_printf(&cw, cfg.colors.text, "\nOld configuration file format.");
+    cwin_console_printf(&cw, cfg.colors.text, "\nRun upgrade tool first.");
     errorexit("");
   }
 }
@@ -262,7 +262,7 @@ void readconfigfile()
   // Write a config file with default values if no file is found
   if (strcmp((const char *)uii_status, "00,ok") != 0)
   {
-    cwin_console_printf(&cw, COL_TEXT, "\nNo config file found, writing defaults.");
+    cwin_console_printf(&cw, cfg.colors.text, "\nNo config file found, writing defaults.");
     writeconfigfile();
     return;
   }
@@ -278,8 +278,8 @@ void readconfigfile()
   // Exit if config file version is too old
   if (cfg.version < CFGVERSION)
   {
-    cwin_console_printf(&cw, COL_TEXT, "\nOld configuration file format.");
-    cwin_console_printf(&cw, COL_TEXT, "\nRun upgrade tool first.");
+    cwin_console_printf(&cw, cfg.colors.text, "\nOld configuration file format.");
+    cwin_console_printf(&cw, cfg.colors.text, "\nRun upgrade tool first.");
     errorexit("");
   }
 

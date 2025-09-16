@@ -192,13 +192,21 @@ __noinline void mainloop(void)
 {
 	char x;
 	int key;
-	char input[20] = "Testinput";
 
-	// Set config defauklt values
-	cfg.version = CFGVERSION;
-	cfg.timeon = 1;
-	cfg.secondsfromutc = 7200;
-	strcpy(cfg.host, "pool.ntp.org");
+    // Set config defauklt values
+    cfg.version = CFGVERSION;
+    cfg.timeon = 1;
+    cfg.secondsfromutc = 7200;
+    cfg.colors.header1 = VCOL_GREEN;
+    cfg.colors.header2 = VCOL_LT_GREEN;
+    cfg.colors.text = VCOL_YELLOW;
+    cfg.colors.text_input = VCOL_WHITE;
+    cfg.colors.key = VCOL_CYAN;
+    cfg.colors.diritem_normal = VCOL_WHITE;
+    cfg.colors.diritem_select = VCOL_CYAN;
+    cfg.colors.error = VCOL_RED;
+    cfg.colors.ok = VCOL_GREEN;
+    strcpy(cfg.host, "pool.ntp.org");
 
 	// Init VIC
 	vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);
@@ -243,7 +251,7 @@ __noinline void mainloop(void)
 		reudetected = reu_count_pages();
 		if (reudetected)
 		{
-			cwin_console_printf(&cw, COL_TEXT, "\nREU detected, size: %d KB\n", reudetected * 64);
+			cwin_console_printf(&cw, cfg.colors.text, "\nREU detected, size: %d KB\n", reudetected * 64);
 		}
 		else
 		{
@@ -273,30 +281,30 @@ __noinline void mainloop(void)
 			errorexit("Getting device info fails.");
 		}
 
-		cwin_console_printf(&cw, COL_TEXT, "\nRecognised Ultimate devices:\n");
+		cwin_console_printf(&cw, cfg.colors.text, "\nRecognised Ultimate devices:\n");
 		if (uii_devinfo[0].exist)
 		{
-			cwin_console_printf(&cw, COL_TEXT, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
+			cwin_console_printf(&cw, cfg.colors.text, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
 		}
 		if (uii_devinfo[1].exist)
 		{
-			cwin_console_printf(&cw, COL_TEXT, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
+			cwin_console_printf(&cw, cfg.colors.text, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
 		}
 		if (uii_devinfo[2].exist)
 		{
-			cwin_console_printf(&cw, COL_TEXT, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
+			cwin_console_printf(&cw, cfg.colors.text, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
 		}
 		if (uii_devinfo[3].exist)
 		{
-			cwin_console_printf(&cw, COL_TEXT, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
+			cwin_console_printf(&cw, cfg.colors.text, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
 		}
-		cwin_console_printf(&cw, COL_TEXT, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
-		cwin_console_printf(&cw, COL_TEXT, "Active IEC IDs: ");
+		cwin_console_printf(&cw, cfg.colors.text, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
+		cwin_console_printf(&cw, cfg.colors.text, "Active IEC IDs: ");
 		for (x = 0; x < 23; x++)
 		{
 			if (iec_devices[x])
 			{
-				cwin_console_printf(&cw, COL_TEXT, "%02d ", (x == 22) ? 4 : x + 8);
+				cwin_console_printf(&cw, cfg.colors.text, "%02d ", (x == 22) ? 4 : x + 8);
 			}
 		}
 		cwin_cursor_newline(&cw);
@@ -332,7 +340,7 @@ __noinline void mainloop(void)
 		{
 		case CH_F1:
 			// Filebrowser
-			//bankrun(1); // Jump to bank of filebrowser and start entry point
+			//fc3_call(2, filebrowser);
 			break;
 
 		case CH_F2:
@@ -342,11 +350,11 @@ __noinline void mainloop(void)
 
 		case CH_F3:
 			// Edit / re-order and delete menuslots
-			//editmenuoptions();
+			//fc3_call(1, editmenuoptions);
 			break;
 
 		case CH_F5:
-			//edittimeconfig();
+			fc3_call(1, edittimeconfig);
 			break;
 
 		default:

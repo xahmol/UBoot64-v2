@@ -87,7 +87,7 @@ BYTE devicetype[MAXDEVID + 1];
 void errorexit(const char *msg)
 // Function to exit to BASIC on error
 {
-  cwin_console_printf(&cw, COL_TEXT, "\n%s\nPress key to exit to BASIC.\n",msg);
+  cwin_console_printf(&cw, cfg.colors.text, "\n%s\nPress key to exit to BASIC.\n", msg);
   cwin_getch();
   fc3_exit();
 }
@@ -215,19 +215,19 @@ void headertext(const char *subtitle, char time)
 // Input: subtitle is text to draw on second line
 //        time = 1 to draw time on right side
 {
-  cwin_fill_rect_raw(&cw, 0, 0, 40, 1, SC_REVSPACE, COL_HEADER1);
-  cwin_fill_rect_raw(&cw, 0, 1, 40, 1, SC_REVSPACE, COL_HEADER2);
-  cwin_putat_string_reverse(&cw, 0, 0, "UBoot64:  Boot Menu for Ultimate devices", COL_HEADER1);
-  cwin_putat_string_reverse(&cw, 0, 1, subtitle, COL_HEADER2);
+  cwin_fill_rect_raw(&cw, 0, 0, 40, 1, SC_REVSPACE, cfg.colors.header1);
+  cwin_fill_rect_raw(&cw, 0, 1, 40, 1, SC_REVSPACE, cfg.colors.header2);
+  cwin_putat_string_reverse(&cw, 0, 0, "UBoot64:  Boot Menu for Ultimate devices", cfg.colors.header1);
+  cwin_putat_string_reverse(&cw, 0, 1, subtitle, cfg.colors.header2);
 
   if (time)
   {
     uii_get_time();
-    cwin_putat_string_reverse(&cw, 40 - strlen(uii_data), 1, uii_data, COL_HEADER2);
+    cwin_putat_string_reverse(&cw, 40 - strlen(uii_data), 1, uii_data, cfg.colors.header2);
   }
   else
   {
-    cwin_putat_string_reverse(&cw, 40 - strlen(VERSION), 1, VERSION, COL_HEADER2);
+    cwin_putat_string_reverse(&cw, 40 - strlen(VERSION), 1, VERSION, cfg.colors.header2);
   }
 }
 
@@ -431,12 +431,12 @@ void DoDemoMode()
   if (uii_devinfo[0].exist && uii_devinfo[0].power && uii_devinfo[0].id != 8)
   {
     uii_disable_drive_a();
-    cwin_console_printf(&cw, COL_TEXT, "Power off drive A: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
+    cwin_console_printf(&cw, cfg.colors.text, "Power off drive A: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
   }
   if (uii_devinfo[1].exist && uii_devinfo[1].power && uii_devinfo[1].id != 8)
   {
     uii_disable_drive_b();
-    cwin_console_printf(&cw, COL_TEXT, "Power off drive B: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
+    cwin_console_printf(&cw, cfg.colors.text, "Power off drive B: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
   }
 
   // Ask user to disable other drives if needed
@@ -447,7 +447,7 @@ void DoDemoMode()
     {
       if (iec_devices[x] && iec_devices[x] < 4)
       {
-        cwin_console_printf(&cw, COL_TEXT, "%02d ", (x == 22) ? 4 : x + 8);
+        cwin_console_printf(&cw, cfg.colors.text, "%02d ", (x == 22) ? 4 : x + 8);
       }
     }
     cwin_put_string(&cw, " and press key.", 7);
@@ -515,7 +515,7 @@ void execute(char *prg, BYTE device, BYTE boot, char *command)
   fc3_exit();
 }
 
-signed textInput(char xpos, char ypos, char *str, unsigned char size)
+signed textInput(char xpos, char ypos, char width, char *str, char size, char validation)
 /**
  * input/modify a string.
  * based on version DraCopy 1.0e, then modified.
@@ -527,21 +527,50 @@ signed textInput(char xpos, char ypos, char *str, unsigned char size)
  * @return -1 if input was aborted.
  * @return >= 0 length of edited string @p str.
  */
+// Added input: Validation  =   0   All printable characters allowed
+//                          +   1   Numbers allowed only
+//                          +   2   Also alphabet allowed (lower and uppercase)
+//                          +   4   Also wildcards * and ? allowed
+//                          Add numbers to combine or 0 for no validation
+//              width:      =   width of input viewport, can be less than size
 {
   char c;
   char idx = strlen(str);
+  char len;
+  char valid = 0;
+  char offs = 0;
   char flag = 0;
-
-  if (idx)
-  {
-    cwin_putat_string(&cw, xpos, ypos, str, COL_TEXT_IMPUT);
-  }
-  cwin_cursor_move(&cw, xpos + idx, ypos);
-  cwin_cursor_show(&cw, 1);
 
   while (1)
   {
+    // Calculate offset for viewing long string in viewport based on cursor pos
+    if (idx + 1 > width)
+    {
+      offs = idx + 1 - width;
+    }
+    else
+    {
+      offs = 0;
+    }
+    len = strlen(str);
+
+    // Clear viewport
+    cwin_cursor_move(&cw, xpos, ypos);
+    cwin_fill_rect_raw(&cw, xpos, ypos, width, 1, SC_SPACE, cfg.colors.text_input);
+
+    // Print viweable part of string
+    cwin_cursor_move(&cw, xpos, ypos);
+    strncpy(linebuffer, str + offs, width - 1);
+    linebuffer[width - 1] = 0;
+    cwin_console_printf(&cw, cfg.colors.text_input, "%s", linebuffer);
+
+    // Print cursor
+    cwin_cursor_move(&cw, xpos + idx - offs, ypos);
+    cwin_cursor_show(&cw, 1);
+
+    // Get key for input
     c = cwin_getch();
+
     switch (c)
     {
     case CH_ESC:
@@ -553,27 +582,27 @@ signed textInput(char xpos, char ypos, char *str, unsigned char size)
       idx = strlen(str);
       str[idx] = 0;
       cwin_cursor_show(&cw, 0);
+      cwin_cursor_move(&cw, xpos, ypos);
+      cwin_fill_rect_raw(&cw, xpos, ypos, width, 1, SC_SPACE, cfg.colors.text_input);
+      strncpy(linebuffer, str + offs, width - 1);
+      linebuffer[width - 1] = 0;
+      cwin_console_printf(&cw, cfg.colors.text_input, "%s", linebuffer);
       return idx;
 
     case CH_DEL:
       if (idx)
       {
-        cwin_cursor_show(&cw, 0);
         --idx;
-        cwin_putat_char_raw(&cw, xpos + idx, ypos, SC_SPACE, COL_TEXT_IMPUT);
         for (c = idx; 1; ++c)
         {
           char b = str[c + 1];
           str[c] = b;
 
-          cwin_putat_char(&cw, xpos + c, ypos, b ? b : CH_SPACE, COL_TEXT_IMPUT);
           if (b == 0)
           {
             break;
           }
         }
-        cwin_cursor_move(&cw, xpos + idx, ypos);
-        cwin_cursor_show(&cw, 1);
       }
       break;
 
@@ -581,7 +610,6 @@ signed textInput(char xpos, char ypos, char *str, unsigned char size)
       c = strlen(str);
       if (c < size && c > 0 && idx < c)
       {
-        cwin_cursor_show(&cw, 0);
         ++c;
         while (c >= idx)
         {
@@ -593,45 +621,53 @@ signed textInput(char xpos, char ypos, char *str, unsigned char size)
           --c;
         }
         str[idx] = ' ';
-        cwin_putat_string(&cw, xpos, ypos, str, COL_TEXT_IMPUT);
-        cwin_cursor_move(&cw, xpos + idx, ypos);
-        cwin_cursor_show(&cw, 1);
       }
       break;
 
     case CH_CURS_LEFT:
       if (idx)
       {
-        cwin_cursor_show(&cw, 0);
         --idx;
-        cwin_cursor_move(&cw, xpos + idx, ypos);
-        cwin_cursor_show(&cw, 1);
       }
       break;
 
     case CH_CURS_RIGHT:
       if (idx < strlen(str) && idx < size)
       {
-        cwin_cursor_show(&cw, 0);
         ++idx;
-        cwin_cursor_move(&cw, xpos + idx, ypos);
-        cwin_cursor_show(&cw, 1);
       }
       break;
 
     default:
-      if (isprint(c) && idx < size)
+      valid = 0;
+      if (!validation)
+      {
+        valid = 1;
+      }
+      if ((validation & 1) && c > 47 && c < 58)
+      {
+        valid = 1;
+      }
+      if ((validation & 2) && c > 64 && c < 91)
+      {
+        valid = 1;
+      }
+      if ((validation & 2) && c > 96 && c < 123)
+      {
+        valid = 1;
+      }
+      if ((validation & 4) && (c == 42 || c == 63))
+      {
+        valid = 1;
+      }
+      if (isprint(c) && idx < size && valid)
       {
         flag = str[idx];
         str[idx] = c;
-        cwin_cursor_show(&cw, 0);
-        cwin_putat_char(&cw, xpos + idx, ypos, c, COL_TEXT_IMPUT);
         ++idx;
-        cwin_cursor_move(&cw, xpos + idx, ypos);
-        cwin_cursor_show(&cw, 1);
         if (!flag)
         {
-          str[idx + 1] = 0;
+          str[idx] = 0;
         }
         break;
       }

@@ -17,7 +17,7 @@ char CheckActiveIECdevices();
 char cmd(const char device, const char *cmd);
 const char *getDeviceType(const BYTE device);
 void execute(char *prg, BYTE device, BYTE boot, char *command);
-signed textInput(char xpos, char ypos, char *str, unsigned char size);
+signed textInput(char xpos, char ypos, char width, char *str, char size, char validation);
 
 /// if you change this enum, also change the "drivetype" array in ops.c
 enum drive_e {NONE=0, PI1541, D1540, D1541, D1551, D1570, D1571, D1581, D1001, D2031, D8040, SD2IEC, CMD, VICE, U64, LAST_DRIVE_E};

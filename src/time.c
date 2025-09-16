@@ -83,34 +83,36 @@ char CheckStatusTime()
 {
     // Function to check UII+ status
 
-    if (uii_status[0] != '0' || uii_status[1] != '0') {
-        cwin_console_printf(&cw,7,"\nStatus: %s Data:%s", uii_status, uii_data);
+    if (uii_status[0] != '0' || uii_status[1] != '0')
+    {
+        cwin_console_printf(&cw, 7, "\nStatus: %s Data:%s", uii_status, uii_data);
         return 1;
     }
     return 0;
 }
 
-char* UNIX_epoch_to_UII_time(time_t epoch) {
-// Convert UNIX time epoch to UII readable time format
+char *UNIX_epoch_to_UII_time(time_t epoch)
+{
+    // Convert UNIX time epoch to UII readable time format
 
-    static char month_days[12]={31,28,31,30,31,30,31,31,30,31,30,31};
+    static char month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
     char ntp_hour, ntp_minute, ntp_second, ntp_day, ntp_month;
-    char leap_days=0;
-    char leap_year_ind=0;
+    char leap_days = 0;
+    char leap_year_ind = 0;
     unsigned temp_days, i;
     unsigned ntp_year, days_since_epoch, day_of_year;
     char settime[6];
 
     // Adjust for timezone
-    epoch+=cfg.secondsfromutc;
+    epoch += cfg.secondsfromutc;
 
     // Calculate time
-    ntp_second = epoch%60;
+    ntp_second = epoch % 60;
     epoch /= 60;
-    ntp_minute = epoch%60;
+    ntp_minute = epoch % 60;
     epoch /= 60;
-    ntp_hour  = epoch%24;
+    ntp_hour = epoch % 24;
     epoch /= 24;
 
     // Calculate date
@@ -118,39 +120,47 @@ char* UNIX_epoch_to_UII_time(time_t epoch) {
     // Number of days since epoch
     days_since_epoch = epoch;
     // ball parking year, may not be accurate!
-    ntp_year = 1970+(days_since_epoch/365);
+    ntp_year = 1970 + (days_since_epoch / 365);
     // Calculating number of leap days since epoch/1970
-    for (i=1972; i<ntp_year; i+=4) {                                
-        if(((i%4==0) && (i%100!=0)) || (i%400==0)) leap_days++;
+    for (i = 1972; i < ntp_year; i += 4)
+    {
+        if (((i % 4 == 0) && (i % 100 != 0)) || (i % 400 == 0))
+            leap_days++;
     }
     // Calculating accurate current year by (days_since_epoch - extra leap days)
-    ntp_year = 1970+((days_since_epoch - leap_days)/365);
-    day_of_year = ((days_since_epoch - leap_days)%365)+1;
+    ntp_year = 1970 + ((days_since_epoch - leap_days) / 365);
+    day_of_year = ((days_since_epoch - leap_days) % 365) + 1;
 
-    if(((ntp_year%4==0) && (ntp_year%100!=0)) || (ntp_year%400==0)) {
-        month_days[1]=29;     //February = 29 days for leap years
-        leap_year_ind = 1;    //if current year is leap, set indicator to 1 
+    if (((ntp_year % 4 == 0) && (ntp_year % 100 != 0)) || (ntp_year % 400 == 0))
+    {
+        month_days[1] = 29; // February = 29 days for leap years
+        leap_year_ind = 1;  // if current year is leap, set indicator to 1
     }
-    else { month_days[1]=28; } //February = 28 days for non-leap years 
+    else
+    {
+        month_days[1] = 28;
+    } // February = 28 days for non-leap years
 
     // Calculating current Month
-    temp_days=0;
-    for (ntp_month=0 ; ntp_month <= 11 ; ntp_month++) {
-        if (day_of_year <= temp_days) break; 
+    temp_days = 0;
+    for (ntp_month = 0; ntp_month <= 11; ntp_month++)
+    {
+        if (day_of_year <= temp_days)
+            break;
         temp_days = temp_days + month_days[ntp_month];
     }
 
     // Calculating current Date
-    temp_days = temp_days - month_days[ntp_month-1];
+    temp_days = temp_days - month_days[ntp_month - 1];
     ntp_day = day_of_year - temp_days;
 
     // Build UII time
-    settime[0]=ntp_year-1900;
-    settime[1]=ntp_month;
-    settime[2]=ntp_day;
-    settime[3]=ntp_hour;
-    settime[4]=ntp_minute;
-    settime[5]=ntp_second;
+    settime[0] = ntp_year - 1900;
+    settime[1] = ntp_month;
+    settime[2] = ntp_day;
+    settime[3] = ntp_hour;
+    settime[4] = ntp_minute;
+    settime[5] = ntp_second;
 
     return settime;
 }
@@ -161,31 +171,33 @@ void get_ntp_time()
 
     char attempt = 1;
     char clock;
-    char fullcmd[] = { 0x00, NET_CMD_SOCKET_WRITE, 0x00, \
-                               0x1b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    char fullcmd[] = {0x00, NET_CMD_SOCKET_WRITE, 0x00,
+                      0x1b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     char socket = 0;
     time_t t;
 
-    cwin_console_printf(&cw,7,"\nUpdating UII+ time from NTP Server.");
+    cwin_console_printf(&cw, 7, "\nUpdating UII+ time from NTP Server.");
     uii_get_time();
-    cwin_console_printf(&cw,7,"\nUltimate datetime: %s", uii_data);
+    cwin_console_printf(&cw, 7, "\nUltimate datetime: %s", uii_data);
 
-    cwin_console_printf(&cw,7,"\nConnecting to: %s", cfg.host);
-	socket = uii_udpconnect(cfg.host, 123); //https://github.com/markusC64/1541ultimate2/blob/master/software/io/network/network_target.cc
-    if(CheckStatusTime()) {
+    cwin_console_printf(&cw, 7, "\nConnecting to: %s", cfg.host);
+    socket = uii_udpconnect(cfg.host, 123); // https://github.com/markusC64/1541ultimate2/blob/master/software/io/network/network_target.cc
+    if (CheckStatusTime())
+    {
         uii_socketclose(socket);
         return;
     }
 
-    cwin_console_printf(&cw,7,"\nSending NTP request");
-	fullcmd[2] = socket;
+    cwin_console_printf(&cw, 7, "\nSending NTP request");
+    fullcmd[2] = socket;
     uii_settarget(TARGET_NETWORK);
-    uii_sendcommand(fullcmd, 51);//3 + sizeof( ntp_packet ));
-	uii_readstatus();
-	uii_accept();
-    if(CheckStatusTime()) {
+    uii_sendcommand(fullcmd, 51); // 3 + sizeof( ntp_packet ));
+    uii_readstatus();
+    uii_accept();
+    if (CheckStatusTime())
+    {
         uii_socketclose(socket);
         return;
     }
@@ -196,145 +208,333 @@ void get_ntp_time()
         // Add delay of a second to avoid time to wait on response being too short
         delay(1);
         // Print attempt number
-        cwin_console_printf(&cw,7,"\nReading result attempt %d",attempt);
+        cwin_console_printf(&cw, 7, "\nReading result attempt %d", attempt);
 
-        // Try to read incoming data        
-        uii_socketread(socket, 50);// 2 + sizeof( ntp_packet ));
+        // Try to read incoming data
+        uii_socketread(socket, 50); // 2 + sizeof( ntp_packet ));
 
         // If data received, end loop. Else do new attempt till counter = 5
-        if(UII_SUCCESS) { 
+        if (UII_SUCCESS)
+        {
             attempt = 5;
-        } else {
+        }
+        else
+        {
             attempt++;
         }
 
-    } while (attempt<5);
-        
-    if(CheckStatusTime()) {
+    } while (attempt < 5);
+
+    if (CheckStatusTime())
+    {
         uii_socketclose(socket);
         return;
     }
 
     // Convert time received to UCI format
-    t = uii_data[37] | (((unsigned long)uii_data[36])<<8)| (((unsigned long)uii_data[35])<<16)| (((unsigned long)uii_data[34])<<24);
+    t = uii_data[37] | (((unsigned long)uii_data[36]) << 8) | (((unsigned long)uii_data[35]) << 16) | (((unsigned long)uii_data[34]) << 24);
     t -= NTP_TIMESTAMP_DELTA;
-    
+
     // Close socket
     uii_socketclose(socket);
 
     // Print time received and parse to UII+ format
-    cwin_console_printf(&cw,7,"\nUnix epoch %lu", t);
-    
+    cwin_console_printf(&cw, 7, "\nUnix epoch %lu", t);
+
     // Set UII+ RTC clock
-    uii_set_time(UNIX_epoch_to_UII_time(t));    
-    cwin_console_printf(&cw,7,"\nStatus: %s", uii_status);
+    uii_set_time(UNIX_epoch_to_UII_time(t));
+    cwin_console_printf(&cw, 7, "\nStatus: %s", uii_status);
     uii_get_time();
-    cwin_console_printf(&cw,7,"\nRTC clock set to %s",uii_data);
+    cwin_console_printf(&cw, 7, "\nRTC clock set to %s", uii_data);
 }
 
 void time_main()
 {
-    if(cfg.timeon == 1)
+    if (cfg.timeon == 1)
     {
         get_ntp_time();
     }
 }
 
 // Config functions
-//void edittimeconfig()
-//{
-//    char changesmade = 0;
-//    char key;
-//    char offsetinput[10] = "";
-//    char buffer2[80] = "";
-//    char* ptrend;
-//
-//    clrscr();
-//    headertext("Configuration tool.");
-//    gotoxy(0,3);
-//    cputs("Present configuration settings:\n\n\r");
-//    cputs("NTP time update settings:\n\r");
-//    ccwin_console_printf(&cw,7,"- Update on boot toggle: %s\n\r",(timeonflag==0)?"Off":"On");
-//    ccwin_console_printf(&cw,7,"- Offset to UTC in seconds: %ld\n\r",secondsfromutc);
-//    mid(host,0,SCREENW,buffer2,SCREENW);
-//    ccwin_console_printf(&cw,7,"- NTP server hostname:\n\r%s\n\r",buffer2);
-//
-//    gotoxy(0,18);
-//    cputs("Make your choice:\n\r");
-//
-//    revers(1);
-//    textcolor(DMB_COLOR_SELECT);
-//    cputs(" F1 ");
-//    revers(0);
-//    textcolor(DC_COLOR_TEXT);
-//    cputs(" Toggle update on boot on/off\n\r");
-//
-//    revers(1);
-//    textcolor(DMB_COLOR_SELECT);
-//    cputs(" F3 ");
-//    revers(0);
-//    textcolor(DC_COLOR_TEXT);
-//    cputs(" Edit time offset to UTC\n\r");
-//
-//    revers(1);
-//    textcolor(DMB_COLOR_SELECT);
-//    cputs(" F5 ");
-//    revers(0);
-//    textcolor(DC_COLOR_TEXT);
-//    cputs(" Edit NTP server host\n\r");
-//
-//    revers(1);
-//    textcolor(DMB_COLOR_SELECT);
-//    cputs(" F7 ");
-//    revers(0);
-//    textcolor(DC_COLOR_TEXT);
-//    cputs(" Back to main menu\n\r");
-//
-//    do
-//    {
-//        do
-//        {
-//            key = cgetc();
-//        } while (key != CH_F1 && key != CH_F3 && key != CH_F5 && key != CH_F7);
-//
-//        switch (key)
-//        {
-//        case CH_F1:
-//            timeonflag = (timeonflag==0)? 1:0;
-//            gotoxy(0,6);
-//            ccwin_console_printf(&cw,7,"- Update on boot toggle: %s\n\r",(timeonflag==0)?"Off":"On ");
-//            changesmade = 1;
-//            break;
-//
-//        case CH_F3:
-//            cputsxy(0,23,"Input time offset to UTC:");
-//            textInput(0,24,offsetinput,10);
-//            secondsfromutc = strtol(offsetinput,&ptrend,10);
-//            clearArea(0,7,SCREENW,1);
-//            clearArea(0,23,SCREENW,2);
-//            gotoxy(0,7);
-//            ccwin_console_printf(&cw,7,"- Offset to UTC in seconds: %ld\n\n\r",secondsfromutc);
-//            changesmade = 1;
-//            break;
-//
-//        case CH_F5:
-//            cputsxy(0,23,"Input NTP server hostname:");
-//            textInput(0,24,host,79);
-//            clearArea(0,9,SCREENW,1);
-//            clearArea(0,23,SCREENW,2);
-//            gotoxy(0,9);
-//            mid(host,0,SCREENW,buffer2,SCREENW);
-//            ccwin_console_printf(&cw,7,"%s",buffer2);
-//            changesmade = 1;
-//            break;
-//
-//        default:
-//	    	break;
-//        }
-//    } while (key != CH_F7);
-//
-//    if (changesmade == 1)
-//    {
-//        writeconfigfile(configfilename);
-//    }
-//}
+char getcolor(char option)
+// Function to get color from config struct
+// Input: option 1-9
+{
+    switch (option)
+    {
+    case 1:
+        return cfg.colors.header1;
+        break;
+    
+    case 2:
+        return cfg.colors.header2; 
+        break;
+    
+    case 3:
+        return cfg.colors.text; 
+        break;  
+    
+    case 4:
+        return cfg.colors.text_input; 
+        break; 
+    
+    case 5:
+        return cfg.colors.key; 
+        break;
+    
+    case 6:
+        return cfg.colors.diritem_normal; 
+        break;
+    
+    case 7:
+        return cfg.colors.diritem_select; 
+        break;
+
+    case 8:
+        return cfg.colors.error; 
+        break;
+    
+    case 9:
+        return cfg.colors.ok; 
+        break;
+    
+    default:
+        return 0;
+        break;
+    }
+}
+
+void pushcolor(char option, char color)
+// Function to push color to config struct
+// Input: option 1-9
+{
+    switch (option)
+    {
+    case 1:
+        cfg.colors.header1 = color;
+        break;
+
+    case 2:
+        cfg.colors.header2 = color;
+        break;
+
+    case 3:
+        cfg.colors.text = color;
+        break;
+
+    case 4:
+        cfg.colors.text_input = color;
+        break;
+
+    case 5:
+        cfg.colors.key = color;
+        break;
+
+    case 6:
+        cfg.colors.diritem_normal = color;
+        break;
+
+    case 7:
+        cfg.colors.diritem_select = color;
+        break;
+
+    case 8:
+        cfg.colors.error = color;
+        break;
+
+    case 9:
+        cfg.colors.ok = color;
+        break;
+
+    default:
+        break;
+    }
+}
+
+char editcolors()
+// Function to edit colour scheme
+// Output: returns 1 if changes made, else 0
+{
+    char changesmade = 0;
+    char key = 0;
+    char x;
+    char option = 1;
+    char color;
+    char setting[9][16] = {"Header line 1  ", "Header line 2  ", "Normal text    ", "Text input     ",
+                           "Key text       ", "Dir item normal", "Dir item select", "Error text     ", "OK text        "};
+
+    do
+    {
+        color = getcolor(option);
+
+        cwin_clear(&cw);
+        headertext("Edit colour scheme.", 1);
+
+        cwin_cursor_move(&cw, 0, 3);
+        cwin_putat_string(&cw, 0, 3, "Current colour scheme:", cfg.colors.text);
+
+        for (x = 0; x < 9; x++)
+        {
+            sprintf(linebuffer, "%s: %2u", setting[x], getcolor(x + 1));
+
+            if (option == x + 1)
+            {
+                cwin_putat_string_reverse(&cw, 0, 5 + x, linebuffer, cfg.colors.diritem_select);
+            }
+            else
+            {
+                cwin_putat_string(&cw, 0, 5 + x, linebuffer, cfg.colors.diritem_normal);
+            }
+
+            cwin_fill_rect_raw(&cw, 30, 5 + x, 4, 1, SC_REVSPACE, getcolor(x + 1));
+        }
+
+        cwin_putat_string_reverse(&cw, 0, 18, " CURS UP/DOWN    ", cfg.colors.key);
+        cwin_putat_string(&cw, 18, 18, "Move up and down", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 19, " CURS LEFT/RIGHT ", cfg.colors.key);
+        cwin_putat_string(&cw, 18, 19, "Incr/Decr colour", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 20, " DEL ", cfg.colors.key);
+        cwin_putat_string(&cw, 18, 20, "Undo change", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 21, " F7 ", cfg.colors.key);
+        cwin_putat_string(&cw, 18, 21, "Back to main menu", cfg.colors.text);
+
+        do
+        {
+            key = cwin_getch();
+        } while (key != CH_CURS_DOWN && key != CH_CURS_UP && key != CH_CURS_LEFT && key != CH_CURS_RIGHT && key != CH_DEL && key != CH_F7);
+
+        switch (key)
+        {
+        case CH_CURS_DOWN:
+            if (option < 9)
+            {
+                option++;
+            }
+            else
+            {
+                option = 1;
+            }
+            break;
+
+        case CH_CURS_UP:
+            if (option > 1)
+            {
+                option--;
+            }
+            else
+            {
+                option = 9;
+            }
+            break;
+
+        case CH_CURS_LEFT:
+            if (color > 0)
+            {
+                pushcolor(option, color - 1);
+                changesmade = 1;
+            }
+            break;
+
+        case CH_CURS_RIGHT:
+            if (color < 15)
+            {
+                pushcolor(option, color + 1);
+                changesmade = 1;
+            }
+            break;
+
+        case CH_DEL:
+            readconfigfile();
+            changesmade = 0;
+            break;
+
+        default:
+            break;
+        }
+
+    } while (key != CH_F7);
+
+    return changesmade;
+}
+
+void edittimeconfig()
+// Function to edit time and colour scheme configuration
+{
+    char changesmade = 0;
+    char key;
+    char offsetinput[10];
+    char *ptrend;
+
+    do
+    {
+        cwin_clear(&cw);
+        headertext("Configuration tool.", 1);
+
+        cwin_cursor_move(&cw, 0, 3);
+        cwin_console_printf(&cw, cfg.colors.text, "\nCurrent configuration settings:\n\n");
+        cwin_console_printf(&cw, cfg.colors.text, "NTP time update settings:\n");
+        cwin_console_printf(&cw, cfg.colors.text, "- Update on boot toggle: %s\n", (cfg.timeon == 0) ? "Off" : "On");
+        cwin_console_printf(&cw, cfg.colors.text, "- Offset to UTC in seconds: %ld\n", cfg.secondsfromutc);
+        cwin_console_printf(&cw, cfg.colors.text, "- NTP server hostname:\n%.40s\n", cfg.host);
+
+        cwin_putat_string(&cw, 0, 16, "Make your choice:", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 18, " F1 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 18, "Toggle update on boot on/off", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 19, " F3 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 19, "Edit time offset to UTC", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 20, " F5 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 20, "Edit NTP server host", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 21, " F6 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 21, "Edit colour scheme", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 22, " F7 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 22, "Back to main menu", cfg.colors.text);
+
+        do
+        {
+            key = cwin_getch();
+        } while (key != CH_F1 && key != CH_F3 && key != CH_F5 && key != CH_F6 && key != CH_F7);
+
+        switch (key)
+        {
+        case CH_F1:
+            cfg.timeon = (cfg.timeon == 0) ? 1 : 0;
+            changesmade = 1;
+            break;
+
+        case CH_F3:
+            sprintf(offsetinput, "%ld", cfg.secondsfromutc);
+            cwin_putat_string(&cw, 0, 23, "Input time offset to UTC:", cfg.colors.text);
+            textInput(0, 24, 10, offsetinput, 10, 0);
+            cfg.secondsfromutc = strtol(offsetinput, &ptrend, 10);
+            changesmade = 1;
+            break;
+
+        case CH_F5:
+            cwin_putat_string(&cw, 0, 23, "Input NTP server hostname:", cfg.colors.text);
+            textInput(0, 24, 40, cfg.host, MAXHOSTLENGTH - 1, 0);
+            changesmade = 1;
+            break;
+
+        case CH_F6:
+            changesmade = editcolors();
+            break;
+
+        default:
+            break;
+        }
+    } while (key != CH_F7);
+
+    if (changesmade == 1)
+    {
+        writeconfigfile();
+    }
+}

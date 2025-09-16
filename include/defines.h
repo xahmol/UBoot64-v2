@@ -3,17 +3,6 @@
 
 #include "c64/vic.h"
 
-// Color scheme
-#define COL_HEADER1 VCOL_GREEN
-#define COL_HEADER2 VCOL_LT_GREEN
-#define COL_TEXT VCOL_YELLOW
-#define COL_TEXT_IMPUT VCOL_WHITE
-#define COL_KEY VCOL_CYAN
-#define COL_DIRITEM_NORMAL VCOL_WHITE
-#define COL_DIRITEM_SELECT VCOL_CYAN
-#define COL_ERROR VCOL_RED
-#define COL_OK VCOL_GREEN
-
 // Screencodes
 #define SC_SPACE 0x20
 #define SC_REVSPACE 0xa0
@@ -78,7 +67,7 @@
 #define EXEC_COMMA1             0x02
 #define EXEC_DEMO               0x10
 
-// Config version and
+// Config defaults
 #define CFGVERSION              0x02
 
 typedef unsigned char BYTE;
@@ -98,6 +87,7 @@ typedef unsigned char BYTE;
 // Define max length of paths and filenames, plus 1 for zero termination
 #define MAXPATHLEN 256
 #define MAXFILENAME 51
+#define MAXHOSTLENGTH 81
 
 // Min function
 #ifndef min
@@ -140,11 +130,23 @@ struct SlotStruct {
 };
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;
+struct ColorPalette {
+    char header1;
+    char header2;
+    char text;
+    char text_input;
+    char key;
+    char diritem_normal;
+    char diritem_select;
+    char error;
+    char ok;
+};
 struct ConfigStruct {
     char version;
     char timeon;
-    char host[80];
+    char host[MAXHOSTLENGTH];
     long secondsfromutc;
+    struct ColorPalette colors;
 };
 extern struct ConfigStruct cfg;
 extern char imagename[MAXFILENAME];

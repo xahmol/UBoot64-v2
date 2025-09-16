@@ -116,7 +116,7 @@ void menuslotnumnerprint(char slotnumber)
 // Input: Slotnumber = menu slot number
 {
     sprintf(linebuffer, "  %c ", menuslotkey(slotnumber));
-    cwin_putat_string_reverse(&cw, 0, slotnumber + 3, linebuffer, COL_KEY);
+    cwin_putat_string_reverse(&cw, 0, slotnumber + 3, linebuffer, cfg.colors.key);
 }
 
 void presentmenuslots()
@@ -133,11 +133,11 @@ void presentmenuslots()
 
         if (strlen(Slot.menu) == 0)
         {
-            cwin_putat_string(&cw, 5, x + 3, "<EMPTY>", COL_TEXT);
+            cwin_putat_string(&cw, 5, x + 3, "<EMPTY>", cfg.colors.text);
         }
         else
         {
-            cwin_putat_string(&cw, 5, x + 3, Slot.menu, COL_TEXT);
+            cwin_putat_string(&cw, 5, x + 3, Slot.menu, cfg.colors.text);
         }
     }
 }
@@ -162,27 +162,27 @@ void mainmenu()
         if (strlen(Slot.menu) != 0)
         {
             menuslotnumnerprint(x);
-            cwin_putat_string(&cw, 5, x + 3, Slot.menu, COL_TEXT);
+            cwin_putat_string(&cw, 5, x + 3, Slot.menu, cfg.colors.text);
         }
     }
 
     // Print menu options
-    cwin_putat_string_reverse(&cw, 0, 21, " F1 ", COL_KEY);
-    cwin_putat_string(&cw, 4, 21, " Filebrowser", COL_TEXT);
+    cwin_putat_string_reverse(&cw, 0, 21, " F1 ", cfg.colors.key);
+    cwin_putat_string(&cw, 5, 21, "Filebrowser", cfg.colors.text);
 
-    cwin_putat_string_reverse(&cw, 20, 21, " F2 ", COL_KEY);
-    cwin_putat_string(&cw, 24, 21, " Information", COL_TEXT);
+    cwin_putat_string_reverse(&cw, 20, 21, " F2 ", cfg.colors.key);
+    cwin_putat_string(&cw, 25, 21, "Information", cfg.colors.text);
 
-    cwin_putat_string_reverse(&cw, 0, 22, " F3 ", COL_KEY);
-    cwin_putat_string(&cw, 4, 22, " Edit/Order/Del", COL_TEXT);
+    cwin_putat_string_reverse(&cw, 0, 22, " F3 ", cfg.colors.key);
+    cwin_putat_string(&cw, 5, 22, "Edit/Order/Del", cfg.colors.text);
 
-    cwin_putat_string_reverse(&cw, 20, 22, " F5 ", COL_KEY);
-    cwin_putat_string(&cw, 24, 22, " NTP time config", COL_TEXT);
+    cwin_putat_string_reverse(&cw, 20, 22, " F5 ", cfg.colors.key);
+    cwin_putat_string(&cw, 25, 22, "Configuration", cfg.colors.text);
 
-    cwin_putat_string_reverse(&cw, 0, 23, " F7 ", COL_KEY);
-    cwin_putat_string(&cw, 4, 23, " Quit to BASIC", COL_TEXT);
+    cwin_putat_string_reverse(&cw, 0, 23, " F7 ", cfg.colors.key);
+    cwin_putat_string(&cw, 5, 23, "Quit to BASIC", cfg.colors.text);
 
-    cwin_putat_string(&cw, 0, 24, "Make your choice.", COL_TEXT);
+    cwin_putat_string(&cw, 0, 24, "Make your choice.", cfg.colors.text);
 
     select = 0;
 
@@ -1002,18 +1002,18 @@ void information()
 
     cwin_cursor_move(&cw, 0, 3);
 
-    cwin_console_printf(&cw, COL_TEXT, "\nUBoot64: Boot menu for Ultimate devices\n\n");
-    cwin_console_printf(&cw, COL_TEXT, "Version: %s\n", VERSION);
-    cwin_console_printf(&cw, COL_TEXT, "Written 2023 (v1), 2025 by Xander Mol.\n\n");
-    cwin_console_printf(&cw, COL_TEXT, "Inspired by/code used of DraBrowse:\n");
-    cwin_console_printf(&cw, COL_TEXT, "DraBrowse is a simple file browser.\n");
-    cwin_console_printf(&cw, COL_TEXT, "Original 2009 by Sascha Bader.\n");
-    cwin_console_printf(&cw, COL_TEXT, "Used version adapted by Dirk Jagdmann.\n\n");
-    cwin_console_printf(&cw, COL_TEXT, "Requires and made possible by:\n\n");
-    cwin_console_printf(&cw, COL_TEXT, "The Ultimate II+ cartridge,\n");
-    cwin_console_printf(&cw, COL_TEXT, "Created by Gideon Zweijtzer.\n\n");
+    cwin_console_printf(&cw, cfg.colors.text, "\nUBoot64: Boot menu for Ultimate devices\n\n");
+    cwin_console_printf(&cw, cfg.colors.text, "Version: %s\n", VERSION);
+    cwin_console_printf(&cw, cfg.colors.text, "Written 2023 (v1), 2025 by Xander Mol.\n\n");
+    cwin_console_printf(&cw, cfg.colors.text, "Inspired by/code used of DraBrowse:\n");
+    cwin_console_printf(&cw, cfg.colors.text, "DraBrowse is a simple file browser.\n");
+    cwin_console_printf(&cw, cfg.colors.text, "Original 2009 by Sascha Bader.\n");
+    cwin_console_printf(&cw, cfg.colors.text, "Used version adapted by Dirk Jagdmann.\n\n");
+    cwin_console_printf(&cw, cfg.colors.text, "Requires and made possible by:\n\n");
+    cwin_console_printf(&cw, cfg.colors.text, "The Ultimate II+ cartridge,\n");
+    cwin_console_printf(&cw, cfg.colors.text, "Created by Gideon Zweijtzer.\n\n");
 
-    cwin_console_printf(&cw, COL_TEXT, "Press a key to continue.");
+    cwin_console_printf(&cw, cfg.colors.text, "Press a key to continue.");
 
     getkey(2);
 
