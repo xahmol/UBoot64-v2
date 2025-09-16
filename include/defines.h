@@ -70,7 +70,7 @@
 // Config defaults
 #define CFGVERSION              0x02
 
-typedef unsigned char BYTE;
+typedef char BYTE;
 
 #define OK 0
 #define ERROR -1
@@ -146,6 +146,7 @@ struct ConfigStruct {
     char timeon;
     char host[MAXHOSTLENGTH];
     long secondsfromutc;
+    char verbose;
     struct ColorPalette colors;
 };
 extern struct ConfigStruct cfg;
@@ -153,26 +154,27 @@ extern char imagename[MAXFILENAME];
 extern char reufilepath[MAXPATHLEN];
 extern char imageaname[MAXFILENAME];
 extern char imageapath[MAXPATHLEN];
-extern unsigned char imageaid;
+extern char imageaid;
 extern char imagebname[MAXFILENAME];
 extern char imagebpath[MAXPATHLEN];
-extern unsigned char imagebid;
-extern unsigned char reusize;
+extern char imagebid;
+extern char reusize;
 extern char reusizelist[8][8];
 extern char configfilename[11];
 extern char slotfilename[11];
-extern unsigned char configversion;
-extern unsigned char menuselect;
-extern unsigned char fb_selection_made;
-extern unsigned char fb_uci_mode;
-extern unsigned char inside_mount;
+extern char configversion;
+extern char menuselect;
+extern char fb_selection_made;
+extern char fb_uci_mode;
+extern char inside_mount;
 extern char iec_devices[23];
 extern char configpath[];
+extern char verbosecounter;
 
 // Import from cartridge back to BASIC code
 extern char execute_commands[200];
 extern char execute_keys[10];
-extern unsigned char iec_device;
+extern char iec_device;
 
 // Main screen window
 extern CharWin cw;

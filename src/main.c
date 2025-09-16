@@ -104,39 +104,6 @@
 
 CharWin cw;
 
-// Now switch code generation to bank 1
-
-#pragma code(bcode1)
-#pragma data(bdata1)
-
-// Print into shared charwin
-
-void print1(void)
-{
-	cwin_put_string(&cw, "This is first bank", 7);
-	cwin_cursor_newline(&cw);
-}
-
-// Now switch code generation to bank 2
-
-#pragma code(bcode2)
-#pragma data(bdata2)
-
-void print2(void)
-{
-	cwin_put_string(&cw, "This is second bank", 7);
-	cwin_cursor_newline(&cw);
-}
-
-#pragma code(bcode3)
-#pragma data(bdata3)
-
-void print3(void)
-{
-	cwin_put_string(&cw, "This is third bank", 7);
-	cwin_cursor_newline(&cw);
-}
-
 // Switching code generation back to the bank 0 common routine section
 #pragma code(code)
 #pragma data(data)
@@ -180,6 +147,7 @@ char fb_selection_made = 0;
 char fb_uci_mode;
 char inside_mount;
 char iec_devices[23];
+char verbosecounter;
 
 // Macro for indirect cross bank call
 #define FCALL(f) fcall(__bankof(f), f)
@@ -193,20 +161,23 @@ __noinline void mainloop(void)
 	char x;
 	int key;
 
-    // Set config defauklt values
-    cfg.version = CFGVERSION;
-    cfg.timeon = 1;
-    cfg.secondsfromutc = 7200;
-    cfg.colors.header1 = VCOL_GREEN;
-    cfg.colors.header2 = VCOL_LT_GREEN;
-    cfg.colors.text = VCOL_YELLOW;
-    cfg.colors.text_input = VCOL_WHITE;
-    cfg.colors.key = VCOL_CYAN;
-    cfg.colors.diritem_normal = VCOL_WHITE;
-    cfg.colors.diritem_select = VCOL_CYAN;
-    cfg.colors.error = VCOL_RED;
-    cfg.colors.ok = VCOL_GREEN;
-    strcpy(cfg.host, "pool.ntp.org");
+	verbosecounter = 0;
+
+	// Set config defauklt values
+	cfg.version = CFGVERSION;
+	cfg.timeon = 1;
+	cfg.secondsfromutc = 7200;
+	cfg.verbose = 0;
+	cfg.colors.header1 = VCOL_GREEN;
+	cfg.colors.header2 = VCOL_LT_GREEN;
+	cfg.colors.text = VCOL_YELLOW;
+	cfg.colors.text_input = VCOL_WHITE;
+	cfg.colors.key = VCOL_CYAN;
+	cfg.colors.diritem_normal = VCOL_WHITE;
+	cfg.colors.diritem_select = VCOL_CYAN;
+	cfg.colors.error = VCOL_RED;
+	cfg.colors.ok = VCOL_GREEN;
+	strcpy(cfg.host, "pool.ntp.org");
 
 	// Init VIC
 	vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);
@@ -226,32 +197,61 @@ __noinline void mainloop(void)
 		headertext("Starting....", 0);
 		cwin_cursor_move(&cw, 0, 3);
 
+		if (!cfg.verbose)
+		{
+			cwin_put_string(&cw, "Detecting and reading...", cfg.colors.text);
+			spinning(25, 3, verbosecounter++);
+		}
+
 		// Is Ultimate Command Interface detected? If no, abort
 		if (!uii_detect())
 		{
-			cwin_put_string(&cw, "No Ultimate Command Interface enabled.", 7);
+			cwin_put_string(&cw, "No Ultimate Command Interface enabled.", cfg.colors.text);
 			cwin_cursor_newline(&cw);
-			cwin_put_string(&cw, "Press key to exit.", 7);
+			cwin_put_string(&cw, "Press key to exit.", cfg.colors.text);
 			cwin_cursor_newline(&cw);
 			cwin_getch();
 			fc3_exit();
 		}
 		else
 		{
-			cwin_put_string(&cw, "Ultimate Command Interface detected.", 7);
-			cwin_cursor_newline(&cw);
+			if (cfg.verbose)
+			{
+				cwin_put_string(&cw, "Ultimate Command Interface detected.", cfg.colors.text);
+				cwin_cursor_newline(&cw);
+			}
+			else
+			{
+				spinning(25, 3, verbosecounter++);
+			}
 		}
 
 		// Feedback on UCI DOS version
 		uii_identify();
-		cwin_put_string(&cw, uii_data, 7);
-		cwin_cursor_newline(&cw);
+
+		if (cfg.verbose)
+		{
+			cwin_put_string(&cw, "DOS version: ", cfg.colors.text);
+			cwin_put_string(&cw, uii_data, cfg.colors.text);
+			cwin_cursor_newline(&cw);
+		}
+		else
+		{
+			spinning(25, 3, verbosecounter++);
+		}
 
 		// Check presence and size of REU
 		reudetected = reu_count_pages();
 		if (reudetected)
 		{
-			cwin_console_printf(&cw, cfg.colors.text, "\nREU detected, size: %d KB\n", reudetected * 64);
+			if (cfg.verbose)
+			{
+				cwin_console_printf(&cw, cfg.colors.text, "\nREU detected, size: %d KB\n", reudetected * 64);
+			}
+			else
+			{
+				spinning(25, 3, verbosecounter++);
+			}
 		}
 		else
 		{
@@ -281,39 +281,46 @@ __noinline void mainloop(void)
 			errorexit("Getting device info fails.");
 		}
 
-		cwin_console_printf(&cw, cfg.colors.text, "\nRecognised Ultimate devices:\n");
-		if (uii_devinfo[0].exist)
+		if (cfg.verbose)
 		{
-			cwin_console_printf(&cw, cfg.colors.text, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
-		}
-		if (uii_devinfo[1].exist)
-		{
-			cwin_console_printf(&cw, cfg.colors.text, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
-		}
-		if (uii_devinfo[2].exist)
-		{
-			cwin_console_printf(&cw, cfg.colors.text, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
-		}
-		if (uii_devinfo[3].exist)
-		{
-			cwin_console_printf(&cw, cfg.colors.text, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
-		}
-		cwin_console_printf(&cw, cfg.colors.text, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
-		cwin_console_printf(&cw, cfg.colors.text, "Active IEC IDs: ");
-		for (x = 0; x < 23; x++)
-		{
-			if (iec_devices[x])
+			cwin_console_printf(&cw, cfg.colors.text, "\nRecognised Ultimate devices:\n");
+			if (uii_devinfo[0].exist)
 			{
-				cwin_console_printf(&cw, cfg.colors.text, "%02d ", (x == 22) ? 4 : x + 8);
+				cwin_console_printf(&cw, cfg.colors.text, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
 			}
+			if (uii_devinfo[1].exist)
+			{
+				cwin_console_printf(&cw, cfg.colors.text, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
+			}
+			if (uii_devinfo[2].exist)
+			{
+				cwin_console_printf(&cw, cfg.colors.text, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
+			}
+			if (uii_devinfo[3].exist)
+			{
+				cwin_console_printf(&cw, cfg.colors.text, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
+			}
+			cwin_console_printf(&cw, cfg.colors.text, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
+			cwin_console_printf(&cw, cfg.colors.text, "Active IEC IDs: ");
+			for (x = 0; x < 23; x++)
+			{
+				if (iec_devices[x])
+				{
+					cwin_console_printf(&cw, cfg.colors.text, "%02d ", (x == 22) ? 4 : x + 8);
+				}
+			}
+			cwin_cursor_newline(&cw);
 		}
-		cwin_cursor_newline(&cw);
+		else
+		{
+			spinning(25, 3, verbosecounter++);
+		}
 
 		// Set time from NTP server
 		fc3_call(1, time_main);
 
 		// Uncomment to pause on boot status feedback for debug
-		// cwin_getch();
+		//cwin_getch();
 	}
 	else
 	{
@@ -333,14 +340,14 @@ __noinline void mainloop(void)
 		if ((menuselect > 47 && menuselect < 58) || (menuselect > 64 && menuselect < 91))
 		// Menuslots 0-9, a-z
 		{
-			//runbootfrommenu(keytomenuslot(menuselect));
+			// runbootfrommenu(keytomenuslot(menuselect));
 		}
 
 		switch (menuselect)
 		{
 		case CH_F1:
 			// Filebrowser
-			//fc3_call(2, filebrowser);
+			// fc3_call(2, filebrowser);
 			break;
 
 		case CH_F2:
@@ -350,7 +357,7 @@ __noinline void mainloop(void)
 
 		case CH_F3:
 			// Edit / re-order and delete menuslots
-			//fc3_call(1, editmenuoptions);
+			// fc3_call(1, editmenuoptions);
 			break;
 
 		case CH_F5:

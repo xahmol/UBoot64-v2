@@ -28,7 +28,7 @@ void fc3_call(char bank, void (*func)())
 void fc3_exit(void)
 // Function to exit from FC3 back to BASIC
 {
-    cwin_put_string(&cw, "Exit routine", 7);
+    cwin_put_string(&cw, "Exit routine", cfg.colors.text);
 	cwin_cursor_newline(&cw);
 
     __asm

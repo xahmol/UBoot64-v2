@@ -85,7 +85,15 @@ char CheckStatusTime()
 
     if (uii_status[0] != '0' || uii_status[1] != '0')
     {
-        cwin_console_printf(&cw, 7, "\nStatus: %s Data:%s", uii_status, uii_data);
+        if (cfg.verbose)
+        {
+            cwin_console_printf(&cw, 7, "\nError getting time from NTP server.");
+            cwin_console_printf(&cw, 7, "\nStatus: %s Data:%s", uii_status, uii_data);
+        }
+        else
+        {
+            spinning(25, 3, verbosecounter++);
+        }
         return 1;
     }
     return 0;
@@ -178,11 +186,27 @@ void get_ntp_time()
     char socket = 0;
     time_t t;
 
-    cwin_console_printf(&cw, 7, "\nUpdating UII+ time from NTP Server.");
-    uii_get_time();
-    cwin_console_printf(&cw, 7, "\nUltimate datetime: %s", uii_data);
+    if (cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nUpdating UII+ time from NTP Server.");
+    }
+    else
+    {
+        spinning(25, 3, verbosecounter++);
+    }
 
-    cwin_console_printf(&cw, 7, "\nConnecting to: %s", cfg.host);
+    uii_get_time();
+
+    if (cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nUltimate datetime: %s", uii_data);
+        cwin_console_printf(&cw, 7, "\nConnecting to: %s", cfg.host);
+    }
+    else
+    {
+        spinning(25, 3, verbosecounter++);
+    }
+
     socket = uii_udpconnect(cfg.host, 123); // https://github.com/markusC64/1541ultimate2/blob/master/software/io/network/network_target.cc
     if (CheckStatusTime())
     {
@@ -190,7 +214,15 @@ void get_ntp_time()
         return;
     }
 
-    cwin_console_printf(&cw, 7, "\nSending NTP request");
+    if (cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nSending NTP request");
+    }
+    else
+    {
+        spinning(25, 3, verbosecounter++);
+    }
+
     fullcmd[2] = socket;
     uii_settarget(TARGET_NETWORK);
     uii_sendcommand(fullcmd, 51); // 3 + sizeof( ntp_packet ));
@@ -208,7 +240,14 @@ void get_ntp_time()
         // Add delay of a second to avoid time to wait on response being too short
         delay(1);
         // Print attempt number
-        cwin_console_printf(&cw, 7, "\nReading result attempt %d", attempt);
+        if (cfg.verbose)
+        {
+            cwin_console_printf(&cw, 7, "\nReading result attempt %d", attempt);
+        }
+        else
+        {
+            spinning(25, 3, verbosecounter++);
+        }
 
         // Try to read incoming data
         uii_socketread(socket, 50); // 2 + sizeof( ntp_packet ));
@@ -239,13 +278,37 @@ void get_ntp_time()
     uii_socketclose(socket);
 
     // Print time received and parse to UII+ format
-    cwin_console_printf(&cw, 7, "\nUnix epoch %lu", t);
+    if (cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nUnix epoch %lu", t);
+    }
+    else
+    {
+        spinning(25, 3, verbosecounter++);
+    }
 
     // Set UII+ RTC clock
     uii_set_time(UNIX_epoch_to_UII_time(t));
-    cwin_console_printf(&cw, 7, "\nStatus: %s", uii_status);
+
+    if (cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nStatus: %s", uii_status);
+    }
+    else
+    {
+        spinning(25, 3, verbosecounter++);
+    }
+
     uii_get_time();
-    cwin_console_printf(&cw, 7, "\nRTC clock set to %s", uii_data);
+
+    if(cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nRTC clock set to %s", uii_data);
+    }
+    else
+    {
+        spinning(25, 3, verbosecounter++);
+    }
 }
 
 void time_main()
@@ -266,39 +329,39 @@ char getcolor(char option)
     case 1:
         return cfg.colors.header1;
         break;
-    
+
     case 2:
-        return cfg.colors.header2; 
+        return cfg.colors.header2;
         break;
-    
+
     case 3:
-        return cfg.colors.text; 
-        break;  
-    
+        return cfg.colors.text;
+        break;
+
     case 4:
-        return cfg.colors.text_input; 
-        break; 
-    
+        return cfg.colors.text_input;
+        break;
+
     case 5:
-        return cfg.colors.key; 
+        return cfg.colors.key;
         break;
-    
+
     case 6:
-        return cfg.colors.diritem_normal; 
+        return cfg.colors.diritem_normal;
         break;
-    
+
     case 7:
-        return cfg.colors.diritem_select; 
+        return cfg.colors.diritem_select;
         break;
 
     case 8:
-        return cfg.colors.error; 
+        return cfg.colors.error;
         break;
-    
+
     case 9:
-        return cfg.colors.ok; 
+        return cfg.colors.ok;
         break;
-    
+
     default:
         return 0;
         break;

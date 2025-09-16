@@ -137,8 +137,15 @@ void write_slotsfile(char verbose)
   {
     if (verbose)
     {
-      cwin_cursor_move(&cw, 0, 8);
-      cwin_console_printf(&cw, cfg.colors.text, "Writing slot data at %lu.", count);
+      if(cfg.verbose)
+      {
+        cwin_cursor_move(&cw, 0, 8);
+        cwin_console_printf(&cw, cfg.colors.text, "Writing slot data at %lu.", count);
+      }
+      else
+      {
+        spinning(25, 3, verbosecounter++);
+      }
     }
     memset(save_buffer, 0, sizeof(save_buffer));
     if (end - count < SAVE_BUF_SIZE)
@@ -198,11 +205,19 @@ void read_slotsfile(unsigned char verbose)
 
       if (verbose)
       {
-        cwin_cursor_move(&cw, 0, 8);
-        cwin_console_printf(&cw, cfg.colors.text, "Creating slot %2d", x + 1);
+        if(cfg.verbose)
+        {
+          cwin_cursor_move(&cw, 0, 8);
+          cwin_console_printf(&cw, cfg.colors.text, "Creating slot %2d", x + 1);
+        }
+        else
+        {
+          spinning(25, 3, verbosecounter++);
+        } 
       }
       save_slot_to_reu(x);
     }
+    cwin_fill_rect_raw(&cw, 0, 8, 40, 1, SC_SPACE, cfg.colors.text);
     write_slotsfile(1);
     uii_close_file();
     return;
@@ -221,8 +236,15 @@ void read_slotsfile(unsigned char verbose)
       count += bytesread;
       if (verbose)
       {
-        cwin_cursor_move(&cw, 0, 8);
-        cwin_console_printf(&cw, cfg.colors.text, "Reading slot data to %lu.", count);
+        if(cfg.verbose)
+        {
+          cwin_cursor_move(&cw, 0, 8);
+          cwin_console_printf(&cw, cfg.colors.text, "Reading slot data to %lu.", count);
+        }
+        else
+        {
+          spinning(25, 3, verbosecounter++);
+        }
       }
     }
   }
@@ -262,8 +284,17 @@ void readconfigfile()
   // Write a config file with default values if no file is found
   if (strcmp((const char *)uii_status, "00,ok") != 0)
   {
-    cwin_console_printf(&cw, cfg.colors.text, "\nNo config file found, writing defaults.");
+    if(cfg.verbose)
+    {
+      cwin_cursor_move(&cw, 0, 8);
+      cwin_console_printf(&cw, cfg.colors.text, "No config file found, writing defaults.");
+    }
+    else
+    {
+      spinning(25, 3, verbosecounter++);
+    }
     writeconfigfile();
+    cwin_fill_rect_raw(&cw, 0, 8, 40, 1, SC_SPACE, cfg.colors.text);
     return;
   }
 

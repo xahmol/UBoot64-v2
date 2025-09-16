@@ -231,6 +231,16 @@ void headertext(const char *subtitle, char time)
   }
 }
 
+void spinning(char posx, char posy, char cont)
+// Function to draw a spinner at given position
+// Input: posx - X position
+//        posy - Y position
+//        cont - counter to determine spinner position
+{
+  const char spinner[4] = {0xbe, 0xbc, 0xac, 0xbb};
+  cwin_putat_char(&cw, posx, posy, spinner[cont % 4], cfg.colors.text);
+}
+
 // Core device IO and IO routines
 
 char iec_present(char id)
@@ -442,7 +452,7 @@ void DoDemoMode()
   // Ask user to disable other drives if needed
   while (CheckActiveIECdevices())
   {
-    cwin_put_string(&cw, "Switch off ID ", 7);
+    cwin_put_string(&cw, "Switch off ID ", cfg.colors.text);
     for (x = 1; x < 23; x++)
     {
       if (iec_devices[x] && iec_devices[x] < 4)
@@ -450,11 +460,11 @@ void DoDemoMode()
         cwin_console_printf(&cw, cfg.colors.text, "%02d ", (x == 22) ? 4 : x + 8);
       }
     }
-    cwin_put_string(&cw, " and press key.", 7);
+    cwin_put_string(&cw, " and press key.", cfg.colors.text);
     cwin_cursor_newline(&cw);
     cwin_getch();
   }
-  cwin_put_string(&cw, "Success in powering down all drives but ID 8.", 7);
+  cwin_put_string(&cw, "Success in powering down all drives but ID 8.", cfg.colors.text);
   cwin_cursor_newline(&cw);
 }
 

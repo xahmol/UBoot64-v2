@@ -11,6 +11,7 @@ char *pathconcat();
 char getkey(BYTE mask);
 void cwin_putat_string_reverse(CharWin *win, char x, char y, const char *str, char color);
 void headertext(const char *subtitle, char time);
+void spinning(char posx, char posy, char cont);
 char iec_present(char id);
 char CheckIfUltimateOnID(char id);
 char CheckActiveIECdevices();
