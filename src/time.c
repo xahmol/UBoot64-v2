@@ -543,11 +543,15 @@ void edittimeconfig()
         cwin_console_printf(&cw, cfg.colors.text, "- Update on boot toggle: %s\n", (cfg.timeon == 0) ? "Off" : "On");
         cwin_console_printf(&cw, cfg.colors.text, "- Offset to UTC in seconds: %ld\n", cfg.secondsfromutc);
         cwin_console_printf(&cw, cfg.colors.text, "- NTP server hostname:\n%.40s\n", cfg.host);
+        cwin_console_printf(&cw, cfg.colors.text, "\nVerbose or silent startup: %s\n", (cfg.verbose == 0) ? "Silent" : "Verbose");
 
         cwin_putat_string(&cw, 0, 16, "Make your choice:", cfg.colors.text);
 
-        cwin_putat_string_reverse(&cw, 0, 18, " F1 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 18, "Toggle update on boot on/off", cfg.colors.text);
+        cwin_putat_string_reverse(&cw, 0, 17, " F1 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 17, "Toggle time synch on/off", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 18, " F2 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 18, "Verbose startup on/off", cfg.colors.text);
 
         cwin_putat_string_reverse(&cw, 0, 19, " F3 ", cfg.colors.key);
         cwin_putat_string(&cw, 5, 19, "Edit time offset to UTC", cfg.colors.text);
@@ -564,12 +568,17 @@ void edittimeconfig()
         do
         {
             key = cwin_getch();
-        } while (key != CH_F1 && key != CH_F3 && key != CH_F5 && key != CH_F6 && key != CH_F7);
+        } while (key != CH_F1 && key != CH_F2 && key != CH_F3 && key != CH_F5 && key != CH_F6 && key != CH_F7);
 
         switch (key)
         {
         case CH_F1:
             cfg.timeon = (cfg.timeon == 0) ? 1 : 0;
+            changesmade = 1;
+            break;
+
+        case CH_F2:
+            cfg.verbose = (cfg.verbose == 0) ? 1 : 0;
             changesmade = 1;
             break;
 

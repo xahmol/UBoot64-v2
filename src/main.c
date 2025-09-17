@@ -167,7 +167,7 @@ __noinline void mainloop(void)
 	cfg.version = CFGVERSION;
 	cfg.timeon = 1;
 	cfg.secondsfromutc = 7200;
-	cfg.verbose = 0;
+	cfg.verbose = 1;
 	cfg.colors.header1 = VCOL_GREEN;
 	cfg.colors.header2 = VCOL_LT_GREEN;
 	cfg.colors.text = VCOL_YELLOW;
@@ -197,11 +197,7 @@ __noinline void mainloop(void)
 		headertext("Starting....", 0);
 		cwin_cursor_move(&cw, 0, 3);
 
-		if (!cfg.verbose)
-		{
-			cwin_put_string(&cw, "Detecting and reading...", cfg.colors.text);
-			spinning(25, 3, verbosecounter++);
-		}
+		cwin_put_string(&cw, "Detecting and reading...", cfg.colors.text);
 
 		// Is Ultimate Command Interface detected? If no, abort
 		if (!uii_detect())
@@ -213,17 +209,36 @@ __noinline void mainloop(void)
 			cwin_getch();
 			fc3_exit();
 		}
+
+		// Wait for USB to be present by looping till dirchange to root successful
+		// Times out on 5 secs
+		cia1.tods = 0;
+		cia1.todt = 0;
+		do
+		{
+			uii_change_dir(configpath);
+		} while (!UII_SUCCESS || cia1.tods > 4);
+		if (!UII_SUCCESS)
+		{
+			errorexit("USB storage not found.");
+		}
+
+		// Read config file.
+		// Need to do this before printing verbose feedback to avoid printing feednack
+		// with verbose off if config file sets verbose off.
+		// But can't do this before uii_detect() as that needs to be tested before config can be read.
+		readconfigfile();
+
+		// Therefore we print verbose feedback on UCI detection success only now
+		if (cfg.verbose)
+		{
+			cwin_cursor_newline(&cw);
+			cwin_put_string(&cw, "Ultimate Command Interface detected.", cfg.colors.text);
+			cwin_cursor_newline(&cw);
+		}
 		else
 		{
-			if (cfg.verbose)
-			{
-				cwin_put_string(&cw, "Ultimate Command Interface detected.", cfg.colors.text);
-				cwin_cursor_newline(&cw);
-			}
-			else
-			{
-				spinning(25, 3, verbosecounter++);
-			}
+			spinning(25, 3, verbosecounter++);
 		}
 
 		// Feedback on UCI DOS version
@@ -258,21 +273,7 @@ __noinline void mainloop(void)
 			errorexit("No REU detected.");
 		}
 
-		// Wait for USB to be present by looping till dirchange to root successful
-		// Times out on 5 secs
-		cia1.tods = 0;
-		cia1.todt = 0;
-		do
-		{
-			uii_change_dir(configpath);
-		} while (!UII_SUCCESS || cia1.tods > 4);
-		if (!UII_SUCCESS)
-		{
-			errorexit("USB storage not found.");
-		}
-
-		// Read config and slot files
-		readconfigfile();
+		// Read slots file
 		read_slotsfile(1);
 
 		// Read (and print feedback of) drive configuration
@@ -320,7 +321,7 @@ __noinline void mainloop(void)
 		fc3_call(1, time_main);
 
 		// Uncomment to pause on boot status feedback for debug
-		//cwin_getch();
+		// cwin_getch();
 	}
 	else
 	{
