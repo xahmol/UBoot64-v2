@@ -52,11 +52,11 @@ void uii_open_dir(void)
 void uii_get_dir(void)
 // Read a directory
 // The “Read Directory” command will return the contents of the directory to the data channel. Each
-// entry of the directory is transmitted as a data packet. The format is simple: The first byte gives the
+// entry of the directory is transmitted as a data packet. The format is simple: The first char gives the
 // attribute of the directory entry, followed by the file name. The attribute has the following fields:
 // Bit 7	Bit 6	Bit 5	Bit 4	Bit 3	Bit 2	Bit 1	Bit 0
 // 					ARCHIVE	DIR		VOLUME	SYSTEM	HIDDEN	READONLY
-// These fields are taken from the attribute byte as it exists in FAT directories, and is reused for other
+// These fields are taken from the attribute char as it exists in FAT directories, and is reused for other
 // non-FAT directories.
 // Read this in a loop, and _accept() the data
 // in order to get the next packet
@@ -145,7 +145,7 @@ void uii_mount_disk(char id, char *filename)
 // Input: id - the ID of the disk to mount
 //        filename - the name of the disk image file
 // The “Mount Disk” command mounts the disk image specified by the <filename> argument on the
-// drive using the IEC-ID specified by the single byte argument <id>.
+// drive using the IEC-ID specified by the single char argument <id>.
 // If there is no drive using the specified id, then the drive last mounted on will be used. If there is no
 // such drive, the status channel reports “90,DRIVE NOT PRESENT”.
 // If the file denoted by <filename> is not a disk image, the status channel reports “89,NOT A DISK
@@ -175,7 +175,7 @@ void uii_unmount_disk(char id)
 // Unmount a disk image
 // Input: id - the ID of the disk to unmount
 // The “Umount Disk” command unmounts the disk currently mounted on the drive using the IEC-ID
-// specified by the single byte argument <id>.
+// specified by the single char argument <id>.
 // If there is no drive using the specified id, then the drive last mounted on will be used. If there is no
 // such drive, the status channel reports “90,DRIVE NOT PRESENT”.
 // On successful unmount the status channel reports “00,OK”. The command is considered successful
@@ -206,7 +206,7 @@ void uii_open_file(char attrib, char *filename)
 //
 // Full explanation:
 // The “Open File” command takes two arguments: an attribute byte; directly followed by the filename to
-// be opened. The attribute byte contains flags that tell the file system how, in which mode, to open the
+// be opened. The attribute char contains flags that tell the file system how, in which mode, to open the
 // file. The following table shows which flags are applicable:
 // Attribute Value
 // 		FA_READ				$01
@@ -314,10 +314,10 @@ void uii_seek_file(char posL, char posML, char posMH, char posH)
 // The command takes one argument: a 32 bit value, which is transferred LSB first.
 // The command never returns any data. When the seek is successful, status returns “00,OK”, or else a
 // message from the file system. If there is no file open, the status channel will read “85,NO FILE OPEN”
-// Input: posL - the low byte of the position
-//        posML - the middle low byte of the position
-//        posMH - the middle high byte of the position
-//        posH - the high byte of the position
+// Input: posL - the low char of the position
+//        posML - the middle low char of the position
+//        posMH - the middle high char of the position
+//        posH - the high char of the position
 {
 	char cmd[] = {0x00, DOS_CMD_FILE_SEEK, posL, posML, posMH, posH};
 
@@ -337,7 +337,7 @@ void uii_file_info()
 //  WORD date; /* Last modified date */
 //  WORD time; /* Last modified time */
 //  char extension[3];
-//  BYTE attrib; /* Attribute */
+//  char attrib; /* Attribute */
 //  char filename[ ];
 // Ultimate DOS Command Summary
 // Version 1.2, December 16th, 2017 6

@@ -70,8 +70,6 @@
 // Config defaults
 #define CFGVERSION              0x02
 
-typedef char BYTE;
-
 #define OK 0
 #define ERROR -1
 #define ABORT +1
@@ -88,6 +86,8 @@ typedef char BYTE;
 #define MAXPATHLEN 256
 #define MAXFILENAME 51
 #define MAXHOSTLENGTH 81
+#define MAXMENUNAME 31
+#define MAXCOMMAND 81
 
 // Min function
 #ifndef min
@@ -97,36 +97,36 @@ typedef char BYTE;
 // Global variables
 extern char path[8][MAXFILENAME];
 extern char pathfile[MAXFILENAME];
-extern BYTE pathdevice;
-extern BYTE pathrunboot;
-extern BYTE depth;
-extern BYTE trace;
-extern BYTE comma1;
-extern BYTE demomode;
-extern BYTE commandflag;
-extern BYTE mountflag;
-extern BYTE reuflag;
-extern BYTE addmountflag;
-extern BYTE runmountflag;
+extern char pathdevice;
+extern char pathrunboot;
+extern char depth;
+extern char trace;
+extern char comma1;
+extern char demomode;
+extern char commandflag;
+extern char mountflag;
+extern char reuflag;
+extern char addmountflag;
+extern char runmountflag;
 extern int reudetected;
 struct SlotStruct {
-    BYTE cfgvs;
+    char cfgvs;
     char path[MAXPATHLEN];
-    char menu[21];
+    char menu[MAXMENUNAME];
     char file[MAXFILENAME];
-    char cmd[80];
+    char cmd[MAXCOMMAND];
     char reu_image[MAXFILENAME];
     char reu_path[MAXPATHLEN];
-    BYTE reusize;
-    BYTE runboot;
-    BYTE device;
-    BYTE command;
+    char reusize;
+    char runboot;
+    char device;
+    char command;
     char image_a_path[MAXPATHLEN];
     char image_a_file[MAXFILENAME];
-    BYTE image_a_id;
+    char image_a_id;
     char image_b_path[MAXPATHLEN];
     char image_b_file[MAXFILENAME];
-    BYTE image_b_id;
+    char image_b_id;
 };
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;

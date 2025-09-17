@@ -74,14 +74,14 @@ const char *reg_types[] = {"SEQ", "PRG", "URS", "REL", "VRP"};
 const char *oth_types[] = {"DEL", "CBM", "DIR", "LNK", "OTH", "HDR"};
 char bad_type[4];
 
-BYTE device = 8;
+char device = 8;
 char linebuffer[100];
 char linebuffer2[100];
 char DOSstatus[40];
 
 /// string descriptions of enum drive_e
 const char *drivetype[LAST_DRIVE_E] = {"", "Pi1541", "1540", "1541", "1551", "1570", "1571", "1581", "1001", "2031", "8040", "sd2iec", "cmd", "vice", "u64"}; /// enum drive_e value for each device 0-19.
-BYTE devicetype[MAXDEVID + 1];
+char devicetype[MAXDEVID + 1];
 
 // Generic functions
 void errorexit(const char *msg)
@@ -153,7 +153,7 @@ char *pathconcat()
   return concat;
 }
 
-char getkey(BYTE mask)
+char getkey(char mask)
 // Function to wait for key within input validation mask
 // Mask values for input validation (adds up for combinations):
 // 00000001 =   1 = Numeric
@@ -165,7 +165,7 @@ char getkey(BYTE mask)
 // 01000000 =  64 = Return
 // 10000000 = 128 = Y and N
 {
-  BYTE keychar;
+  char keychar;
 
   do
   {
@@ -399,12 +399,12 @@ char cmd(const char device, const char *cmd)
   return dosCommand(15, device, 15, cmd);
 }
 
-const char *getDeviceType(const BYTE device)
+const char *getDeviceType(const char device)
 // Function to get device type string for given device number
 // Input: device - device number to check
 // Output: Pointer to string with device type, or error string
 {
-  BYTE idx;
+  char idx;
 
   if (device > sizeof(devicetype))
   {
@@ -468,7 +468,7 @@ void DoDemoMode()
   cwin_cursor_newline(&cw);
 }
 
-void execute(char *prg, BYTE device, BYTE boot, char *command)
+void execute(char *prg, char device, char boot, char *command)
 // Routine to execute or boot chosen file or dir
 // Input:
 // prg:     Filename
@@ -650,27 +650,36 @@ signed textInput(char xpos, char ypos, char width, char *str, char size, char va
 
     default:
       valid = 0;
+
+      // No validation apart from check if it isnot a control character
       if (!validation)
       {
-        valid = 1;
+        if ((c > 31 && c < 128) || (c > 159 && c < 256))
+        {
+          valid = 1;
+        }
       }
+      /// Validation on numbers only
       if ((validation & 1) && c > 47 && c < 58)
       {
         valid = 1;
       }
+      // Validation on alphabet only lowercase
       if ((validation & 2) && c > 64 && c < 91)
       {
         valid = 1;
       }
+      // Validation on alphabet only uppercase
       if ((validation & 2) && c > 96 && c < 123)
       {
         valid = 1;
       }
+      // Validation on wildcards * and ?
       if ((validation & 4) && (c == 42 || c == 63))
       {
         valid = 1;
       }
-      if (isprint(c) && idx < size && valid)
+      if (idx < size && valid)
       {
         flag = str[idx];
         str[idx] = c;

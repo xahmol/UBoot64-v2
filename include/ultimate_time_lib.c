@@ -39,7 +39,7 @@ void uii_get_time(void)
 void uii_set_time(char *data)
 // Set the current time
 // Input: data - the new time to set.
-// Format of the time data byte stream:  <Y> <M> <D> <h> <m> <s>
+// Format of the time data char stream:  <Y> <M> <D> <h> <m> <s>
 // This command sets the current date and time and the status channel will read “00,OK” on success. The
 // year has to be reduced by 1900 in order to fit in a single byte.
 // This function may be enabled or disabled by the ultimate settings. In the latter case the status will read

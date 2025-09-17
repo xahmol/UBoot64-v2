@@ -161,7 +161,7 @@ void uii_sendcommand(char *bytes, unsigned count)
 			uii_logstatusreg();
 		};
 
-		// Write byte by byte to data register
+		// Write char by char to data register
 		uii_logtext("\nwriting command...");
 		while (x < count)
 			uii_reg_write.cmddata = bytes[x++];

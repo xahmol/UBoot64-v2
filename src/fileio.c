@@ -130,7 +130,7 @@ void write_slotsfile(char verbose)
   // Delete old config file as I can not (yet) get overwrite to work
   uii_delete_file(slotfilename);
 
-  // Save slots via UCI, one slot at a time due to 512 byte limit
+  // Save slots via UCI, one slot at a time due to 512 char limit
   uii_open_file(0x06, slotfilename);
 
   while (count < end)

@@ -111,17 +111,17 @@ CharWin cw;
 // Global variables
 char path[8][MAXFILENAME];
 char pathfile[MAXFILENAME];
-BYTE pathdevice;
-BYTE pathrunboot;
-BYTE depth = 0;
-BYTE trace = 0;
-BYTE comma1 = 1;
-BYTE demomode = 0;
-BYTE commandflag = 0;
-BYTE reuflag = 0;
-BYTE addmountflag = 0;
-BYTE runmountflag = 0;
-BYTE mountflag = 0;
+char pathdevice;
+char pathrunboot;
+char depth = 0;
+char trace = 0;
+char comma1 = 1;
+char demomode = 0;
+char commandflag = 0;
+char reuflag = 0;
+char addmountflag = 0;
+char runmountflag = 0;
+char mountflag = 0;
 int reudetected;
 
 struct SlotStruct Slot;
@@ -186,7 +186,7 @@ __noinline void mainloop(void)
 
 	// Prepare output window
 	cwin_init(&cw, (char *)0x0400, 0, 0, 40, 25);
-	cwin_clear(&cw);
+	cwin_clear(&cw);	
 
 	// Initialize the sprite
 	spr_init((char *)0x0400);
@@ -232,7 +232,7 @@ __noinline void mainloop(void)
 		// Therefore we print verbose feedback on UCI detection success only now
 		if (cfg.verbose)
 		{
-			cwin_cursor_newline(&cw);
+			cwin_cursor_move(&cw, 0, 4);
 			cwin_put_string(&cw, "Ultimate Command Interface detected.", cfg.colors.text);
 			cwin_cursor_newline(&cw);
 		}
@@ -321,7 +321,7 @@ __noinline void mainloop(void)
 		fc3_call(1, time_main);
 
 		// Uncomment to pause on boot status feedback for debug
-		// cwin_getch();
+		//cwin_getch();
 	}
 	else
 	{
