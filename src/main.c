@@ -358,7 +358,7 @@ __noinline void mainloop(void)
 
 		case CH_F3:
 			// Edit / re-order and delete menuslots
-			// fc3_call(1, editmenuoptions);
+			fc3_call(1, editmenuoptions);
 			break;
 
 		case CH_F5:

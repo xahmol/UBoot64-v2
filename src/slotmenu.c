@@ -226,11 +226,11 @@ void mainmenu()
 //     // printf("B ID: %d Imagelen: %3d\n\r",imagebid,strlen(imagebname));
 //     // printf("%s\n\r",imagebname);
 //     // printf("%s\n\r",imagebpath);
-//     // cgetc();
+//     // cwin_getch();
 //     // strcpy(linebuffer,"");
 //     // textInput(0,24,linebuffer,20);
 //     // strcpy(Slot->menu,linebuffer);
-//     // cgetc();
+//     // cwin_getch();
 //
 //     clrscr();
 //     headertext("Choose menuslot.");
@@ -239,7 +239,7 @@ void mainmenu()
 //     cputs("Choose slot by pressing key: ");
 //     do
 //     {
-//         key = cgetc();
+//         key = cwin_getch();
 //     } while ((key < 48 || key > 57) && (key < 65 || key > 90));
 //     menuslot = keytomenuslot(key);
 //     selected = 1;
@@ -283,7 +283,7 @@ void mainmenu()
 //                     cprintf("REU file size: (%i) %s  ", Slot->reusize, reusizelist[Slot->reusize]);
 //                     do
 //                     {
-//                         plusmin = cgetc();
+//                         plusmin = cwin_getch();
 //                     } while (plusmin != '+' && plusmin != '-' && plusmin != CH_ENTER);
 //                     if (plusmin == '+')
 //                     {
@@ -492,63 +492,66 @@ void mainmenu()
 //     }
 // }
 //
-// char deletemenuslot()
-// {
-//     // Routine to delete a chosen menu slot
-//     // Returns 1 if something has been deleted, else 0
-//
-//     int menuslot;
-//     int changesmade = 0;
-//     char key;
-//     BYTE yesno;
-//     BYTE selected = 0;
-//
-//     clrscr();
-//     headertext("Delete menu slots");
-//
-//     presentmenuslots();
-//
-//     gotoxy(0, 23);
-//     cputs("Choose menu slot to be deleted. ");
-//
-//     do
-//     {
-//         key = cgetc();
-//         if ((key > 47 && key < 58) || (key > 64 && key < 91)) // If keys 0 - 9 or a - z
-//         {
-//             menuslot = keytomenuslot(key);
-//             selected = 1;
-//         }
-//     } while (selected == 0);
-//
-//     Slot = FirstSlot + menuslot;
-//
-//     cprintf("%c\n\r", key);
-//     if (strlen(Slot->menu) != 0)
-//     {
-//         cprintf("Are you sure? Y/N ");
-//         yesno = getkey(128);
-//         cprintf("%c", yesno);
-//         if (yesno == 78)
-//         {
-//             selected = 0;
-//         }
-//     }
-//     else
-//     {
-//         cprintf("Slot is already empty. Press key.");
-//         getkey(2);
-//         selected = 0;
-//     }
-//     if (selected == 1)
-//     {
-//         memset(Slot, 0, SLOTSIZE);
-//         changesmade = 1;
-//     }
-//
-//     return changesmade;
-// }
-//
+
+char deletemenuslot()
+// Routine to delete a chosen menu slot
+// Returns 1 if something has been deleted, else 0
+{
+
+    char menuslot = 0;
+    char changesmade = 0;
+    char key;
+    char yesno;
+    char selected = 0;
+
+    cwin_clear(&cw);
+    headertext("Delete menu slots", 1);
+
+    presentmenuslots();
+
+    cwin_cursor_move(&cw, 0, 23);
+    cwin_console_printf(&cw, cfg.colors.text, "Choose menu slot to be deleted. ");
+
+    do
+    {
+        key = cwin_getch();
+        if ((key > 47 && key < 58) || (key > 64 && key < 91)) // If keys 0 - 9 or a - z
+        {
+            menuslot = keytomenuslot(key);
+            selected = 1;
+        }
+    } while (selected == 0);
+
+    get_slot_from_reu(menuslot);
+
+    cwin_console_printf(&cw, cfg.colors.text, "%c\n", key);
+
+    if (strlen(Slot.menu) != 0)
+    {
+        cwin_console_printf(&cw, cfg.colors.text, "Are you sure? Y/N ");
+        yesno = getkey(128);
+        cwin_console_printf(&cw, cfg.colors.text, "%c", yesno);
+        if (yesno == 78)
+        {
+            selected = 0;
+        }
+    }
+    else
+    {
+        cwin_console_printf(&cw, cfg.colors.text, "Slot is already empty. Press key.");
+        getkey(2);
+        selected = 0;
+    }
+    if (selected == 1)
+    {
+        memset(&Slot, 0, sizeof(Slot));
+        save_slot_to_reu(menuslot);
+        changesmade = 1;
+    }
+
+    return changesmade;
+}
+
 // char renamemenuslot()
 // {
 //     // Routine to rename a chosen menu slot
@@ -570,7 +573,7 @@ void mainmenu()
 //
 //     do
 //     {
-//         key = cgetc();
+//         key = cwin_getch();
 //         if ((key > 47 && key < 58) || (key > 64 && key < 91)) // If keys 0 - 9 or a - z
 //         {
 //             menuslot = keytomenuslot(key);
@@ -688,7 +691,7 @@ void mainmenu()
 //
 //         do
 //         {
-//             key = cgetc(); // obtain alphanumeric key
+//             key = cwin_getch(); // obtain alphanumeric key
 //             if (key == CH_F7)
 //             {
 //                 select = 1;
@@ -744,7 +747,7 @@ void mainmenu()
 //
 //                 do
 //                 {
-//                     key = cgetc();
+//                     key = cwin_getch();
 //                 } while (key != CH_F7 && key != 13 && key != 17 && key != 145);
 //
 //                 switch (key)
@@ -844,7 +847,7 @@ void mainmenu()
 //
 //     do
 //     {
-//         key = cgetc();
+//         key = cwin_getch();
 //         if ((key > 47 && key < 58) || (key > 64 && key < 91)) // If keys 0 - 9 or a - z
 //         {
 //             menuslot = keytomenuslot(key);
@@ -890,104 +893,77 @@ void mainmenu()
 //
 //     return changesmade;
 // }
-//
-// void editmenuoptions()
-// {
-//     // Routine for edit / re-order / delete menu slots
-//
-//     int changesmade = 0;
-//     int select = 0;
-//     char key;
-//
-//     do
-//     {
-//         clrscr();
-//         headertext("Edit/Re-order/Delete");
-//
-//         presentmenuslots();
-//
-//         gotoxy(0, 21);
-//         revers(1);
-//         textcolor(DMB_COLOR_SELECT);
-//         cprintf(" F1 ");
-//         revers(0);
-//         textcolor(DC_COLOR_TEXT);
-//         cputs(" Edit name");
-//
-//         gotoxy(20, 21);
-//         revers(1);
-//         textcolor(DMB_COLOR_SELECT);
-//         cprintf(" F2 ");
-//         revers(0);
-//         textcolor(DC_COLOR_TEXT);
-//         cputs(" Edit command");
-//
-//         gotoxy(0, 22);
-//         revers(1);
-//         textcolor(DMB_COLOR_SELECT);
-//         cprintf(" F3 ");
-//         revers(0);
-//         textcolor(DC_COLOR_TEXT);
-//         cputs(" Re-order slots");
-//
-//         gotoxy(20, 22);
-//         revers(1);
-//         textcolor(DMB_COLOR_SELECT);
-//         cprintf(" F5 ");
-//         revers(0);
-//         textcolor(DC_COLOR_TEXT);
-//         cputs(" Delete slot");
-//
-//         gotoxy(0, 23);
-//         revers(1);
-//         textcolor(DMB_COLOR_SELECT);
-//         cprintf(" F7 ");
-//         revers(0);
-//         textcolor(DC_COLOR_TEXT);
-//         cputs(" Quit");
-//
-//         select = 0;
-//
-//         do
-//         {
-//             key = cgetc();
-//             if (key == CH_F1 || key == CH_F2 || key == CH_F3 || key == CH_F5 || key == CH_F7)
-//             {
-//                 select = 1;
-//             }
-//         } while (select == 0);
-//
-//         switch (key)
-//         {
-//         case CH_F5:
-//             changesmade = deletemenuslot();
-//             break;
-//
-//         case CH_F1:
-//             changesmade = renamemenuslot();
-//             break;
-//
-//         case CH_F2:
-//             changesmade = edituserdefinedcommand();
-//             break;
-//
-//         case CH_F3:
-//             changesmade = reordermenuslot();
-//             break;
-//
-//         default:
-//             break;
-//         }
-//
-//     } while (key != CH_F7);
-//
-//     if (changesmade == 1)
-//     {
-//         gotoxy(0, 24);
-//         cputs("Saving. Please wait.          ");
-//         std_write(slotfilename, 0);
-//     }
-// }
+
+void editmenuoptions()
+// Routine for edit / re-order / delete menu slots
+{
+    char changesmade = 0;
+    char select = 0;
+    char key;
+
+    do
+    {
+        cwin_clear(&cw);
+        headertext("Edit/Re-order/Delete", 1);
+
+        presentmenuslots();
+
+        cwin_putat_string_reverse(&cw, 0, 21, " F1 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 21, "Edit name", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 20, 21, " F2 ", cfg.colors.key);
+        cwin_putat_string(&cw, 25, 21, "Edit command", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 40, 21, " F3 ", cfg.colors.key);
+        cwin_putat_string(&cw, 45, 21, "Re-order slots", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 60, 21, " F5 ", cfg.colors.key);
+        cwin_putat_string(&cw, 65, 21, "Delete slot", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 80, 21, " F7 ", cfg.colors.key);
+        cwin_putat_string(&cw, 85, 21, "Quit", cfg.colors.text);
+
+        select = 0;
+
+        do
+        {
+            key = cwin_getch();
+            if (key == CH_F1 || key == CH_F2 || key == CH_F3 || key == CH_F5 || key == CH_F7)
+            {
+                select = 1;
+            }
+        } while (select == 0);
+
+        switch (key)
+        {
+        case CH_F5:
+            changesmade = deletemenuslot();
+            break;
+
+        case CH_F1:
+            //changesmade = renamemenuslot();
+            break;
+
+        case CH_F2:
+            //changesmade = edituserdefinedcommand();
+            break;
+
+        case CH_F3:
+            //changesmade = reordermenuslot();
+            break;
+
+        default:
+            break;
+        }
+
+    } while (key != CH_F7);
+
+    if (changesmade == 1)
+    {
+        cwin_putat_string(&cw, 0, 24, "Saving. Please wait.          ", cfg.colors.text);
+        write_slotsfile(0);
+    }
+}
 
 void information()
 {
