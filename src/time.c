@@ -301,7 +301,7 @@ void get_ntp_time()
 
     uii_get_time();
 
-    if(cfg.verbose)
+    if (cfg.verbose)
     {
         cwin_console_printf(&cw, 7, "\nRTC clock set to %s", uii_data);
     }
@@ -362,6 +362,14 @@ char getcolor(char option)
         return cfg.colors.ok;
         break;
 
+    case 10:
+        return cfg.colors.background;
+        break;
+
+    case 11:
+        return cfg.colors.border;
+        break;
+
     default:
         return 0;
         break;
@@ -410,6 +418,16 @@ void pushcolor(char option, char color)
         cfg.colors.ok = color;
         break;
 
+    case 10:
+        cfg.colors.background = color;
+        vic.color_back = color;
+        break;
+
+    case 11:
+        cfg.colors.border = color;
+        vic.color_border = color;
+        break;
+
     default:
         break;
     }
@@ -424,8 +442,9 @@ char editcolors()
     char x;
     char option = 1;
     char color;
-    char setting[9][16] = {"Header line 1  ", "Header line 2  ", "Normal text    ", "Text input     ",
-                           "Key text       ", "Dir item normal", "Dir item select", "Error text     ", "OK text        "};
+    char setting[11][16] = {"Header line 1  ", "Header line 2  ", "Normal text    ", "Text input     ",
+                           "Key text       ", "Dir item normal", "Dir item select", "Error text     ", "OK text        ",
+                           "Background     ", "Border         "};
 
     do
     {
@@ -437,7 +456,7 @@ char editcolors()
         cwin_cursor_move(&cw, 0, 3);
         cwin_putat_string(&cw, 0, 3, "Current colour scheme:", cfg.colors.text);
 
-        for (x = 0; x < 9; x++)
+        for (x = 0; x < 11; x++)
         {
             sprintf(linebuffer, "%s: %2u", setting[x], getcolor(x + 1));
 
@@ -473,7 +492,7 @@ char editcolors()
         switch (key)
         {
         case CH_CURS_DOWN:
-            if (option < 9)
+            if (option < 11)
             {
                 option++;
             }
@@ -490,7 +509,7 @@ char editcolors()
             }
             else
             {
-                option = 9;
+                option = 11;
             }
             break;
 

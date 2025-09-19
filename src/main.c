@@ -168,6 +168,8 @@ __noinline void mainloop(void)
 	cfg.timeon = 1;
 	cfg.secondsfromutc = 7200;
 	cfg.verbose = 1;
+	cfg.colors.background = VCOL_BLACK;
+	cfg.colors.border = VCOL_BLACK;
 	cfg.colors.header1 = VCOL_GREEN;
 	cfg.colors.header2 = VCOL_LT_GREEN;
 	cfg.colors.text = VCOL_YELLOW;
@@ -186,7 +188,7 @@ __noinline void mainloop(void)
 
 	// Prepare output window
 	cwin_init(&cw, (char *)0x0400, 0, 0, 40, 25);
-	cwin_clear(&cw);	
+	cwin_clear(&cw);
 
 	// Initialize the sprite
 	spr_init((char *)0x0400);
@@ -228,6 +230,11 @@ __noinline void mainloop(void)
 		// with verbose off if config file sets verbose off.
 		// But can't do this before uii_detect() as that needs to be tested before config can be read.
 		readconfigfile();
+
+		// Recolor header in case config file has different color scheme
+		headertext("Starting....", 0);
+		vic.color_border = cfg.colors.border;
+		vic.color_back = cfg.colors.background;
 
 		// Therefore we print verbose feedback on UCI detection success only now
 		if (cfg.verbose)
@@ -321,7 +328,7 @@ __noinline void mainloop(void)
 		fc3_call(1, time_main);
 
 		// Uncomment to pause on boot status feedback for debug
-		//cwin_getch();
+		// cwin_getch();
 	}
 	else
 	{

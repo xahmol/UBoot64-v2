@@ -185,22 +185,22 @@ void read_slotsfile(unsigned char verbose)
     for (x = 0; x < SLOTS; ++x)
     {
       // Debug
-      sprintf(Slot.path, "Path %2u", x);
-      sprintf(Slot.menu, "Menu %2u", x);
-      sprintf(Slot.file, "File %2u", x);
-      sprintf(Slot.cmd, "Cmd %2u", x);
-      sprintf(Slot.reu_image, "REU %2u", x);
-      sprintf(Slot.reu_path, "REUPath %2u", x);
-      Slot.reusize = x;
-      Slot.runboot = x;
-      Slot.device = x;
-      Slot.command = 0;
-      sprintf(Slot.image_a_path, "ImgAPath %2u", x);
-      sprintf(Slot.image_a_file, "ImgAFile %2u", x);
-      Slot.image_a_id = x;
-      sprintf(Slot.image_b_path, "ImgBPath %2u", x);
-      sprintf(Slot.image_b_file, "ImgBFile %2u", x);
-      Slot.image_b_id = x;
+      //sprintf(Slot.path, "Path %2u", x);
+      //sprintf(Slot.menu, "Menu %2u", x);
+      //sprintf(Slot.file, "File %2u", x);
+      //sprintf(Slot.cmd, "Cmd %2u", x);
+      //sprintf(Slot.reu_image, "REU %2u", x);
+      //sprintf(Slot.reu_path, "REUPath %2u", x);
+      //Slot.reusize = x;
+      //Slot.runboot = x;
+      //Slot.device = x;
+      //Slot.command = 0;
+      //sprintf(Slot.image_a_path, "ImgAPath %2u", x);
+      //sprintf(Slot.image_a_file, "ImgAFile %2u", x);
+      //Slot.image_a_id = x;
+      //sprintf(Slot.image_b_path, "ImgBPath %2u", x);
+      //sprintf(Slot.image_b_file, "ImgBFile %2u", x);
+      //Slot.image_b_id = x;
       // End of debug
 
       if (verbose)

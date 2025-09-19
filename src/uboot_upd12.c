@@ -57,7 +57,7 @@ char linebuffer[100];
 // Screen output generic routines
 void error(const char *msg)
 {
-    cwin_console_printf(&cw, cfg.colors.text, "\n%s\nPress key to exit to BASIC.\n", msg);
+    cwin_console_printf(&cw, VCOL_YELLOW, "\n%s\nPress key to exit to BASIC.\n", msg);
     cwin_getch();
     exit(1);
 }
@@ -123,8 +123,8 @@ void CheckStatus(const char *message)
 {
     if (!UII_SUCCESS)
     {
-        cwin_console_printf(&cw, cfg.colors.text, "\nI/O error in %s.\n", message);
-        cwin_console_printf(&cw, cfg.colors.text, "\nStatus: %s\n", uii_status);
+        cwin_console_printf(&cw, VCOL_YELLOW, "\nI/O error in %s.\n", message);
+        cwin_console_printf(&cw, VCOL_YELLOW, "\nStatus: %s\n", uii_status);
         uii_abort();
         error("");
     }
@@ -151,7 +151,7 @@ void write_slotsfile()
     while (count < end)
     {
         cwin_cursor_move(&cw, 0, ypos);
-        cwin_console_printf(&cw, cfg.colors.text, "Writing slot data at %lu.", count);
+        cwin_console_printf(&cw, VCOL_YELLOW, "Writing slot data at %lu.", count);
         memset(save_buffer, 0, sizeof(save_buffer));
         if (end - count < SAVE_BUF_SIZE)
         {
@@ -237,7 +237,7 @@ void read_old_slotsfile()
     }
 
     ypos = cw.cy + 1;
-    cwin_console_printf(&cw, cfg.colors.text, "\nReading %lu to %lu", count, end);
+    cwin_console_printf(&cw, VCOL_YELLOW, "\nReading %lu to %lu", count, end);
 
     while (count < end)
     {
@@ -251,7 +251,7 @@ void read_old_slotsfile()
             reu_store(count, uii_data, bytesread);
             count += bytesread;
             cwin_cursor_move(&cw, 0, ypos);
-            cwin_console_printf(&cw, cfg.colors.text, "Reading slot data to %lu.", count);
+            cwin_console_printf(&cw, VCOL_YELLOW, "Reading slot data to %lu.", count);
         }
     }
 
@@ -301,27 +301,29 @@ void convert_slot_data()
 
         // Print status
         cwin_cursor_move(&cw, 0, ypos);
-        cwin_console_printf(&cw, cfg.colors.text, "Converting slot %u", x);
+        cwin_console_printf(&cw, VCOL_YELLOW, "Converting slot %u", x);
     }
 }
 
 int main(void)
 {
     // Set config defauklt values
-    cfg.version = CFGVERSION;
-    cfg.timeon = 1;
-    cfg.secondsfromutc = 7200;
-    cfg.verbose = 1;
-    cfg.colors.header1 = VCOL_GREEN;
-    cfg.colors.header2 = VCOL_LT_GREEN;
-    cfg.colors.text = VCOL_YELLOW;
-    cfg.colors.text_input = VCOL_WHITE;
-    cfg.colors.key = VCOL_CYAN;
-    cfg.colors.diritem_normal = VCOL_WHITE;
-    cfg.colors.diritem_select = VCOL_CYAN;
-    cfg.colors.error = VCOL_RED;
-    cfg.colors.ok = VCOL_GREEN;
-    strcpy(cfg.host, "pool.ntp.org");
+	cfg.version = CFGVERSION;
+	cfg.timeon = 1;
+	cfg.secondsfromutc = 7200;
+	cfg.verbose = 1;
+	cfg.colors.background = VCOL_BLACK;
+	cfg.colors.border = VCOL_BLACK;
+	cfg.colors.header1 = VCOL_GREEN;
+	cfg.colors.header2 = VCOL_LT_GREEN;
+	cfg.colors.text = VCOL_YELLOW;
+	cfg.colors.text_input = VCOL_WHITE;
+	cfg.colors.key = VCOL_CYAN;
+	cfg.colors.diritem_normal = VCOL_WHITE;
+	cfg.colors.diritem_select = VCOL_CYAN;
+	cfg.colors.error = VCOL_RED;
+	cfg.colors.ok = VCOL_GREEN;
+	strcpy(cfg.host, "pool.ntp.org");
 
     // Init VIC
     vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);
@@ -341,13 +343,13 @@ int main(void)
     }
     else
     {
-        cwin_put_string(&cw, "Ultimate Command Interface detected.", cfg.colors.text);
+        cwin_put_string(&cw, "Ultimate Command Interface detected.", VCOL_YELLOW);
         cwin_cursor_newline(&cw);
 
         // Feedback on UCI DOS version
         uii_identify();
-        cwin_put_string(&cw, "DOS version: ", cfg.colors.text);
-        cwin_put_string(&cw, uii_data, cfg.colors.text);
+        cwin_put_string(&cw, "DOS version: ", VCOL_YELLOW);
+        cwin_put_string(&cw, uii_data, VCOL_YELLOW);
         cwin_cursor_newline(&cw);
     }
 
@@ -355,7 +357,7 @@ int main(void)
     reudetected = reu_count_pages();
     if (reudetected)
     {
-        cwin_console_printf(&cw, cfg.colors.text, "\nREU detected, size: %d KB\n", reudetected * 64);
+        cwin_console_printf(&cw, VCOL_YELLOW, "\nREU detected, size: %d KB\n", reudetected * 64);
     }
     else
     {
@@ -376,35 +378,35 @@ int main(void)
     }
 
     // Read old config file.
-    cwin_console_printf(&cw, cfg.colors.text, "\nReading old config file...");
+    cwin_console_printf(&cw, VCOL_YELLOW, "\nReading old config file...");
     read_old_configfile();
 
     // Write new config file
-    cwin_console_printf(&cw, cfg.colors.text, "\nWriting new config file...");
+    cwin_console_printf(&cw, VCOL_YELLOW, "\nWriting new config file...");
     writeconfigfile();
 
     // Read old slots file to buffer REU memory
-    cwin_console_printf(&cw, cfg.colors.text, "\nReading old slots file...");
+    cwin_console_printf(&cw, VCOL_YELLOW, "\nReading old slots file...");
     read_old_slotsfile();
 
     // Convert old slot data in buffer REU memory to new format in normal REU
     cwin_cursor_move(&cw, 0, cw.cy + 1);
-    cwin_console_printf(&cw, cfg.colors.text, "\nConverting slot data...");
+    cwin_console_printf(&cw, VCOL_YELLOW, "\nConverting slot data...");
     convert_slot_data();
 
     // Write new slots file
     cwin_cursor_move(&cw, 0, cw.cy + 1);
-    cwin_console_printf(&cw, cfg.colors.text, "\nWriting new slots file...");
+    cwin_console_printf(&cw, VCOL_YELLOW, "\nWriting new slots file...");
     write_slotsfile();
 
     // Close
     cwin_cursor_move(&cw, 0, cw.cy + 1);
-    cwin_console_printf(&cw, cfg.colors.text, "\n\nUpdate completed.\n");
-    cwin_console_printf(&cw, cfg.colors.text, "Press key to exit to BASIC.\n");
+    cwin_console_printf(&cw, VCOL_YELLOW, "\n\nUpdate completed.\n");
+    cwin_console_printf(&cw, VCOL_YELLOW, "Press key to exit to BASIC.\n");
     cwin_getch();
 
     // Clear screen and exit to BASIC
     cwin_clear(&cw);
-
+    
     return 0;
 }

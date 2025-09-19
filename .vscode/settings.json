@@ -4,6 +4,7 @@
         "defines.h": "c",
         "cia.h": "c",
         "charwin.h": "c",
-        "u-time.h": "c"
+        "u-time.h": "c",
+        "time.h": "c"
     }
 }

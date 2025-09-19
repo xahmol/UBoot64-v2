@@ -131,6 +131,8 @@ struct SlotStruct {
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;
 struct ColorPalette {
+    char background;
+    char border;
     char header1;
     char header2;
     char text;
