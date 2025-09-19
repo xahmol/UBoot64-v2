@@ -23,6 +23,7 @@ CC = /home/xahmol/oscar64/bin/oscar64
 
 # Application names
 MAIN = uboot64
+UPD12 = uboot_upd12
 
 # Build versioning
 VERSION_MAJOR = 2
@@ -33,38 +34,34 @@ VERSION = v$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)-$(VERSION_TIMESTAM
 
 # Common compile flags
 CFLAGS  = -i=include -tm=$(SYS) -tf=crt16 -cid=3 -csub=1 -cname=$(MAIN) -O2 -dNOFLOAT -dHEAPCHECK -dVERSION="\"$(VERSION)\""
+CFLAGSUPD  = -i=include -tm=$(SYS) -O2 -dNOFLOAT -dHEAPCHECK -dVERSION="\"$(VERSION)\""
 
 # Sources
 MAINSRC = src/main.c
-
-# Files to add to disk
-#PROGRAM = -write $(MAIN).prg $(MAIN) -write $(GEN).prg $(GEN)
-#OVERLAYS = -write $(MAIN)lmc.prg $(MAIN)lmc -write $(MAIN)ovl1.prg $(MAIN)ovl1 -write $(MAIN)ovl2.prg $(MAIN)ovl2 -write $(MAIN)ovl3.prg $(MAIN)ovl3 -write $(MAIN)ovl4.prg $(MAIN)ovl4 -write $(MAIN)ovl5.prg $(MAIN)ovl5 -write $(MAIN)ovl6.prg $(MAIN)ovl6 -write $(GEN)lmc.prg $(GEN)lmc
-#ASSETS = -write $(MAIN)petv.prg $(MAIN)petv -write $(VIEW).prg $(VIEW)
-#SCREENS = -write $(MAIN)tscr.prg $(MAIN)tscr -write $(MAIN)hsc1.prg $(MAIN)hsc1 -write $(MAIN)hsc2.prg $(MAIN)hsc2 -write $(MAIN)hsc3.prg $(MAIN)hsc3 -write $(MAIN)hsc4.prg $(MAIN)hsc4
-#SAMPLESPROJ = -write loveisdrug.proj.prg loveisdrug.proj -write loveisdrug.scrn.prg loveisdrug.scrn -write bcc2024.proj.prg bcc2024.proj -write bcc2024.scrn.prg bcc2024.scrn -write fjaeld24.proj.prg fjaeld24.proj -write fjaeld24.scrn.prg fjaeld24.scrn -write vf7-v2.proj.prg vf7-v2.proj -write vf7-v2.scrn.prg vf7-v2.scrn
-#SAMPLESRAW = -write loveisthedrugraw.prg loveisthedrugraw -write fullackraw.prg fullackraw -write moneyislandraw.prg moneyislandraw -write morbosezraw.prg morbosezraw -write arcadevenusraw.prg arcadevenusraw -write drakardemonerraw.prg drakardemonerraw -write greatescaperaw.prg greatescaperaw -write aquamanraw.prg aquamanraw -write umlautraw.prg umlautraw -write vf7-v2raw.prg vf7-v2raw -write vf7-v2-80x50.seq vf7-v2-80x50,s
-#SAMPLESOWN = -write ludo.proj.prg ludo.proj -write ludo.scrn.prg ludo.scrn -write ludo.chrs.prg ludo.chrs -write ludo.chra.prg ludo.chra -write careers.proj.prg careers.proj -write careers.scrn.prg careers.scrn -write careers.chrs.prg careers.chrs -write careers.chra.prg careers.chra -write carmscr.proj.prg carmscr.proj -write carmscr.scrn.prg carmscr.scrn -write carmscr.chrs.prg carmscr.chrs -write carmscr.chra.prg carmscr.chra -write roundfont.proj.prg roundfont.proj -write roundfont.scrn.prg roundfont.scrn -write oscardemo.proj.prg oscardemo.proj -write oscardemo.scrn.prg oscardemo.scrn
+UPD12SRC = src/uboot_upd12.c
 
 # Hostname of Ultimate II+ target for deployment. Edit for proper IP and usb number
 ULTHOST = ftp://192.168.1.52/usb0/Dev/
 
 # ZIP file contents
-#ZIP = $(MAIN)_$(VERSION).zip
-#README = README.pdf
+ZIP = $(MAIN)_$(VERSION).zip
+README = README.pdf
 
 ########################################
 
 .SUFFIXES:
 .PHONY: all clean deploy
-all: $(MAIN).crt
+all: $(MAIN).crt $(UPD12).prg $(ZIP)
 
 $(MAIN).crt: $(MAINSRC)
 	$(CC) $(CFLAGS) -n -o=build/$(MAIN).crt $<
 
+$(UPD12).prg: $(UPD12SRC)
+	$(CC) $(CFLAGSUPD) -n -o=build/$(UPD12).prg $<
+
 # Creating ZIP file for distribution
-#$(ZIP):
-#	zip -j $(ZIP) build/*.d* $(README)
+$(ZIP):
+	zip -j $(ZIP) build/$(MAIN).crt build/$(UPD12).prg $(README)
 
 # Cleaning repo of build files
 clean:
@@ -72,4 +69,4 @@ clean:
 
 # To deploy software to UII+ enter make deploy. Obviously C128 needs to powered on with UII+ and USB drive connected.
 deploy:
-	wput -u build/*.crt $(ULTHOST)
+	wput -u build/$(MAIN).crt build/$(UPD12).prg $(ULTHOST)

@@ -165,7 +165,7 @@ void read_slotsfile(unsigned char verbose)
 // Function to read slots file
 // Input: verbose - if non-zero, print status messages
 {
-  unsigned char x;
+  char x;
   long count = SLOT_REU_START;
   long end = SLOT_REU_START + (sizeof(Slot) * SLOTS);
   unsigned bytesread;
