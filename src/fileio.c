@@ -181,6 +181,7 @@ void read_slotsfile(unsigned char verbose)
     // Create slot with default values
     memset(&Slot, 0, sizeof(Slot));
     Slot.cfgvs = CFGVERSION;
+    strncpy(Slot.padding, "uboot64 x mol", 13); // Padding to make structure size a multiple of 16
 
     for (x = 0; x < SLOTS; ++x)
     {
@@ -197,10 +198,10 @@ void read_slotsfile(unsigned char verbose)
       //Slot.command = 0;
       //sprintf(Slot.image_a_path, "ImgAPath %2u", x);
       //sprintf(Slot.image_a_file, "ImgAFile %2u", x);
-      //Slot.image_a_id = x;
+      //Slot.image_a_id = 8;
       //sprintf(Slot.image_b_path, "ImgBPath %2u", x);
       //sprintf(Slot.image_b_file, "ImgBFile %2u", x);
-      //Slot.image_b_id = x;
+      //Slot.image_b_id = 9;
       // End of debug
 
       if (verbose)

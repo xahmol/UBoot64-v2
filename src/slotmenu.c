@@ -208,290 +208,286 @@ void mainmenu()
     menuselect = key;
 }
 
-// void pickmenuslot()
-// {
-//     // Routine to pick a slot to store the chosen dir trace path
-//
-//     char menuslot;
-//     char key, plusmin;
-//     char yesno;
-//     char selected = 0;
-//
-//     // clrscr();
-//     // printf("A ID: %d Imagelen: %3d\n",imageaid,strlen(imageaname));
-//     // printf("%s\n",imageaname);
-//     // printf("%s\n",imageapath);
-//     // printf("File name len: %3d\n",strlen(pathfile));
-//     // printf("%s\n",pathfile);
-//     // printf("B ID: %d Imagelen: %3d\n",imagebid,strlen(imagebname));
-//     // printf("%s\n",imagebname);
-//     // printf("%s\n",imagebpath);
-//     // cwin_getch();
-//     // strcpy(linebuffer,"");
-//     // textInput(0,24,linebuffer,20);
-//     // strcpy(Slot->menu,linebuffer);
-//     // cwin_getch();
-//
-//     clrscr();
-//     headertext("Choose menuslot.");
-//     presentmenuslots();
-//     gotoxy(0, 21);
-//     cputs("Choose slot by pressing key: ");
-//     do
-//     {
-//         key = cwin_getch();
-//     } while ((key < 48 || key > 57) && (key < 65 || key > 90));
-//     menuslot = keytomenuslot(key);
-//     selected = 1;
-//     Slot = FirstSlot + menuslot;
-//     cprintf("%c", key);
-//
-//     if (strlen(Slot->menu) != 0)
-//     {
-//         gotoxy(0, 22);
-//         cprintf("Slot not empty. Edit? Y/N ");
-//         yesno = getkey(128);
-//         cprintf("%c", yesno);
-//         if (yesno == 78)
-//         {
-//             selected = 0;
-//         }
-//     }
-//     else
-//     {
-//         StringSafeCopy(Slot->menu, pathfile, 20);
-//     }
-//     if (selected == 1)
-//     {
-//         clearArea(0, 22, SCREENW, 3);
-//         cputsxy(0, 23, "Choose name for slot:");
-//
-//         textInput(0, 24, Slot->menu, 20);
-//
-//         clearArea(0, 23, SCREENW, 2);
-//         gotoxy(0, 23);
-//         if (reuflag || addmountflag)
-//         {
-//             if (reuflag)
-//             {
-//
-//                 cputs("Select REU size (+/-/ENTER):");
-//
-//                 do
-//                 {
-//                     gotoxy(0, 24);
-//                     cprintf("REU file size: (%i) %s  ", Slot->reusize, reusizelist[Slot->reusize]);
-//                     do
-//                     {
-//                         plusmin = cwin_getch();
-//                     } while (plusmin != '+' && plusmin != '-' && plusmin != CH_ENTER);
-//                     if (plusmin == '+')
-//                     {
-//                         Slot->reusize++;
-//                         if (Slot->reusize > 7)
-//                         {
-//                             Slot->reusize = 0;
-//                         }
-//                     }
-//                     if (plusmin == '-')
-//                     {
-//                         if (Slot->reusize == 0)
-//                         {
-//                             Slot->reusize = 7;
-//                         }
-//                         else
-//                         {
-//                             Slot->reusize--;
-//                         }
-//                     }
-//                 } while (plusmin != CH_ENTER);
-//                 StringSafeCopy(Slot->reu_image, imagename, 19);
-//                 Slot->command = Slot->command | COMMAND_REU;
-//             }
-//             else
-//             {
-//                 if (addmountflag == 1)
-//                 {
-//                     Slot->image_a_id = imageaid;
-//                     strcpy(Slot->image_a_path, imageapath);
-//                     strcpy(Slot->image_a_file, imageaname);
-//                     Slot->command = Slot->command | COMMAND_IMGA;
-//                 }
-//                 else
-//                 {
-//                     Slot->image_b_id = imagebid;
-//                     strcpy(Slot->image_b_path, imagebpath);
-//                     strcpy(Slot->image_b_file, imagebname);
-//                     Slot->command = Slot->command | COMMAND_IMGB;
-//                 }
-//             }
-//         }
-//         else
-//         {
-//             if (inside_mount)
-//             {
-//                 Slot->device = imageaid;
-//                 Slot->image_a_id = imageaid;
-//                 strcpy(Slot->image_a_path, imageapath);
-//                 strcpy(Slot->image_a_file, imageaname);
-//                 Slot->command = Slot->command | COMMAND_IMGA;
-//             }
-//             else
-//             {
-//                 Slot->device = pathdevice;
-//             }
-//             StringSafeCopy(Slot->file, pathfile, 19);
-//             if (runmountflag || fb_uci_mode)
-//             {
-//                 strcpy(Slot->path, "");
-//             }
-//             else
-//             {
-//                 StringSafeCopy(Slot->path, pathconcat(), 99);
-//             }
-//             Slot->runboot = pathrunboot;
-//         }
-//
-//         gotoxy(0, 24);
-//         cputs("Saving. Please wait.          ");
-//         std_write(slotfilename, 0);
-//     }
-// }
-//
-// void ErrorCheckMmounting()
-// {
-//     // Error handling for disk and REU mounting
-//
-//     if (!uii_success())
-//     {
-//         printf("\nError on mounting.\n");
-//         printf("%s\n", uii_status);
-//         errorexit();
-//     }
-// }
-//
-// void mountimage(char device, char *path, char *image)
-// {
-//     // Mount an imamage on an Ultimate emulated drive
-//     // Device = IEC ID, path and image are path and filename to image to mount
-//
-//     uii_change_dir(path);
-//     uii_mount_disk(device, image);
-//     ErrorCheckMmounting();
-// }
-//
-// void ToggleDrivePower(char ab, char on)
-// {
-//     // Toggle power for the Ultimate drives
-//     // - ab: Drive A = 0, Drive B = 1
-//     // - on: 0 = switch off, 1 = switch on
-//
-//     if (!uii_parse_deviceinfo())
-//     {
-//         ErrorCheckMmounting();
-//     }
-//
-//     if (uii_devinfo[ab].exist)
-//     {
-//         // Drive selected and existing
-//         cprintf("Drive %s ", (ab) ? "B" : "A");
-//
-//         if (on)
-//         {
-//             if (!uii_devinfo[ab].power)
-//             {
-//                 // Power on drive A if needed
-//                 if (!ab)
-//                 {
-//                     uii_enable_drive_a();
-//                 }
-//                 else
-//                 {
-//                     uii_enable_drive_b();
-//                 }
-//                 cputs("powered on.\n");
-//                 cputs("Waiting for drive to be ready.");
-//                 delay(2);
-//             }
-//             else
-//             {
-//                 cputs("already on.\n");
-//             }
-//         }
-//
-//         if (!on)
-//         {
-//             if (uii_devinfo[ab].power)
-//             {
-//                 // Power on drive A if needed
-//                 if (!ab)
-//                 {
-//                     uii_disable_drive_a();
-//                 }
-//                 else
-//                 {
-//                     uii_disable_drive_b();
-//                 }
-//                 cputs("powered off.\n");
-//             }
-//             else
-//             {
-//                 cputs("already off.\n");
-//             }
-//         }
-//     }
-//
-//     if (!uii_success())
-//     {
-//         ErrorCheckMmounting();
-//     }
-// }
-//
-// void runbootfrommenu(int select)
-// {
-//     // Function to execute selected boot option choice slot 0-9
-//     // Input: select: chosen menuslot 0-9
-//
-//     Slot = FirstSlot + select;
-//
-//     clrscr();
-//     gotoxy(0, 0);
-//     if (Slot->command & COMMAND_IMGA)
-//     {
-//         cprintf("%s on ID %d.\n", Slot->image_a_file, Slot->image_a_id);
-//         ToggleDrivePower(0, 1);
-//         mountimage(Slot->image_a_id, Slot->image_a_path, Slot->image_a_file);
-//     }
-//     if (Slot->command & COMMAND_IMGB)
-//     {
-//         cprintf("%s on ID %d.\n", Slot->image_b_file, Slot->image_b_id);
-//         ToggleDrivePower(1, 1);
-//         mountimage(Slot->image_b_id, Slot->image_b_path, Slot->image_b_file);
-//     }
-//     if (Slot->command & COMMAND_REU)
-//     {
-//         cprintf("REU file %s", Slot->reu_image);
-//         uii_change_dir(Slot->image_a_path);
-//         uii_open_file(1, Slot->reu_image);
-//         uii_load_reu(Slot->reusize);
-//         uii_close_file();
-//         ErrorCheckMmounting();
-//     }
-//
-//     // Enter correct directory path on correct device number
-//     if (Slot->runboot & EXEC_MOUNT)
-//     {
-//         // Run from mounted disk
-//         execute(Slot->file, Slot->image_a_id, Slot->runboot, Slot->cmd);
-//     }
-//     else
-//     {
-//         // Run from IEC filesystem
-//         cmd(Slot->device, Slot->path);
-//         execute(Slot->file, Slot->device, Slot->runboot, Slot->cmd);
-//     }
-// }
-//
+void pickmenuslot()
+// Routine to pick a slot to store the chosen dir trace path
+{
+    char menuslot;
+    char key, plusmin;
+    char yesno;
+    char selected = 0;
+
+    cwin_clear(&cw);
+    headertext("Choose menuslot.");
+    presentmenuslots();
+    cwin_cursor_move(&cw, 0, 21);
+    cwin_console_printf(&cw, cfg.colors.text, "Choose slot by pressing key: ");
+    do
+    {
+        key = cwin_getch();
+    } while ((key < 48 || key > 57) && (key < 65 || key > 90));
+    menuslot = keytomenuslot(key);
+    selected = 1;
+    get_slot_from_reu(menuslot);
+    cwin_console_printf(&cw, cfg.colors.text, "%c", key);
+
+    if (strlen(Slot.menu) != 0)
+    {
+        cwin_cursor_move(&cw, 0, 22);
+        cwin_console_printf(&cw, cfg.colors.text, "Slot not empty. Edit? Y/N ");
+        yesno = getkey(128);
+        cwin_console_printf(&cw, cfg.colors.text, "%c", yesno);
+        if (yesno == 78)
+        {
+            selected = 0;
+        }
+    }
+    else
+    {
+        strncpy(Slot.menu, pathfile, MAXMENUNAME - 1);
+        Slot.menu[MAXMENUNAME - 1] = 0;
+    }
+    if (selected == 1)
+    {
+        cwin_cursor_move(&cw, 0, 22);
+        cwin_fill_rect_raw(&cw, 0, 22, 40, 3, SC_SPACE, cfg.colors.text);
+        cwin_console_printf(&cw, cfg.colors.text, "Choose name for slot:");
+
+        textInput(0, 24, 40, Slot.menu, MAXMENUNAME, 0);
+
+        cwin_fill_rect_raw(&cw, 0, 23, 40, 2, SC_SPACE, cfg.colors.text);
+        cwin_cursor_move(&cw, 0, 23);
+        if (reuflag || addmountflag)
+        {
+            if (reuflag)
+            {
+                cwin_console_printf(&cw, cfg.colors.text, "Select REU size (+/-/ENTER):");
+
+                do
+                {
+                    cwin_cursor_move(&cw, 0, 24);
+                    cwin_console_printf(&cw, cfg.colors.text, "REU file size: (%i) %s  ", Slot.reusize, reusizelist[Slot.reusize]);
+                    do
+                    {
+                        plusmin = cwin_getch();
+                    } while (plusmin != '+' && plusmin != '-' && plusmin != CH_ENTER);
+                    if (plusmin == '+')
+                    {
+                        Slot.reusize++;
+                        if (Slot.reusize > 7)
+                        {
+                            Slot.reusize = 0;
+                        }
+                    }
+                    if (plusmin == '-')
+                    {
+                        if (Slot.reusize == 0)
+                        {
+                            Slot.reusize = 7;
+                        }
+                        else
+                        {
+                            Slot.reusize--;
+                        }
+                    }
+                } while (plusmin != CH_ENTER);
+
+                strncpy(Slot.reu_image, imagename, MAXFILENAME - 1);
+                Slot.reu_image[MAXFILENAME - 1] = 0;
+                Slot.command = Slot.command | COMMAND_REU;
+            }
+            else
+            {
+                if (addmountflag == 1)
+                {
+                    Slot.image_a_id = imageaid;
+                    strncpy(Slot.image_a_path, imageapath, MAXPATHLEN - 1);
+                    Slot.image_a_path[MAXPATHLEN - 1] = 0;
+                    strncpy(Slot.image_a_file, imageaname, MAXFILENAME - 1);
+                    Slot.image_a_file[MAXFILENAME - 1] = 0;
+                    Slot.command = Slot.command | COMMAND_IMGA;
+                }
+                else
+                {
+                    Slot.image_b_id = imagebid;
+                    strncpy(Slot.image_b_path, imagebpath, MAXPATHLEN - 1);
+                    Slot.image_b_path[MAXPATHLEN - 1] = 0;
+                    strncpy(Slot.image_b_file, imagebname, MAXFILENAME - 1);
+                    Slot.image_b_file[MAXFILENAME - 1] = 0;
+                    Slot.command = Slot.command | COMMAND_IMGB;
+                }
+            }
+        }
+        else
+        {
+            if (inside_mount)
+            {
+                Slot.device = imageaid;
+                Slot.image_a_id = imageaid;
+                strncpy(Slot.image_a_path, imageapath, MAXPATHLEN - 1);
+                Slot.image_a_path[MAXPATHLEN - 1] = 0;
+                strncpy(Slot.image_a_file, imageaname, MAXFILENAME - 1);
+                Slot.image_a_file[MAXFILENAME - 1] = 0;
+                Slot.command = Slot.command | COMMAND_IMGA;
+            }
+            else
+            {
+                Slot.device = pathdevice;
+            }
+            strncpy(Slot.file, pathfile, MAXFILENAME - 1);
+            Slot.file[MAXFILENAME - 1] = 0;
+
+            if (runmountflag || fb_uci_mode)
+            {
+                strcpy(Slot.path, "");
+            }
+            else
+            {
+                strncpy(Slot.path, pathconcat(), MAXPATHLEN - 1);
+                Slot.path[MAXPATHLEN - 1] = 0;
+            }
+            Slot.runboot = pathrunboot;
+        }
+
+        cwin_cursor_move(&cw, 0, 24);
+        cwin_console_printf(&cw, cfg.colors.text, "Saving. Please wait.          ");
+        write_slotsfile(0);
+    }
+}
+
+void ErrorCheckMmounting()
+// Error handling for disk and REU mounting
+{
+
+    if (!UII_SUCCESS)
+    {
+        cwin_console_printf(&cw, cfg.colors.text, "\nError on mounting.\n");
+        cwin_console_printf(&cw, cfg.colors.text, "%s\n", uii_status);
+        errorexit("");
+    }
+}
+
+void mountimage(char device, char *path, char *image)
+// Mount an imamage on an Ultimate emulated drive
+// Device = IEC ID, path and image are path and filename to image to mount
+{
+
+    uii_change_dir(path);
+    uii_mount_disk(device, image);
+    ErrorCheckMmounting();
+}
+
+void ToggleDrivePower(char ab, char on)
+// Toggle power for the Ultimate drives
+// - ab: Drive A = 0, Drive B = 1
+// - on: 0 = switch off, 1 = switch on
+{
+    if (!uii_parse_deviceinfo())
+    {
+        ErrorCheckMmounting();
+    }
+
+    if (uii_devinfo[ab].exist)
+    {
+        // Drive selected and existing
+        cwin_console_printf(&cw, cfg.colors.text, "Drive %s ", (ab) ? "B" : "A");
+
+        if (on)
+        {
+            if (!uii_devinfo[ab].power)
+            {
+                // Power on drive A if needed
+                if (!ab)
+                {
+                    uii_enable_drive_a();
+                }
+                else
+                {
+                    uii_enable_drive_b();
+                }
+                cwin_console_printf(&cw, cfg.colors.text, "powered on.\n");
+                cwin_console_printf(&cw, cfg.colors.text, "Waiting for drive to be ready.\n");
+                delay(2);
+            }
+            else
+            {
+                cwin_console_printf(&cw, cfg.colors.text, "already on.\n");
+            }
+        }
+
+        if (!on)
+        {
+            if (uii_devinfo[ab].power)
+            {
+                // Power on drive A if needed
+                if (!ab)
+                {
+                    uii_disable_drive_a();
+                }
+                else
+                {
+                    uii_disable_drive_b();
+                }
+                cwin_console_printf(&cw, cfg.colors.text, "powered off.\n");
+            }
+            else
+            {
+                cwin_console_printf(&cw, cfg.colors.text, "already off.\n");
+            }
+        }
+    }
+
+    if (!UII_SUCCESS)
+    {
+        ErrorCheckMmounting();
+    }
+}
+
+void runbootfrommenu(char select)
+// Function to execute selected boot option choice slot 0-9
+// Input: select: chosen menuslot 0-9
+{
+    get_slot_from_reu(select);
+
+    cwin_clear(&cw);
+    cwin_cursor_move(&cw, 0, 0);
+
+    if (Slot.command & COMMAND_IMGA)
+    {
+        cwin_console_printf(&cw, cfg.colors.text, "%s on ID %d.\n", Slot.image_a_file, Slot.image_a_id);
+        ToggleDrivePower(0, 1);
+        mountimage(Slot.image_a_id, Slot.image_a_path, Slot.image_a_file);
+        delay(1);
+    }
+    if (Slot.command & COMMAND_IMGB)
+    {
+        cwin_console_printf(&cw, cfg.colors.text, "%s on ID %d.\n", Slot.image_b_file, Slot.image_b_id);
+        ToggleDrivePower(1, 1);
+        mountimage(Slot.image_b_id, Slot.image_b_path, Slot.image_b_file);
+        delay(1);
+    }
+    if (Slot.command & COMMAND_REU)
+    {
+        cwin_console_printf(&cw, cfg.colors.text, "REU file %s", Slot.reu_image);
+        uii_change_dir(Slot.image_a_path);
+        uii_open_file(1, Slot.reu_image);
+        uii_load_reu(Slot.reusize);
+        uii_close_file();
+        ErrorCheckMmounting();
+    }
+
+    // Enter correct directory path on correct device number
+    if (Slot.runboot & EXEC_MOUNT)
+    {
+        // Run from mounted disk
+        execute(Slot.file, Slot.image_a_id, Slot.runboot, Slot.cmd);
+    }
+    else
+    {
+        // Run from IEC filesystem
+        cmd(Slot.device, Slot.path);
+        execute(Slot.file, Slot.device, Slot.runboot, Slot.cmd);
+    }
+}
 
 char deletemenuslot()
 // Routine to delete a chosen menu slot
@@ -622,7 +618,7 @@ void printnewmenuslot(char pos, char select, char *name)
     cwin_fill_rect_raw(&cw, 0, pos + 3, 40, 1, SC_SPACE, cfg.colors.text);
 
     // Key print
-    sprintf(linebuffer, " %s%c ", (select) ? "-" : " ", menuslotkey(pos));
+    cwin_console_printf(&cw, cfg.colors.text, linebuffer, " %s%c ", (select) ? "-" : " ", menuslotkey(pos));
     cwin_putat_string_reverse(&cw, 0, pos + 3, linebuffer, color_key);
 
     // Name print
@@ -835,7 +831,7 @@ char edituserdefinedcommand()
 
         cwin_putat_string(&cw, 0, 3, "Chosen slot:", cfg.colors.text);
 
-        sprintf(linebuffer, "  %c ", menuslotkey(menuslot));
+        cwin_console_printf(&cw, cfg.colors.text, linebuffer, "  %c ", menuslotkey(menuslot));
         cwin_putat_string_reverse(&cw, 0, 4, linebuffer, cfg.colors.key);
         cwin_putat_string(&cw, 5, 4, Slot.menu, cfg.colors.text);
 

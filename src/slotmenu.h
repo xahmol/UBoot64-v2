@@ -12,7 +12,7 @@ char reordermenuslot();
 char edituserdefinedcommand();
 void editmenuoptions();
 void information();
-void runbootfrommenu(int select);
+void runbootfrommenu(char select);
 
 #pragma compile("slotmenu.c")
 

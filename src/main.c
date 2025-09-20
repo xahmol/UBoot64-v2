@@ -348,7 +348,7 @@ __noinline void mainloop(void)
 		if ((menuselect > 47 && menuselect < 58) || (menuselect > 64 && menuselect < 91))
 		// Menuslots 0-9, a-z
 		{
-			// runbootfrommenu(keytomenuslot(menuselect));
+			runbootfrommenu(keytomenuslot(menuselect));
 		}
 
 		switch (menuselect)

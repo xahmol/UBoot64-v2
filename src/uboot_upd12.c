@@ -272,6 +272,10 @@ void convert_slot_data()
 
     for (x = 0; x < SLOTS; x++)
     {
+        // Print status
+        cwin_cursor_move(&cw, 0, ypos);
+        cwin_console_printf(&cw, VCOL_YELLOW, "Converting slot %u", x);
+
         // Read old slot data from buffer REU memory
         reu_load(srcaddr, (char *)&OldSlot, sizeof(OldSlot));
         srcaddr += sizeof(OldSlot);
@@ -294,14 +298,11 @@ void convert_slot_data()
         strncpy(Slot.image_b_path, OldSlot.image_b_path, MAXPATHLEN - 1);
         strncpy(Slot.image_b_file, OldSlot.image_b_file, MAXFILENAME - 1);
         Slot.image_b_id = OldSlot.image_b_id;
+        strncpy(Slot.padding, "uboot64 x mol", 13); // Padding to make structure size a multiple of 16
 
         // Write new slot data to normal REU memory
         reu_store(destaddr, (char *)&Slot, sizeof(Slot));
         destaddr += sizeof(Slot);
-
-        // Print status
-        cwin_cursor_move(&cw, 0, ypos);
-        cwin_console_printf(&cw, VCOL_YELLOW, "Converting slot %u", x);
     }
 }
 

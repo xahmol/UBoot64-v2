@@ -441,12 +441,12 @@ void DoDemoMode()
   if (uii_devinfo[0].exist && uii_devinfo[0].power && uii_devinfo[0].id != 8)
   {
     uii_disable_drive_a();
-    cwin_console_printf(&cw, cfg.colors.text, "Power off drive A: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
+    cwin_console_printf(&cw, cfg.colors.text, "Power off drive A: %s\n", (UII_SUCCESS) ? "Yes" : "No");
   }
   if (uii_devinfo[1].exist && uii_devinfo[1].power && uii_devinfo[1].id != 8)
   {
     uii_disable_drive_b();
-    cwin_console_printf(&cw, cfg.colors.text, "Power off drive B: %s\n\r", (UII_SUCCESS) ? "Yes" : "No");
+    cwin_console_printf(&cw, cfg.colors.text, "Power off drive B: %s\n", (UII_SUCCESS) ? "Yes" : "No");
   }
 
   // Ask user to disable other drives if needed
@@ -460,7 +460,7 @@ void DoDemoMode()
         cwin_console_printf(&cw, cfg.colors.text, "%02d ", (x == 22) ? 4 : x + 8);
       }
     }
-    cwin_put_string(&cw, " and press key.", cfg.colors.text);
+    cwin_put_string(&cw, "and press key.", cfg.colors.text);
     cwin_cursor_newline(&cw);
     cwin_getch();
   }

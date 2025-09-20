@@ -127,6 +127,7 @@ struct SlotStruct {
     char image_b_path[MAXPATHLEN];
     char image_b_file[MAXFILENAME];
     char image_b_id;
+    char padding[13]; // Padding to make structure size a multiple of 16, also room for future use
 };
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;
