@@ -64,6 +64,7 @@
 #include "fileio.h"
 #include "u-time.h"
 #include "slotmenu.h"
+#include "filebrowse.h"
 
 // Ram area for copied common routines code and common data, plus bss/heap/stack
 // Common routine code and data will be copied on startup from ROM bank 0
@@ -194,149 +195,139 @@ __noinline void mainloop(void)
 	spr_init((char *)0x0400);
 	spr_set(0, true, 320, 70, 0x0340 / 64, VCOL_CYAN, false, false, false);
 
-	if (!fb_selection_made)
+	headertext("Starting....", 0);
+	cwin_cursor_move(&cw, 0, 3);
+
+	cwin_put_string(&cw, "Detecting and reading...", cfg.colors.text);
+
+	// Is Ultimate Command Interface detected? If no, abort
+	if (!uii_detect())
 	{
-		headertext("Starting....", 0);
-		cwin_cursor_move(&cw, 0, 3);
+		cwin_put_string(&cw, "No Ultimate Command Interface enabled.", cfg.colors.text);
+		cwin_cursor_newline(&cw);
+		cwin_put_string(&cw, "Press key to exit.", cfg.colors.text);
+		cwin_cursor_newline(&cw);
+		cwin_getch();
+		fc3_exit();
+	}
 
-		cwin_put_string(&cw, "Detecting and reading...", cfg.colors.text);
+	// Wait for USB to be present by looping till dirchange to root successful
+	// Times out on 5 secs
+	cia1.tods = 0;
+	cia1.todt = 0;
+	do
+	{
+		uii_change_dir(configpath);
+	} while (!UII_SUCCESS || cia1.tods > 4);
+	if (!UII_SUCCESS)
+	{
+		errorexit("USB storage not found.");
+	}
 
-		// Is Ultimate Command Interface detected? If no, abort
-		if (!uii_detect())
-		{
-			cwin_put_string(&cw, "No Ultimate Command Interface enabled.", cfg.colors.text);
-			cwin_cursor_newline(&cw);
-			cwin_put_string(&cw, "Press key to exit.", cfg.colors.text);
-			cwin_cursor_newline(&cw);
-			cwin_getch();
-			fc3_exit();
-		}
+	// Read config file.
+	// Need to do this before printing verbose feedback to avoid printing feednack
+	// with verbose off if config file sets verbose off.
+	// But can't do this before uii_detect() as that needs to be tested before config can be read.
+	readconfigfile();
 
-		// Wait for USB to be present by looping till dirchange to root successful
-		// Times out on 5 secs
-		cia1.tods = 0;
-		cia1.todt = 0;
-		do
-		{
-			uii_change_dir(configpath);
-		} while (!UII_SUCCESS || cia1.tods > 4);
-		if (!UII_SUCCESS)
-		{
-			errorexit("USB storage not found.");
-		}
+	// Recolor header in case config file has different color scheme
+	headertext("Starting....", 0);
+	vic.color_border = cfg.colors.border;
+	vic.color_back = cfg.colors.background;
 
-		// Read config file.
-		// Need to do this before printing verbose feedback to avoid printing feednack
-		// with verbose off if config file sets verbose off.
-		// But can't do this before uii_detect() as that needs to be tested before config can be read.
-		readconfigfile();
-
-		// Recolor header in case config file has different color scheme
-		headertext("Starting....", 0);
-		vic.color_border = cfg.colors.border;
-		vic.color_back = cfg.colors.background;
-
-		// Therefore we print verbose feedback on UCI detection success only now
-		if (cfg.verbose)
-		{
-			cwin_cursor_move(&cw, 0, 4);
-			cwin_put_string(&cw, "Ultimate Command Interface detected.", cfg.colors.text);
-			cwin_cursor_newline(&cw);
-		}
-		else
-		{
-			spinning(25, 3, verbosecounter++);
-		}
-
-		// Feedback on UCI DOS version
-		uii_identify();
-
-		if (cfg.verbose)
-		{
-			cwin_put_string(&cw, "DOS version: ", cfg.colors.text);
-			cwin_put_string(&cw, uii_data, cfg.colors.text);
-			cwin_cursor_newline(&cw);
-		}
-		else
-		{
-			spinning(25, 3, verbosecounter++);
-		}
-
-		// Check presence and size of REU
-		reudetected = reu_count_pages();
-		if (reudetected)
-		{
-			if (cfg.verbose)
-			{
-				cwin_console_printf(&cw, cfg.colors.text, "\nREU detected, size: %d KB\n", reudetected * 64);
-			}
-			else
-			{
-				spinning(25, 3, verbosecounter++);
-			}
-		}
-		else
-		{
-			errorexit("No REU detected.");
-		}
-
-		// Read slots file
-		read_slotsfile(1);
-
-		// Read (and print feedback of) drive configuration
-		if (!uii_parse_deviceinfo())
-		{
-			errorexit("Getting device info fails.");
-		}
-
-		if (cfg.verbose)
-		{
-			cwin_console_printf(&cw, cfg.colors.text, "\nRecognised Ultimate devices:\n");
-			if (uii_devinfo[0].exist)
-			{
-				cwin_console_printf(&cw, cfg.colors.text, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
-			}
-			if (uii_devinfo[1].exist)
-			{
-				cwin_console_printf(&cw, cfg.colors.text, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
-			}
-			if (uii_devinfo[2].exist)
-			{
-				cwin_console_printf(&cw, cfg.colors.text, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
-			}
-			if (uii_devinfo[3].exist)
-			{
-				cwin_console_printf(&cw, cfg.colors.text, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
-			}
-			cwin_console_printf(&cw, cfg.colors.text, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
-			cwin_console_printf(&cw, cfg.colors.text, "Active IEC IDs: ");
-			for (x = 0; x < 23; x++)
-			{
-				if (iec_devices[x])
-				{
-					cwin_console_printf(&cw, cfg.colors.text, "%02d ", (x == 22) ? 4 : x + 8);
-				}
-			}
-			cwin_cursor_newline(&cw);
-		}
-		else
-		{
-			spinning(25, 3, verbosecounter++);
-		}
-
-		// Set time from NTP server
-		fc3_call(1, time_main);
-
-		// Uncomment to pause on boot status feedback for debug
-		// cwin_getch();
+	// Therefore we print verbose feedback on UCI detection success only now
+	if (cfg.verbose)
+	{
+		cwin_cursor_move(&cw, 0, 4);
+		cwin_put_string(&cw, "Ultimate Command Interface detected.", cfg.colors.text);
+		cwin_cursor_newline(&cw);
 	}
 	else
 	{
-		if (fb_selection_made == 1)
+		spinning(25, 3, verbosecounter++);
+	}
+
+	// Feedback on UCI DOS version
+	uii_identify();
+
+	if (cfg.verbose)
+	{
+		cwin_put_string(&cw, "DOS version: ", cfg.colors.text);
+		cwin_put_string(&cw, uii_data, cfg.colors.text);
+		cwin_cursor_newline(&cw);
+	}
+	else
+	{
+		spinning(25, 3, verbosecounter++);
+	}
+
+	// Check presence and size of REU
+	reudetected = reu_count_pages();
+	if (reudetected)
+	{
+		if (cfg.verbose)
 		{
-			//			pickmenuslot();
+			cwin_console_printf(&cw, cfg.colors.text, "\nREU detected, size: %d KB\n", reudetected * 64);
+		}
+		else
+		{
+			spinning(25, 3, verbosecounter++);
 		}
 	}
+	else
+	{
+		errorexit("No REU detected.");
+	}
+
+	// Read slots file
+	read_slotsfile(1);
+
+	// Read (and print feedback of) drive configuration
+	if (!uii_parse_deviceinfo())
+	{
+		errorexit("Getting device info fails.");
+	}
+
+	if (cfg.verbose)
+	{
+		cwin_console_printf(&cw, cfg.colors.text, "\nRecognised Ultimate devices:\n");
+		if (uii_devinfo[0].exist)
+		{
+			cwin_console_printf(&cw, cfg.colors.text, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
+		}
+		if (uii_devinfo[1].exist)
+		{
+			cwin_console_printf(&cw, cfg.colors.text, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
+		}
+		if (uii_devinfo[2].exist)
+		{
+			cwin_console_printf(&cw, cfg.colors.text, "SoftIEC: ID %2d Pow %s\n", uii_devinfo[2].id, (uii_devinfo[2].power) ? "On" : "Off");
+		}
+		if (uii_devinfo[3].exist)
+		{
+			cwin_console_printf(&cw, cfg.colors.text, "Printer: ID %2d Pow %s\n", uii_devinfo[3].id, (uii_devinfo[3].power) ? "On" : "Off");
+		}
+		cwin_console_printf(&cw, cfg.colors.text, "IDs needing manual power switching: %s\n", (CheckActiveIECdevices()) ? "Yes" : "No");
+		cwin_console_printf(&cw, cfg.colors.text, "Active IEC IDs: ");
+		for (x = 0; x < 23; x++)
+		{
+			if (iec_devices[x])
+			{
+				cwin_console_printf(&cw, cfg.colors.text, "%02d ", (x == 22) ? 4 : x + 8);
+			}
+		}
+		cwin_cursor_newline(&cw);
+	}
+	else
+	{
+		spinning(25, 3, verbosecounter++);
+	}
+
+	// Set time from NTP server
+	fc3_call(1, time_main);
+
+	// Uncomment to pause on boot status feedback for debug
+	// cwin_getch();
 
 	// Disable sprite logo
 	spr_show(0, false);
@@ -355,7 +346,11 @@ __noinline void mainloop(void)
 		{
 		case CH_F1:
 			// Filebrowser
-			// fc3_call(2, filebrowser);
+			fc3_call(2, mainLoopBrowse);
+			if (fb_selection_made == 1)
+			{
+				//			pickmenuslot();
+			}
 			break;
 
 		case CH_F2:

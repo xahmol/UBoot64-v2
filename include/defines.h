@@ -2,6 +2,7 @@
 #define DEFINES_H_
 
 #include "c64/vic.h"
+#include "c64/charwin.h"
 
 // Screencodes
 #define SC_SPACE 0x20
