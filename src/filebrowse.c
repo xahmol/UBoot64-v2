@@ -860,12 +860,19 @@ void dir_print_entry(char printpos)
 // Print the current directory element at specified position
 // Input: printpos = position to print (0-18)
 {
+  char namebuffer[22];
+
   if (fb_uci_mode)
   {
-    sprintf(linebuffer, "%-21s %s", AscToPet(presentdirelement.name), fileTypeToStr(presentdirelement.meta.type));
+    strncpy(namebuffer, AscToPet(presentdirelement.name), 21);
+    namebuffer[21] = 0;
+    sprintf(linebuffer, "%-21s %s", namebuffer, fileTypeToStr(presentdirelement.meta.type));
   }
   else
   {
+    // Prepare name
+    strncpy(namebuffer, presentdirelement.name, 16);
+
     // Get file type to string
     strcpy(linebuffer2, (char *)fileTypeToStr(presentdirelement.meta.type));
 
@@ -875,10 +882,11 @@ void dir_print_entry(char printpos)
       linebuffer2[0] = linebuffer2[1];
       linebuffer2[1] = linebuffer2[2];
       linebuffer2[2] = 0;
+      namebuffer[15] = 0;
     }
     sprintf(linebuffer, (presentdirelement.meta.size < 10000) ? "%4u %-16s %s" : "%u %-15s %s",
             presentdirelement.meta.size,
-            presentdirelement.name,
+            namebuffer,
             linebuffer2);
   }
 
@@ -1173,14 +1181,85 @@ void FindFirstIECDrive()
   }
 }
 
-void mainLoopBrowse(void)
+void dir_go_down()
+// Scroll down in dir of active pane
 {
-  unsigned pos = 0;
-  char lastpage = 0;
-  char nextpage = 0;
-  char xpos, ypos, yoff;
+  // Are there dir entries? And is there a next entry?
+  if (presentdir.firstelement && presentdirelement.meta.next)
+  {
+    present = presentdirelement.meta.next;
+    dir_get_element(present);
+    presentdir.present = present;
+    presentdir.position++;
+
+    // Check if next entry is on a next page. If yes, print next page
+    if (presentdir.position > 18)
+    {
+      presentdir.position = 0;
+      presentdir.firstprint = present;
+      dir_draw(0);
+    }
+    else
+    {
+      // Select next entry
+      previous = presentdirelement.meta.prev;
+      dir_get_element(previous);
+      dir_print_entry(presentdir.position - 1);
+      dir_get_element(present);
+      dir_print_entry(presentdir.position);
+    }
+  }
+}
+
+void dir_go_up()
+// Scroll up in dir of active pane
+{
   char count;
 
+  // Are there dir entries? And is there a previous entry?
+  if (presentdir.firstelement && presentdirelement.meta.prev)
+  {
+    present = presentdirelement.meta.prev;
+    dir_get_element(present);
+    presentdir.present = present;
+
+    // Check if previous entry is on a previous page. If yes, print previous page
+    if (!presentdir.position)
+    {
+      presentdir.position = 18;
+      for (count = 0; count < 19; count++)
+      {
+        if (!presentdirelement.meta.prev)
+        {
+          break;
+        }
+        present = presentdirelement.meta.prev;
+        dir_get_element(present);
+        cwin_putat_string(&cw, 0, 2, "Scrolling up...", cfg.colors.text);
+      }
+      presentdir.firstprint = present;
+      cwin_fill_rect_raw(&cw, 0, 2, 40, 1, SC_SPACE, cfg.colors.text);
+      dir_draw(0);
+    }
+    else
+    {
+      // Select previous entry
+      presentdir.position--;
+      next = presentdirelement.meta.next;
+      dir_get_element(next);
+      dir_print_entry(presentdir.position + 1);
+      dir_get_element(present);
+      dir_print_entry(presentdir.position);
+    }
+  }
+}
+
+void mainLoopBrowse(void)
+{
+  char key;
+  char done = 0;
+
+  sorted = 0;
   trace = 0;
   depth = 0;
   reuflag = 0;
@@ -1199,6 +1278,38 @@ void mainLoopBrowse(void)
   uii_change_dir_home();
   browse_updatescreen();
 
+  do
+  {
+    present = presentdir.present;
+    if (present)
+    {
+      dir_get_element(present);
+    }
+
+    key = cwin_getch();
+
+    switch (key)
+    {
+    case CH_CURS_DOWN:
+      // Curs Down: Scroll down
+      dir_go_down();
+      break;
+
+    case CH_CURS_UP:
+      // Curs Up: Scroll up
+      dir_go_up();
+      break;
+
+    case 'q':
+    case CH_F7:
+      trace = 0;
+      done = 1;
+      break;
+
+    default:
+      break;
+    }
+  } while (!done);
   //  while (1)
   //  {
   //    current = cwd.selected;
@@ -1591,5 +1702,4 @@ void mainLoopBrowse(void)
   //  }
   //
   // done:;
-  cwin_getch();
 }
