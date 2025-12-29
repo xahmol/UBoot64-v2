@@ -177,8 +177,12 @@ char configversion = CFGVERSION;
 char menuselect;
 char fb_selection_made = 0;
 char fb_uci_mode;
-char inside_mount;
 char iec_devices[23];
+<<<<<<< Updated upstream
+=======
+char inside_mount;
+char verbosecounter;
+>>>>>>> Stashed changes
 
 // Macro for indirect cross bank call
 #define FCALL(f) fcall(__bankof(f), f)

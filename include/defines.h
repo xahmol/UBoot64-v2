@@ -66,20 +66,28 @@
 #define CH_F6 139         // Petscii control code for F6
 #define CH_F7 136         // Petscii control code for F7
 #define CH_F8 140         // Petscii control code for F8
+#define CH_LARROW 0x5f    // Petscii code for left arrow
+#define CH_UARROW 0x5e    // Petscii code for up arrow
+#define CH_POUND 0x5c     // Petscii code for pound sign
 
 // Command flag values
-#define COMMAND_CMD             0x01
-#define COMMAND_REU             0x02
-#define COMMAND_IMGA            0x04
-#define COMMAND_IMGB            0x08
+#define COMMAND_CMD 0x01
+#define COMMAND_REU 0x02
+#define COMMAND_IMGA 0x04
+#define COMMAND_IMGB 0x08
 
 // Execute flag values
-#define EXEC_MOUNT              0x01
-#define EXEC_COMMA1             0x02
-#define EXEC_DEMO               0x10
+#define EXEC_MOUNT 0x01
+#define EXEC_COMMA1 0x02
+#define EXEC_DEMO 0x10
 
+<<<<<<< Updated upstream
 // Config version and
 #define CFGVERSION              0x02
+=======
+// Config defaults
+#define CFGVERSION 0x02
+>>>>>>> Stashed changes
 
 typedef unsigned char BYTE;
 
@@ -101,7 +109,7 @@ typedef unsigned char BYTE;
 
 // Min function
 #ifndef min
-#define min(a,b) ( (a) < (b) ? (a) : (b) )
+#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 // Global variables
@@ -119,8 +127,14 @@ extern BYTE reuflag;
 extern BYTE addmountflag;
 extern BYTE runmountflag;
 extern int reudetected;
+<<<<<<< Updated upstream
 struct SlotStruct {
     BYTE cfgvs;
+=======
+struct SlotStruct
+{
+    char cfgvs;
+>>>>>>> Stashed changes
     char path[MAXPATHLEN];
     char menu[21];
     char file[MAXFILENAME];
@@ -140,7 +154,26 @@ struct SlotStruct {
 };
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;
+<<<<<<< Updated upstream
 struct ConfigStruct {
+=======
+struct ColorPalette
+{
+    char background;
+    char border;
+    char header1;
+    char header2;
+    char text;
+    char text_input;
+    char key;
+    char diritem_normal;
+    char diritem_select;
+    char error;
+    char ok;
+};
+struct ConfigStruct
+{
+>>>>>>> Stashed changes
     char version;
     char timeon;
     char host[80];
