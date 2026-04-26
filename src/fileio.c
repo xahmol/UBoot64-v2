@@ -140,7 +140,7 @@ void write_slotsfile(char verbose)
       if(cfg.verbose)
       {
         cwin_cursor_move(&cw, 0, 8);
-        cwin_console_printf(&cw, cfg.colors.text, "Writing slot data at %lu.", count);
+        cwin_console_printf(&cw, cfg.colors.text, "Writing slot data at %ld.", count);
       }
       else
       {
@@ -240,7 +240,7 @@ void read_slotsfile(unsigned char verbose)
         if(cfg.verbose)
         {
           cwin_cursor_move(&cw, 0, 8);
-          cwin_console_printf(&cw, cfg.colors.text, "Reading slot data to %lu.", count);
+          cwin_console_printf(&cw, cfg.colors.text, "Reading slot data to %ld.", count);
         }
         else
         {

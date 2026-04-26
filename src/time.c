@@ -561,7 +561,12 @@ void edittimeconfig()
         cwin_console_printf(&cw, cfg.colors.text, "NTP time update settings:\n");
         cwin_console_printf(&cw, cfg.colors.text, "- Update on boot toggle: %s\n", (cfg.timeon == 0) ? "Off" : "On");
         cwin_console_printf(&cw, cfg.colors.text, "- Offset to UTC in seconds: %ld\n", cfg.secondsfromutc);
-        cwin_console_printf(&cw, cfg.colors.text, "- NTP server hostname:\n%.40s\n", cfg.host);
+        {
+          char hostbuf[41];
+          strncpy(hostbuf, cfg.host, 40);
+          hostbuf[40] = 0;
+          cwin_console_printf(&cw, cfg.colors.text, "- NTP server hostname:\n%s\n", hostbuf);
+        }
         cwin_console_printf(&cw, cfg.colors.text, "\nVerbose or silent startup: %s\n", (cfg.verbose == 0) ? "Silent" : "Verbose");
 
         cwin_putat_string(&cw, 0, 16, "Make your choice:", cfg.colors.text);

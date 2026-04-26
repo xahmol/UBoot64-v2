@@ -211,7 +211,7 @@ char dir_open(char lfn, unsigned char device)
     }
   }
 
-  // Return error code or 0 on succcess
+  // Return error code or 0 on success
   return error;
 }
 
@@ -244,16 +244,11 @@ char dir_readentry_iec(struct DirElement *l_dirent)
   char b, len;
   char i = 0;
 
-  // check that device is ready
+  // Read first link byte — zero means end of directory
   b = krnio_chrin();
   if (!b)
   {
-    // No entry found
     return 1;
-  }
-  if (krnio_status())
-  {
-    return 7;
   }
 
   // Skip second basic link byte
@@ -279,12 +274,6 @@ char dir_readentry_iec(struct DirElement *l_dirent)
     {
       linebuffer[i++] = b;
     }
-    // return if reading had error
-    if (krnio_status())
-    {
-      krnio_clrchn();
-      return 2;
-    }
   }
 
   // handle "B" BLOCKS FREE
@@ -300,19 +289,18 @@ char dir_readentry_iec(struct DirElement *l_dirent)
     return 3;
   }
 
-  // strip whitespace from right part of line
-  for (len = i; len > 0; --len)
+  // Find stripped length by scanning backwards for last non-whitespace char.
+  // Written as a plain while+break to avoid an Oscar64 for/continue miscompilation
+  // that zeroes the entire buffer before type detection can run.
+  len = i;
+  while (len > 0)
   {
-    b = linebuffer[len];
-    if (b == 0 ||
-        b == ' ' ||
-        b == 0xA0)
+    b = linebuffer[len - 1];
+    if (b != 0 && b != ' ' && b != 0xA0)
     {
-      linebuffer[len] = 0;
-      continue;
+      break;
     }
-    ++len;
-    break;
+    len--;
   }
 
   // parse file name
@@ -518,7 +506,8 @@ char dir_read(char sort)
   char presenttype;
   char datalength;
   char count = 0xff;
-  unsigned element;
+  unsigned long element;
+  unsigned long prevaddr;
   struct DirElement bufferdir;
   unsigned long workaddress;
   char inserted;
@@ -595,14 +584,28 @@ char dir_read(char sort)
       if (presentdirelement.meta.type == CBM_T_HEADER)
       {
         strcpy(presentdir.path, presentdirelement.name);
-        presentdir.path[presentdirelement.meta.length] = ',';
-        memcpy(&presentdir.path[presentdirelement.meta.length + 1], disk_id_buf, DISK_ID_LEN);
+        {
+          unsigned char namelen = strlen(presentdirelement.name);
+          presentdir.path[namelen] = ',';
+          memcpy(&presentdir.path[namelen + 1], disk_id_buf, DISK_ID_LEN);
+          presentdir.path[namelen + 1 + DISK_ID_LEN] = 0;
+          if (namelen + 1 + DISK_ID_LEN > 20)
+          {
+            presentdir.path[20] = 0;
+          }
+        }
+        // If disk name was empty, path[0] is still $00 — force non-zero so subsequent
+        // file entries are not mistaken for another header.
+        if (!presentdir.path[0])
+        {
+          presentdir.path[0] = ' ';
+        }
       }
       else
       {
         strcpy(presentdir.path, "Unknown type");
       }
-      break;
+      continue;  // header is not stored in the listing; keep reading file entries
     }
 
     // Check if blocks free entry is found
@@ -648,7 +651,8 @@ char dir_read(char sort)
           if (strcmp(bufferdir.name, presentdirelement.name) > 0)
           {
             // Insert before the first one?
-            if (!bufferdir.meta.prev)
+            prevaddr = bufferdir.meta.prev;
+            if (!prevaddr)
             {
               presentdirelement.meta.prev = 0;
               presentdirelement.meta.next = element;
@@ -660,13 +664,13 @@ char dir_read(char sort)
             else
             // Insert in between
             {
-              presentdirelement.meta.prev = bufferdir.meta.prev;
+              presentdirelement.meta.prev = prevaddr;
               presentdirelement.meta.next = element;
               bufferdir.meta.prev = present;
               reu_store(element, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
-              reu_load(bufferdir.meta.prev, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
+              reu_load(prevaddr, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
               bufferdir.meta.next = present;
-              reu_store(bufferdir.meta.prev, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
+              reu_store(prevaddr, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
             }
             inserted = 1;
             break;
@@ -821,7 +825,7 @@ void dir_print_id_and_path()
   }
   else
   {
-    cwin_console_printf(&cw, cfg.colors.text, "[%02i] %.20s", device, presentdir.path);
+    cwin_console_printf(&cw, cfg.colors.text, "[%02i] %s", device, presentdir.path);
     cwin_cursor_move(&cw, 0, 24);
     cwin_console_printf(&cw, cfg.colors.text, "(%s) %u bl. free", drivetype[devicetype[device]], presentdir.free);
   }
@@ -835,18 +839,18 @@ void dir_print_id_and_path()
     }
     else
     {
-      strncpy(linebuffer, pathconcat(), 255);
+      strncpy(pathbuffer, pathconcat(), 255);
     }
-    pathbuffer[255] = 0; // Ensure null termination
+    pathbuffer[255] = 0;
 
-    length = strlen((char *)linebuffer);
+    length = strlen(pathbuffer);
     if (length > 24)
     {
-      strcpy(linebuffer2, (char *)pathbuffer + length - 24);
+      strcpy(linebuffer2, pathbuffer + length - 24);
     }
     else
     {
-      strcpy(linebuffer2, (char *)pathbuffer);
+      strcpy(linebuffer2, pathbuffer);
     }
   }
   else
@@ -906,6 +910,7 @@ void dir_draw(unsigned char readdir)
 {
   char printpos = 0;
   unsigned long element;
+  unsigned long nextaddr;
 
   // Print header
   dir_print_id_and_path();
@@ -917,17 +922,17 @@ void dir_draw(unsigned char readdir)
     presentdir.present = presentdir.firstprint;
   }
 
+  // Read firstprint into local so the zero-check uses a plain variable
+  element = presentdir.firstprint;
+
   // Print no data if no valid entries in dir are found
-  if (!presentdir.firstprint)
+  if (!element)
   {
     cwin_putat_string(&cw, 0, 5, "Empty directory.", cfg.colors.error);
   }
   // Print entries until area is filled or last item is reached
   else
   {
-    // Get direlement
-    element = presentdir.firstprint;
-
     // Loop while area is not full and further direntries are still present
     do
     {
@@ -942,14 +947,12 @@ void dir_draw(unsigned char readdir)
       printpos++;
 
       // Check if next dir entry is present, if no: break. If yes: update present pointer
-      if (!presentdirelement.meta.next)
+      nextaddr = presentdirelement.meta.next;
+      if (!nextaddr)
       {
         break;
       }
-      else
-      {
-        element = presentdirelement.meta.next;
-      }
+      element = nextaddr;
 
     } while (printpos < 19);
     present = presentdir.present;
@@ -1030,122 +1033,121 @@ void browse_menu(void)
   }
 }
 
-// int changeDir(const BYTE device, char *dirname)
-//{
-//   int ret;
-//   register BYTE l = strlen(dirname);
-//   // char x;
-//
-//   if (dirname)
-//   {
-//     CheckMounttype(dirname);
-//
-//     if (mountflag == 2 && (trace == 1 || fb_uci_mode))
-//     {
-//       reuflag = 1;
-//       StringSafeCopy(imagename, dirname, 19);
-//     }
-//     if (fb_uci_mode && !inside_mount)
-//     {
-//       if (mountflag == 1)
-//       {
-//
-//         if (!uii_parse_deviceinfo())
-//         {
-//           clrscr();
-//           printf("Old Ultimate firmware detected.\n\r");
-//           errorexit();
-//         }
-//         // cputsxy(26,21,"DevInfo:");
-//         // cwin_cursor_move(&cw, 26,22);
-//         // for(x=0;x<7;x++) { cwin_console_printf(&cw,cfg.colors.text,"%2X",uii_data[x]); }
-//         // cgetc();
-//
-//         imageaid = uii_devinfo[0].id;
-//         StringSafeCopy(imageaname, dirname, 19);
-//         // clearArea(26,21,14,2);
-//         // cwin_cursor_move(&cw, 26,21);
-//         // cwin_console_printf(&cw,cfg.colors.text,"ID: %d @ %4X",imageaid,&imageaid);
-//         // cputsxy(26,22,imageaname);
-//         // cgetc();
-//
-//         if (!uii_devinfo[0].power)
-//         {
-//           uii_enable_drive_a();
-//           // clearArea(26,21,14,2);
-//           // cputsxy(26,21,"Power A on:");
-//           // cputsxy(26,22,uii_status);
-//           // cgetc();
-//         }
-//
-//         uii_mount_disk(imageaid, dirname);
-//         // clearArea(26,21,14,2);
-//         // cputsxy(26,21,"Mount on A:");
-//         // cputsxy(26,22,uii_status);
-//         // cgetc();
-//
-//         // clearArea(26,21,14,2);
-//         uii_get_path();
-//         StringSafeCopy(imageapath, uii_data, 99);
-//         if (!uii_success())
-//         {
-//           return 1;
-//         }
-//         trace = 1;
-//         inside_mount = 1;
-//         fb_uci_mode = 0;
-//         depth = 0;
-//         refreshDir();
-//         updateMenu();
-//       }
-//       else
-//       {
-//         uii_change_dir(dirname);
-//       }
-//     }
-//     else
-//     {
-//       if (mountflag == 1 || (l == 1 && dirname[0] == CH_LARROW) ||
-//           devicetype[device] == VICE || devicetype[device] == U64)
-//       {
-//         sprintf(linebuffer, "cd:%s", dirname);
-//       }
-//       else
-//       {
-//         sprintf(linebuffer, "cd/%s/", dirname);
-//       }
-//     }
-//
-//     if (trace == 1)
-//     {
-//       StringSafeCopy(path[depth], dirname, 19);
-//     }
-//   }
-//   else
-//   {
-//     if (fb_uci_mode)
-//     {
-//       uii_change_dir("/");
-//     }
-//     else
-//     {
-//       strcpy(linebuffer, "cd//");
-//     }
-//   }
-//   if (fb_uci_mode)
-//   {
-//     ret = (uii_success()) ? 0 : 1;
-//   }
-//   else
-//   {
-//     ret = cmd(device, linebuffer);
-//   }
-//   if (ret == 0)
-//   {
-//     refreshDir();
-//   }
-//   return ret;
-// }
+char dir_changedir(char *dirname)
+{
+  char ret;
+  char l = strlen(dirname);
+
+  if (dirname)
+  {
+    CheckMounttype(dirname);
+
+    if (mountflag == 2 && (trace == 1 || fb_uci_mode))
+    {
+      reuflag = 1;
+      strncpy(imagename, dirname, MAXFILENAME);
+      imagename[MAXFILENAME - 1] = 0;
+      if (fb_uci_mode)
+      {
+        uii_get_path();
+        strncpy(imagebpath, AscToPet(uii_data), MAXPATHLEN);
+        imagebpath[MAXPATHLEN - 1] = 0; // Ensure null termination
+      }
+      else
+      {
+        strncpy(imageapath, pathconcat(), MAXPATHLEN);
+        imageapath[MAXPATHLEN - 1] = 0; // Ensure null termination
+      }
+    }
+    if (fb_uci_mode && !inside_mount)
+    {
+      if (mountflag == 1)
+      {
+
+        if (!uii_parse_deviceinfo())
+        {
+          cwin_clear(&cw);
+          errorexit("Old Ultimate firmware detected.");
+        }
+
+        imageaid = uii_devinfo[0].id;
+        strncpy(imageaname, imagename, MAXFILENAME);
+        imageaname[MAXFILENAME - 1] = 0;
+
+        if (!uii_devinfo[0].power)
+        {
+          uii_enable_drive_a();
+          delay(2);
+          ;
+        }
+
+        uii_mount_disk(imageaid, dirname);
+        delay(2);
+        ;
+
+        uii_get_path();
+        strncpy(imageapath, uii_data, MAXPATHLEN);
+        imageapath[MAXPATHLEN - 1] = 0; // Ensure null termination
+        if (!UII_SUCCESS)
+        {
+          return 1;
+        }
+        trace = 1;
+        inside_mount = 1;
+        fb_uci_mode = 0;
+        depth = 0;
+        dir_draw(1);
+        browse_menu();
+      }
+      else
+      {
+        uii_change_dir(dirname);
+      }
+    }
+    else
+    {
+      if (mountflag == 1 || (l == 1 && dirname[0] == CH_LARROW) ||
+          devicetype[device] == VICE || devicetype[device] == U64)
+      {
+        sprintf(linebuffer, "cd:%s", dirname);
+      }
+      else
+      {
+        sprintf(linebuffer, "cd/%s/", dirname);
+      }
+    }
+
+    if (trace == 1)
+    {
+      strncpy(path[depth], dirname, MAXFILENAME);
+      path[depth][MAXFILENAME - 1] = 0;
+    }
+  }
+  else
+  {
+    if (fb_uci_mode)
+    {
+      uii_change_dir((char *)"/");
+    }
+    else
+    {
+      strcpy(linebuffer, "cd//");
+    }
+  }
+  if (fb_uci_mode)
+  {
+    ret = (UII_SUCCESS) ? 0 : 1;
+  }
+  else
+  {
+    ret = cmd(device, linebuffer);
+  }
+  if (ret == 0)
+  {
+    dir_draw(1);
+  }
+  return ret;
+}
 
 void browse_updatescreen()
 {
@@ -1184,10 +1186,13 @@ void FindFirstIECDrive()
 void dir_go_down()
 // Scroll down in dir of active pane
 {
+  unsigned long nextaddr;
+
   // Are there dir entries? And is there a next entry?
-  if (presentdir.firstelement && presentdirelement.meta.next)
+  nextaddr = presentdirelement.meta.next;
+  if (presentdir.firstelement && nextaddr)
   {
-    present = presentdirelement.meta.next;
+    present = nextaddr;
     dir_get_element(present);
     presentdir.present = present;
     presentdir.position++;
@@ -1214,12 +1219,14 @@ void dir_go_down()
 void dir_go_up()
 // Scroll up in dir of active pane
 {
+  unsigned long prevaddr;
   char count;
 
   // Are there dir entries? And is there a previous entry?
-  if (presentdir.firstelement && presentdirelement.meta.prev)
+  prevaddr = presentdirelement.meta.prev;
+  if (presentdir.firstelement && prevaddr)
   {
-    present = presentdirelement.meta.prev;
+    present = prevaddr;
     dir_get_element(present);
     presentdir.present = present;
 
@@ -1229,11 +1236,12 @@ void dir_go_up()
       presentdir.position = 18;
       for (count = 0; count < 19; count++)
       {
-        if (!presentdirelement.meta.prev)
+        prevaddr = presentdirelement.meta.prev;
+        if (!prevaddr)
         {
           break;
         }
-        present = presentdirelement.meta.prev;
+        present = prevaddr;
         dir_get_element(present);
         cwin_putat_string(&cw, 0, 2, "Scrolling up...", cfg.colors.text);
       }
@@ -1251,6 +1259,195 @@ void dir_go_up()
       dir_get_element(present);
       dir_print_entry(presentdir.position);
     }
+  }
+}
+
+void dir_last_of_page()
+// Go to last entry in present page
+{
+  unsigned long element;
+  unsigned long nextaddr;
+  unsigned char count;
+  unsigned char position = 0;
+  unsigned char oldpos = presentdir.position;
+
+  // Are there dir entries?
+  if (presentdir.firstelement)
+  {
+    // Find last of page
+    element = presentdir.firstprint;
+    dir_get_element(element);
+    for (count = 0; count < 18; count++)
+    {
+      nextaddr = presentdirelement.meta.next;
+      if (!nextaddr)
+      {
+        break;
+      }
+      position++;
+      element = nextaddr;
+      dir_get_element(element);
+    }
+
+    // Set new variables and pint old and new entries in correct colour
+    presentdir.position = position;
+    dir_get_element(present);
+    dir_print_entry(oldpos);
+    presentdir.present = element;
+    present = element;
+    dir_get_element(present);
+    dir_print_entry(position);
+  }
+}
+
+void dir_pagedown()
+// Page down in dir of active pane
+{
+  unsigned long element;
+  unsigned long nextaddr;
+  unsigned char count;
+
+  // Are there dir entries?
+  if (presentdir.firstelement)
+  {
+    element = presentdir.lastprint;
+    dir_get_element(element);
+
+    // Is there a next page?
+    nextaddr = presentdirelement.meta.next;
+    if (nextaddr)
+    {
+      dir_get_element(present);
+      // Search how long next page is
+      for (count = 0; count < 19; count++)
+      {
+        nextaddr = presentdirelement.meta.next;
+        if (!nextaddr)
+        {
+          break;
+        }
+        present = nextaddr;
+        dir_get_element(present);
+        cwin_putat_string(&cw, 0, 2, " ", cfg.colors.text);
+      }
+
+      // Set new firstprint and present
+      presentdir.firstprint = present;
+      presentdir.present = present;
+      presentdir.position = 0;
+
+      // Print new page
+      dir_draw(0);
+    }
+    else
+    {
+      // Go to bottom
+      dir_last_of_page();
+    }
+  }
+}
+
+void dir_pageup()
+// Page up in dir of active pane
+{
+  unsigned long prevaddr;
+  unsigned char count;
+
+  // Are there dir entries?
+  prevaddr = presentdirelement.meta.prev;
+  if (presentdir.firstelement && prevaddr)
+  {
+    // Search how long previous page is
+    for (count = 0; count < 19; count++)
+    {
+      prevaddr = presentdirelement.meta.prev;
+      if (!prevaddr)
+      {
+        break;
+      }
+      present = prevaddr;
+      dir_get_element(present);
+      cwin_putat_string(&cw, 0, 2, " ", cfg.colors.text);
+    }
+
+    // Set new firstprint and present
+    presentdir.firstprint = present;
+    presentdir.present = present;
+    presentdir.position = 0;
+
+    // Print new page
+    dir_draw(0);
+  }
+}
+
+void dir_top()
+// Go to top of dir in active pane
+{
+  // Are there dir entries?
+  if (presentdir.firstelement)
+  {
+    // Set present to first element and print new page
+    present = presentdir.firstelement;
+    dir_get_element(present);
+    presentdir.present = present;
+    presentdir.position = 0;
+    presentdir.firstprint = present;
+    dir_draw(0);
+  }
+}
+
+void dir_bottom()
+// Go to bottom of dir in active pane
+{
+  unsigned long nextaddr;
+  unsigned long prevaddr;
+  unsigned char count;  // backward loop counter
+
+  // Are there dir entries? And is there a next dir entry
+  nextaddr = presentdirelement.meta.next;
+  if (presentdir.firstelement && nextaddr)
+  {
+    // Check if not already at bottom page
+    present = presentdir.lastprint;
+    dir_get_element(present);
+    nextaddr = presentdirelement.meta.next;
+    if (!nextaddr)
+    {
+      dir_last_of_page();
+      return;
+    }
+
+    // Find last element
+    while (1)
+    {
+      dir_get_element(present);
+      nextaddr = presentdirelement.meta.next;
+      if (!nextaddr)
+      {
+        break;
+      }
+      present = nextaddr;
+      cwin_putat_string(&cw, 0, 2, " ", cfg.colors.text);
+    }
+
+    // Go back one page minus one element
+    presentdir.present = present;
+    presentdir.position = 18;
+    for (count = 0; count < 18; count++)
+    {
+      prevaddr = presentdirelement.meta.prev;
+      if (!prevaddr)
+      {
+        break;
+      }
+      present = prevaddr;
+      dir_get_element(present);
+      cwin_putat_string(&cw, 0, 2, " ", cfg.colors.text);
+    }
+    presentdir.firstprint = present;
+
+    // Print new page
+    dir_draw(0);
   }
 }
 
@@ -1290,6 +1487,133 @@ void mainLoopBrowse(void)
 
     switch (key)
     {
+    case '1':
+      comma1 = !comma1;
+      browse_menu();
+      break;
+
+    case 'o':
+      demomode = !demomode;
+      browse_menu();
+      break;
+
+    case 'd':
+      if (!fb_uci_mode)
+      {
+        if (trace == 0)
+        {
+          trace = 1;
+          pathdevice = device;
+          dir_changedir((char *)"");
+        }
+        else
+        {
+          trace = 0;
+          depth = 0;
+        }
+        dir_draw(1);
+        browse_menu();
+      }
+      break;
+
+    // Page down
+    case 'p':
+      // Check if not already last item? If no, page down
+      dir_pagedown();
+      break;
+
+    // Page up
+    case 'u':
+      // Check if not already first item? If no, page up
+      dir_pageup();
+      break;
+
+    case CH_F1:
+      dir_draw(1);
+      break;
+
+    case '2':
+    case CH_F2:
+    case '+':
+      if (!fb_uci_mode && device)
+      {
+        if (++device > MAXDEVID)
+        {
+          device = 8;
+        }
+        while (!iec_devices[device - 8])
+        {
+          if (++device > MAXDEVID)
+          {
+            device = 8;
+          }
+        }
+        if (!devicetype[device])
+        {
+          getDeviceType(device);
+        }
+        memset(&presentdir, 0, sizeof(presentdir));
+        dir_draw(1);
+      }
+      break;
+
+    case '-':
+      if (!fb_uci_mode && device)
+      {
+        if (--device < 8)
+        {
+          device = MAXDEVID;
+        }
+        while (!iec_devices[device - 8])
+        {
+          if (--device < 8)
+          {
+            device = MAXDEVID;
+          }
+        }
+        if (!devicetype[device])
+        {
+          getDeviceType(device);
+        }
+        memset(&presentdir, 0, sizeof(presentdir));
+        dir_draw(1);
+      }
+      break;
+
+    case CH_F3:
+      fb_uci_mode = !fb_uci_mode;
+      trace = 0;
+      depth = 0;
+      if (inside_mount)
+      {
+        inside_mount = 0;
+        uii_unmount_disk(imageaid);
+        imageaid = 0;
+        uii_disable_drive_a();
+        delay(2);
+        ;
+      }
+      browse_menu();
+      if (!fb_uci_mode)
+      {
+        FindFirstIECDrive();
+        if (!device)
+        {
+          cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
+          cwin_cursor_move(&cw, 0, 3);
+          cwin_console_printf(&cw, cfg.colors.error, "No active IEC drives.\n\r");
+          cwin_console_printf(&cw, cfg.colors.text, "Press key.");
+          cwin_getch();
+          fb_uci_mode = 1;
+          dir_draw(1);
+        }
+      }
+      else
+      {
+        dir_draw(1);
+      }
+      break;
+
     case CH_CURS_DOWN:
       // Curs Down: Scroll down
       dir_go_down();
@@ -1298,6 +1622,153 @@ void mainLoopBrowse(void)
     case CH_CURS_UP:
       // Curs Up: Scroll up
       dir_go_up();
+      break;
+
+    case 't':
+    case CH_HOME:
+      dir_top();
+      break;
+
+    case 'e':
+      dir_bottom();
+      break;
+
+    case CH_UARROW:
+      if (trace == 1)
+      {
+        depth = 0;
+      }
+      dir_changedir((char *)"");
+      break;
+
+    case 'a':
+      if (fb_uci_mode)
+      {
+        CheckMounttype(presentdirelement.name);
+        if (mountflag == 1)
+        {
+          if (!uii_parse_deviceinfo())
+          {
+            cwin_clear(&cw);
+            errorexit("Old Ultimate firmware detected.");
+          }
+          addmountflag = 1;
+          imageaid = uii_devinfo[0].id;
+          strncpy(imageaname, presentdirelement.name, MAXFILENAME);
+          imageaname[MAXFILENAME - 1] = 0;
+          uii_get_path();
+          strncpy(imageapath, uii_data, MAXPATHLEN);
+          imageapath[MAXPATHLEN - 1] = 0;
+          fb_selection_made = 1;
+          done = 1;
+        }
+      }
+      break;
+
+    case 'b':
+      if (fb_uci_mode)
+      {
+        CheckMounttype(presentdirelement.name);
+        if (mountflag == 1)
+        {
+          if (!uii_parse_deviceinfo())
+          {
+            cwin_clear(&cw);
+            errorexit("Old Ultimate firmware detected.");
+          }
+          addmountflag = 1;
+          imagebid = uii_devinfo[0].id;
+          strncpy(imagebname, presentdirelement.name, MAXFILENAME);
+          imagebname[MAXFILENAME - 1] = 0;
+          uii_get_path();
+          strncpy(imagebpath, uii_data, MAXPATHLEN);
+          imagebpath[MAXPATHLEN - 1] = 0;
+          fb_selection_made = 1;
+          done = 1;
+        }
+      }
+      break;
+
+    case 'm':
+      if (mountflag == 1 && imageaid)
+      {
+        runmountflag = 1;
+        strncpy(pathfile, presentdirelement.name, MAXFILENAME);
+        pathfile[MAXFILENAME - 1] = 0;
+        pathrunboot = comma1 * EXEC_COMMA1 + demomode * EXEC_DEMO;
+        fb_selection_made = 1;
+        done = 1;
+      }
+      break;
+
+    // --- start / enter directory
+    case CH_ENTER:
+    case CH_CURS_RIGHT:
+      // Executable PRG?
+      if (!fb_uci_mode && presentdir.firstelement && presentdirelement.meta.type == CBM_T_PRG)
+      {
+        if (trace == 0)
+        {
+          execute(presentdirelement.name, device, comma1 * EXEC_COMMA1 + demomode * EXEC_DEMO, (char *)"");
+        }
+        else
+        {
+          strncpy(pathfile, presentdirelement.name, MAXFILENAME);
+          pathfile[MAXFILENAME - 1] = 0;
+          pathrunboot = comma1 * EXEC_COMMA1 + demomode * EXEC_DEMO;
+          fb_selection_made = 1;
+          done = 1;
+          break;
+        }
+      }
+      // else change dir
+      if (presentdir.firstelement)
+      {
+        if (trace == 1)
+        {
+          strncpy(path[depth], presentdirelement.name, MAXFILENAME);
+          path[depth][MAXFILENAME - 1] = 0;
+        }
+        dir_changedir(presentdirelement.name);
+      }
+      if (reuflag)
+      {
+        fb_selection_made = 1;
+        done = 1;
+      }
+      break;
+
+    // --- leave directory
+    case CH_CURS_LEFT:
+    case CH_DEL:
+      if (inside_mount && !depth)
+      {
+        inside_mount = 0;
+        fb_uci_mode = 1;
+        trace = 0;
+        uii_unmount_disk(imageaid);
+        imageaid = 0;
+        uii_disable_drive_a();
+        delay(2);
+        ;
+        dir_draw(1);
+        browse_menu();
+      }
+      else
+      {
+        if (trace == 1 && depth)
+        {
+          --depth;
+        }
+        if (fb_uci_mode)
+        {
+          dir_changedir((char *)"..");
+        }
+        else
+        {
+          dir_changedir((devicetype[device] == U64) ? (char *)".." : (char *)"\xff");
+        }
+      }
       break;
 
     case 'q':
@@ -1310,396 +1781,4 @@ void mainLoopBrowse(void)
       break;
     }
   } while (!done);
-  //  while (1)
-  //  {
-  //    current = cwd.selected;
-  //    pos = cwd.pos;
-  //    lastpage = pos / 19;
-  //    yoff = pos - (lastpage * 19);
-  //    xpos = 0;
-  //    ypos = yoff + 5;
-  //
-  //    switch (cgetc())
-  //    {
-  //    case '1':
-  //      comma1 = !comma1;
-  //      updateMenu();
-  //      break;
-  //
-  //    case 'o':
-  //      demomode = !demomode;
-  //      updateMenu();
-  //      break;
-  //
-  //    case CH_F1:
-  //      readDir(device);
-  //      showDir();
-  //      break;
-  //
-  //    case CH_F3:
-  //      fb_uci_mode = !fb_uci_mode;
-  //      updateMenu();
-  //      if (!fb_uci_mode)
-  //      {
-  //        FindFirstIECDrive();
-  //        if (!device)
-  //        {
-  //          clearArea(0, 3, 24, 22);
-  //          cwin_cursor_move(&cw, 0, 3);
-  //          cputs("No active IEC drives.\n\r");
-  //          cputs("Press key.");
-  //          cgetc();
-  //          fb_uci_mode = 1;
-  //          readDir(device);
-  //          showDir();
-  //        }
-  //      }
-  //      else
-  //      {
-  //        readDir(device);
-  //        showDir();
-  //      }
-  //      break;
-  //
-  //    case '2':
-  //    case CH_F2:
-  //    case '+':
-  //      if (!fb_uci_mode && device)
-  //      {
-  //        if (++device > MAXDEVID)
-  //        {
-  //          device = 8;
-  //        }
-  //        while (!iec_devices[device - 8])
-  //        {
-  //          if (++device > MAXDEVID)
-  //          {
-  //            device = 8;
-  //          }
-  //        }
-  //        if (!devicetype[device])
-  //        {
-  //          getDeviceType(device);
-  //        }
-  //        memset(&cwd, 0, sizeof(cwd));
-  //        showDir();
-  //      }
-  //      break;
-  //
-  //    case '-':
-  //      if (!fb_uci_mode && device)
-  //      {
-  //        if (--device < 8)
-  //        {
-  //          device = MAXDEVID;
-  //        }
-  //        while (!iec_devices[device - 8])
-  //        {
-  //          if (--device < 8)
-  //          {
-  //            device = MAXDEVID;
-  //          }
-  //        }
-  //        if (!devicetype[device])
-  //        {
-  //          getDeviceType(device);
-  //        }
-  //        memset(&cwd, 0, sizeof(cwd));
-  //        showDir();
-  //      }
-  //      break;
-  //
-  //    case 't':
-  //    case CH_HOME:
-  //      cwd.selected = cwd.firstelement;
-  //      cwd.pos = 0;
-  //      printDir();
-  //      break;
-  //
-  //    case 'd':
-  //      if (!fb_uci_mode)
-  //      {
-  //        if (trace == 0)
-  //        {
-  //          trace = 1;
-  //          pathdevice = device;
-  //          changeDir(device, NULL);
-  //        }
-  //        else
-  //        {
-  //          trace = 0;
-  //          depth = 0;
-  //        }
-  //        showDir();
-  //        updateMenu();
-  //      }
-  //      break;
-  //
-  //    case 'e':
-  //      current = cwd.firstelement;
-  //      pos = 0;
-  //      while (1)
-  //      {
-  //        if (current->next != NULL)
-  //        {
-  //          current = current->next;
-  //          pos++;
-  //        }
-  //        else
-  //        {
-  //          break;
-  //        }
-  //      }
-  //      cwd.selected = current;
-  //      cwd.pos = pos;
-  //      printDir();
-  //      break;
-  //
-  //    case 'q':
-  //    case CH_F7:
-  //      trace = 0;
-  //      goto done;
-  //
-  //    case CH_CURS_DOWN:
-  //      if (cwd.selected != NULL && current->next != NULL)
-  //      {
-  //        current = current->next;
-  //        cwd.selected = current;
-  //        nextpage = (pos + 1) / 19;
-  //        cwd.pos++;
-  //        if (lastpage != nextpage)
-  //        {
-  //          cwd.firstprinted = current;
-  //          printDir();
-  //        }
-  //        else
-  //        {
-  //          current = current->prev;
-  //          printElementPriv(xpos, ypos);
-  //          yoff++;
-  //          xpos = 0;
-  //          ypos = yoff + 5;
-  //          current = current->next;
-  //          printElementPriv(xpos, ypos);
-  //        }
-  //      }
-  //      break;
-  //
-  //    case CH_CURS_UP:
-  //      if (cwd.selected != NULL && current->prev != NULL)
-  //      {
-  //        current = current->prev;
-  //        cwd.selected = current;
-  //        nextpage = (pos - 1) / 19;
-  //        cwd.pos--;
-  //        if (lastpage != nextpage)
-  //        {
-  //          for (count = 0; count < 19 - 1; count++)
-  //          {
-  //            if (current->prev != NULL)
-  //            {
-  //              current = current->prev;
-  //            }
-  //          }
-  //          cwd.firstprinted = current;
-  //          printDir();
-  //        }
-  //        else
-  //        {
-  //          current = current->next;
-  //          printElementPriv(xpos, ypos);
-  //          yoff--;
-  //          xpos = 0;
-  //          ypos = yoff + 5;
-  //          current = current->prev;
-  //          printElementPriv(xpos, ypos);
-  //        }
-  //      }
-  //      break;
-  //
-  //    // --- start / enter directory
-  //    case CH_ENTER:
-  //    case CH_CURS_RIGHT:
-  //      // Executable PRG?
-  //      if (!fb_uci_mode && cwd.selected && current->dirent.type == CBM_T_PRG)
-  //      {
-  //        if (trace == 0 && !fb_uci_mode)
-  //        {
-  //          execute(current->dirent.name, device, comma1 * EXEC_COMMA1 + demomode * EXEC_DEMO, "");
-  //        }
-  //        else
-  //        {
-  //          StringSafeCopy(pathfile, current->dirent.name, 19);
-  //          pathrunboot = comma1 * EXEC_COMMA1 + demomode * EXEC_DEMO;
-  //          fb_selection_made = 1;
-  //          goto done;
-  //        }
-  //      }
-  //      // else change dir
-  //      if (cwd.selected)
-  //      {
-  //        if (trace == 1)
-  //        {
-  //          StringSafeCopy(path[depth++], current->dirent.name, 19);
-  //        }
-  //        changeDir(device, current->dirent.name);
-  //      }
-  //      if (reuflag)
-  //      {
-  //        fb_selection_made = 1;
-  //        goto done;
-  //      }
-  //      break;
-  //
-  //    // --- leave directory
-  //    case CH_CURS_LEFT:
-  //    case CH_DEL:
-  //      if (inside_mount && !depth)
-  //      {
-  //        inside_mount = 0;
-  //        fb_uci_mode = 1;
-  //        trace = 0;
-  //        uii_unmount_disk(imageaid);
-  //        imageaid = 0;
-  //        uii_disable_drive_a();
-  //        refreshDir();
-  //        updateMenu();
-  //      }
-  //      else
-  //      {
-  //        if (trace == 1 && depth)
-  //        {
-  //          --depth;
-  //        }
-  //        if (fb_uci_mode)
-  //        {
-  //          changeDir(0, "..");
-  //        }
-  //        else
-  //        {
-  //          changeDir(device, (devicetype[device] == U64) ? ".." : "\xff");
-  //        }
-  //      }
-  //      break;
-  //
-  //    // Page down
-  //    case 'p':
-  //      // Check if not already last item? If no, page down
-  //      if (current->next != NULL)
-  //      {
-  //        cwd.selected = 0;
-  //        printElementPriv(xpos, ypos);
-  //        for (count = 0; count < 19; count++)
-  //        {
-  //          if (current->next)
-  //          {
-  //            current = current->next;
-  //            cwd.pos++;
-  //            cwd.selected = current;
-  //            cwd.firstprinted = current;
-  //          }
-  //        }
-  //        pos = cwd.pos;
-  //        yoff = pos - (lastpage * 19);
-  //        xpos = 0;
-  //        ypos = yoff + 5;
-  //        printDir();
-  //      }
-  //      break;
-  //
-  //    // Page up
-  //    case 'u':
-  //      // Check if not already first item? If no, page up
-  //      if (current->prev != NULL)
-  //      {
-  //        cwd.selected = 0;
-  //        printElementPriv(xpos, ypos);
-  //        for (count = 0; count < 19; count++)
-  //        {
-  //          if (current->prev)
-  //          {
-  //            current = current->prev;
-  //            cwd.pos--;
-  //            cwd.selected = current;
-  //            cwd.firstprinted = current;
-  //          }
-  //        }
-  //        pos = cwd.pos;
-  //        yoff = pos - (lastpage * 19);
-  //        xpos = 0;
-  //        ypos = yoff + 5;
-  //        printDir();
-  //      }
-  //      break;
-  //
-  //    case CH_UARROW:
-  //      if (trace == 1)
-  //      {
-  //        depth = 0;
-  //      }
-  //      changeDir(device, NULL);
-  //      break;
-  //
-  //    case 'a':
-  //      if (fb_uci_mode)
-  //      {
-  //        CheckMounttype(current->dirent.name);
-  //        if (mountflag == 1)
-  //        {
-  //          if (!uii_parse_deviceinfo())
-  //          {
-  //            clrscr();
-  //            printf("Old Ultimate firmware detected.\n\r");
-  //            errorexit();
-  //          }
-  //          addmountflag = 1;
-  //          imageaid = uii_devinfo[0].id;
-  //          StringSafeCopy(imageaname, current->dirent.name, 19);
-  //          uii_get_path();
-  //          StringSafeCopy(imageapath, uii_data, 99);
-  //          fb_selection_made = 1;
-  //          goto done;
-  //        }
-  //      }
-  //      break;
-  //
-  //    case 'b':
-  //      if (fb_uci_mode)
-  //      {
-  //        CheckMounttype(current->dirent.name);
-  //        if (mountflag == 1)
-  //        {
-  //          if (!uii_parse_deviceinfo())
-  //          {
-  //            clrscr();
-  //            printf("Old Ultimate firmware detected.\n\r");
-  //            errorexit();
-  //          }
-  //          if (uii_devinfo[1].exist)
-  //          {
-  //            addmountflag = 2;
-  //            imagebid = uii_devinfo[1].id;
-  //            StringSafeCopy(imagebname, current->dirent.name, 19);
-  //            uii_get_path();
-  //            StringSafeCopy(imagebpath, uii_data, 99);
-  //            fb_selection_made = 1;
-  //            goto done;
-  //          }
-  //        }
-  //      }
-  //      break;
-  //
-  //    case 'm':
-  //      if (mountflag == 1 && imageaid)
-  //      {
-  //        runmountflag = 1;
-  //        StringSafeCopy(pathfile, current->dirent.name, 19);
-  //        pathrunboot = comma1 * EXEC_COMMA1 + demomode * EXEC_DEMO;
-  //        fb_selection_made = 1;
-  //        goto done;
-  //      }
-  //    }
-  //  }
-  //
-  // done:;
 }

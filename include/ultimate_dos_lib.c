@@ -84,6 +84,7 @@ void uii_change_dir(char *directory)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(strlen(directory) + 2);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_CHANGE_DIR;
 
@@ -108,6 +109,7 @@ void uii_create_dir(char *directory)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(strlen(directory) + 2);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_CREATE_DIR;
 
@@ -154,6 +156,7 @@ void uii_mount_disk(char id, char *filename)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_MOUNT_DISK;
 	fullcmd[2] = id;
@@ -226,6 +229,7 @@ void uii_open_file(char attrib, char *filename)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_OPEN_FILE;
 	fullcmd[2] = attrib;
@@ -269,6 +273,7 @@ void uii_write_file(char *data, unsigned length)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(length + 4);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_WRITE_DATA;
 	fullcmd[2] = 0x00;
@@ -305,7 +310,7 @@ void uii_read_file(unsigned length)
 	cmd[3] = length >> 8;
 
 	uii_settarget(TARGET_DOS1);
-	uii_sendcommand(cmd, 2);
+	uii_sendcommand(cmd, 4);
 }
 
 void uii_seek_file(char posL, char posML, char posMH, char posH)
@@ -363,6 +368,7 @@ void uii_file_stat(char *filename)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(strlen(filename) + 2);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_FILE_STAT;
 
@@ -388,6 +394,7 @@ void uii_delete_file(char *filename)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(strlen(filename) + 2);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_DELETE_FILE;
 
@@ -414,6 +421,7 @@ void uii_rename_file(char *oldname, char *newname)
 	unsigned x = 0;
 	unsigned count = 0;
 	char *fullcmd = (char *)malloc(strlen(oldname) + strlen(newname) + 3);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_RENAME_FILE;
 
@@ -448,6 +456,7 @@ void uii_copy_file(char *source, char *destination)
 	unsigned x = 0;
 	unsigned count = 0;
 	char *fullcmd = (char *)malloc(strlen(source) + strlen(destination) + 3);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_COPY_FILE;
 
@@ -492,6 +501,7 @@ void uii_loadIntoRamDisk(char id, char *filename, char whatif)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_LOAD_INTO_RAMDISK;
 	fullcmd[2] = id + (128 * whatif);
@@ -516,6 +526,7 @@ void uii_saveRamDisk(char id, char *filename)
 {
 	unsigned x = 0;
 	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_SAVE_RAMDISK;
 	fullcmd[2] = id;
@@ -611,7 +622,6 @@ void uii_enable_drive_a(void)
 void uii_disable_drive_a(void)
 // Disable drive A
 {
-#define CTRL_CMD_DISABLE_DISK_A 0x31
 	char cmd[] = {0x00, CTRL_CMD_DISABLE_DISK_A};
 
 	uii_settarget(TARGET_CONTROL);
@@ -677,7 +687,7 @@ void uii_get_drive_b_power(void)
 void uii_get_deviceinfo(void)
 // Get device information
 {
-	char cmd[] = {0x00, CTRL_CMD_DEVICE_INFO};
+	char cmd[] = {0x00, CTRL_CMD_GET_DRVINFO};
 
 	uii_settarget(TARGET_CONTROL);
 	uii_sendcommand(cmd, 2);
@@ -726,7 +736,7 @@ char uii_parse_deviceinfo(void)
 	// Parse drive B
 	if (temp < 0x0f)
 	{
-		// Drive A found
+		// Drive B found
 		uii_devinfo[1].exist = 1;
 		uii_devinfo[1].type = temp;
 		uii_devinfo[1].id = uii_data[count++];
@@ -758,25 +768,70 @@ char uii_parse_deviceinfo(void)
 	return 1;
 }
 
-char *uii_device_tyoe(char typeval)
+char *uii_device_type(char typeval)
 // Convert device type value to string
 {
 	switch (typeval)
 	{
-	case 0:
+	case 0x00:
 		return "1541";
-		break;
-
-	case 1:
+	case 0x01:
 		return "1571";
-		break;
-
-	case 2:
+	case 0x02:
 		return "1581";
-		break;
-
+	case 0x0F:
+		return "SoftIEC";
+	case 0x50:
+		return "Printer";
 	default:
 		return "";
-		break;
 	}
+}
+
+void uii_swap_disk(void)
+// Swap the disk mounted on drive A with drive B
+// The "Swap Disk" command swaps the disk images mounted on drive A and drive B.
+// This command does not return any data.
+{
+	char cmd[] = {0x00, DOS_CMD_SWAP_DISK, 0x00};
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(cmd, 3);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_reboot(void)
+// Reboot the C64 via the cartridge
+// Triggers a clean C64 reset through the Ultimate control interface.
+// This command does not return — the machine resets immediately.
+{
+	char cmd[] = {0x00, CTRL_CMD_REBOOT};
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, 2);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_get_hwinfo(char device)
+// Get hardware information from the Ultimate cartridge
+// Input: device - 0 = product identification string (e.g. "Ultimate 64", "1541 Ultimate II+")
+//                 1 = SID chip configuration (byte 0: count; per SID: addr_lo, addr_hi, bits, rsvd, rsvd)
+// Result is returned in uii_data[].
+{
+	char cmd[] = {0x00, CTRL_CMD_GET_HWINFO, 0x00};
+
+	cmd[2] = device;
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, 3);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
 }

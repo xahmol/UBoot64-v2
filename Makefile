@@ -41,7 +41,7 @@ MAINSRC = src/main.c
 UPD12SRC = src/uboot_upd12.c
 
 # Hostname of Ultimate II+ target for deployment. Edit for proper IP and usb number
-ULTHOST = ftp://192.168.1.52/usb0/Dev/
+ULTHOST = ftp://192.168.1.233/usb0/Dev/
 
 # ZIP file contents
 ZIP = $(MAIN)_$(VERSION).zip

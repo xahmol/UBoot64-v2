@@ -148,6 +148,7 @@ char fb_selection_made = 0;
 char fb_uci_mode;
 char inside_mount;
 char iec_devices[23];
+char inside_mount;
 char verbosecounter;
 
 // Macro for indirect cross bank call
@@ -293,11 +294,11 @@ __noinline void mainloop(void)
 		cwin_console_printf(&cw, cfg.colors.text, "\nRecognised Ultimate devices:\n");
 		if (uii_devinfo[0].exist)
 		{
-			cwin_console_printf(&cw, cfg.colors.text, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[0].type));
+			cwin_console_printf(&cw, cfg.colors.text, "Drive A: ID %2d Pow %s, %s\n", uii_devinfo[0].id, (uii_devinfo[0].power) ? "On" : "Off", uii_device_type(uii_devinfo[0].type));
 		}
 		if (uii_devinfo[1].exist)
 		{
-			cwin_console_printf(&cw, cfg.colors.text, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_tyoe(uii_devinfo[1].type));
+			cwin_console_printf(&cw, cfg.colors.text, "Drive B: ID %2d Pow %s, %s\n", uii_devinfo[1].id, (uii_devinfo[1].power) ? "On" : "Off", uii_device_type(uii_devinfo[1].type));
 		}
 		if (uii_devinfo[2].exist)
 		{

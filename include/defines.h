@@ -56,20 +56,23 @@
 #define CH_F6 139         // Petscii control code for F6
 #define CH_F7 136         // Petscii control code for F7
 #define CH_F8 140         // Petscii control code for F8
+#define CH_LARROW 0x5f    // Petscii code for left arrow
+#define CH_UARROW 0x5e    // Petscii code for up arrow
+#define CH_POUND 0x5c     // Petscii code for pound sign
 
 // Command flag values
-#define COMMAND_CMD             0x01
-#define COMMAND_REU             0x02
-#define COMMAND_IMGA            0x04
-#define COMMAND_IMGB            0x08
+#define COMMAND_CMD 0x01
+#define COMMAND_REU 0x02
+#define COMMAND_IMGA 0x04
+#define COMMAND_IMGB 0x08
 
 // Execute flag values
-#define EXEC_MOUNT              0x01
-#define EXEC_COMMA1             0x02
-#define EXEC_DEMO               0x10
+#define EXEC_MOUNT 0x01
+#define EXEC_COMMA1 0x02
+#define EXEC_DEMO 0x10
 
-// Config defaults
-#define CFGVERSION              0x02
+// Config version and defaults
+#define CFGVERSION 0x02
 
 #define OK 0
 #define ERROR -1
@@ -92,7 +95,7 @@
 
 // Min function
 #ifndef min
-#define min(a,b) ( (a) < (b) ? (a) : (b) )
+#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 // Global variables
@@ -110,7 +113,8 @@ extern char reuflag;
 extern char addmountflag;
 extern char runmountflag;
 extern int reudetected;
-struct SlotStruct {
+struct SlotStruct
+{
     char cfgvs;
     char path[MAXPATHLEN];
     char menu[MAXMENUNAME];
@@ -132,7 +136,8 @@ struct SlotStruct {
 };
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;
-struct ColorPalette {
+struct ColorPalette
+{
     char background;
     char border;
     char header1;
@@ -145,7 +150,8 @@ struct ColorPalette {
     char error;
     char ok;
 };
-struct ConfigStruct {
+struct ConfigStruct
+{
     char version;
     char timeon;
     char host[MAXHOSTLENGTH];
@@ -173,6 +179,7 @@ extern char fb_uci_mode;
 extern char inside_mount;
 extern char iec_devices[23];
 extern char configpath[];
+extern char inside_mount;
 extern char verbosecounter;
 
 // Import from cartridge back to BASIC code
