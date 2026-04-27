@@ -387,11 +387,11 @@ char dir_readentry_iec(struct DirElement *l_dirent)
     // strip disk name
     for (b = 1; b < 16; ++b)
     {
-      if (l_dirent->name[16-b] == 0 ||
-          l_dirent->name[16-b] == ' ' ||
-          l_dirent->name[16-b] == 0xA0)
+      if (l_dirent->name[16 - b] == 0 ||
+          l_dirent->name[16 - b] == ' ' ||
+          l_dirent->name[16 - b] == 0xA0)
       {
-        l_dirent->name[16-b] = 0;
+        l_dirent->name[16 - b] = 0;
       }
     }
     return 0;
@@ -1024,7 +1024,11 @@ char dir_changedir(char *dirname)
   char ret;
   char l = strlen(dirname);
 
-  if (dirname)
+  //sprintf(linebuffer, "Root. %u", l);
+  //cwin_putat_string(&cw, 0, 24, linebuffer, cfg.colors.text);
+  //cwin_getch();
+
+  if (l)
   {
     CheckMounttype(dirname);
 
@@ -1118,7 +1122,6 @@ char dir_changedir(char *dirname)
     else
     {
       strcpy(linebuffer, "cd//");
-      cwin_putat_string(&cw, 0, 2, "Root", cfg.colors.text);
     }
   }
   if (fb_uci_mode)
