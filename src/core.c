@@ -115,9 +115,7 @@ void mid(const char *src, char start, char length, char *dst, char dstlen)
   char len = min(dstlen - 1, length);
 
   strncpy(dst, src + start, len);
-  // zero terminate because strncpy() didn't ?
-  if (len < length)
-    dst[dstlen - 1] = 0;
+  dst[len] = 0; // strncpy doesn't null-terminate when source fills the count
 }
 
 char *pathconcat()

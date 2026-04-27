@@ -1714,8 +1714,9 @@ void mainLoopBrowse(void)
       {
         if (trace == 1)
         {
-          strncpy(path[depth++], presentdirelement.name, MAXFILENAME);
+          strncpy(path[depth], presentdirelement.name, MAXFILENAME);
           path[depth][MAXFILENAME - 1] = 0;
+          depth++;
         }
         dir_changedir(presentdirelement.name);
       }
