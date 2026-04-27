@@ -1057,6 +1057,7 @@ char dir_changedir(char *dirname)
         }
 
         imageaid = uii_devinfo[0].id;
+        device = imageaid;
         strncpy(imageaname, imagename, MAXFILENAME);
         imageaname[MAXFILENAME - 1] = 0;
 
@@ -1064,12 +1065,11 @@ char dir_changedir(char *dirname)
         {
           uii_enable_drive_a();
           delay(2);
-          ;
         }
+        getDeviceType(device);
 
         uii_mount_disk(imageaid, dirname);
         delay(2);
-        ;
 
         uii_get_path();
         strncpy(imageapath, uii_data, MAXPATHLEN);
@@ -1118,6 +1118,7 @@ char dir_changedir(char *dirname)
     else
     {
       strcpy(linebuffer, "cd//");
+      cwin_putat_string(&cw, 0, 2, "Root", cfg.colors.text);
     }
   }
   if (fb_uci_mode)
@@ -1314,7 +1315,6 @@ void dir_pagedown()
         }
         present = nextaddr;
         dir_get_element(present);
-        cwin_putat_string(&cw, 0, 2, " ", cfg.colors.text);
       }
 
       // Set new firstprint and present
@@ -1353,7 +1353,6 @@ void dir_pageup()
       }
       present = prevaddr;
       dir_get_element(present);
-      cwin_putat_string(&cw, 0, 2, " ", cfg.colors.text);
     }
 
     // Set new firstprint and present
@@ -1413,7 +1412,6 @@ void dir_bottom()
         break;
       }
       present = nextaddr;
-      cwin_putat_string(&cw, 0, 2, " ", cfg.colors.text);
     }
 
     // Go back one page minus one element
@@ -1428,7 +1426,6 @@ void dir_bottom()
       }
       present = prevaddr;
       dir_get_element(present);
-      cwin_putat_string(&cw, 0, 2, " ", cfg.colors.text);
     }
     presentdir.firstprint = present;
 
@@ -1577,7 +1574,6 @@ void mainLoopBrowse(void)
         imageaid = 0;
         uii_disable_drive_a();
         delay(2);
-        ;
       }
       browse_menu();
       if (!fb_uci_mode)
@@ -1736,7 +1732,6 @@ void mainLoopBrowse(void)
         imageaid = 0;
         uii_disable_drive_a();
         delay(2);
-        ;
         dir_draw(1);
         browse_menu();
       }
