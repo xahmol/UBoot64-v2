@@ -74,7 +74,8 @@
 #include "fileio.h"
 #include "slotmenu.h"
 
-// Switching code generation to bank 0 common routine section
+// Bank 1: slot menu UI — boot menu display, slot selection, slot editing (rename/delete/reorder),
+// and boot execution. Cross-bank calls to bank 0 via fc3_call for I/O and config operations.
 #pragma code(bcode1)
 #pragma data(bdata1)
 
@@ -120,9 +121,8 @@ void menuslotnumnerprint(char slotnumber)
 }
 
 void presentmenuslots()
+// Routine to show all 18 menu slots on screen
 {
-    // Routine to show the present menu slots
-
     char x;
 
     for (x = 0; x < 18; ++x)
@@ -143,10 +143,9 @@ void presentmenuslots()
 }
 
 void mainmenu()
+// Draw the main boot menu and block until user selects a valid option
+// Sets global menuselect to the key value chosen
 {
-    // Draw main boot menu
-    // Returns chosen menu option as char key value
-
     char x;
     char select;
     char key;
@@ -293,7 +292,7 @@ void pickmenuslot()
 
                 strncpy(Slot.reu_image, imagename, MAXFILENAME - 1);
                 Slot.reu_image[MAXFILENAME - 1] = 0;
-                Slot.command = Slot.command | COMMAND_REU;
+                Slot.command = Slot.command | COMMAND_REU; // Set REU bit in command flags
             }
             else
             {
@@ -304,7 +303,7 @@ void pickmenuslot()
                     Slot.image_a_path[MAXPATHLEN - 1] = 0;
                     strncpy(Slot.image_a_file, imageaname, MAXFILENAME - 1);
                     Slot.image_a_file[MAXFILENAME - 1] = 0;
-                    Slot.command = Slot.command | COMMAND_IMGA;
+                    Slot.command = Slot.command | COMMAND_IMGA; // Set image A bit in command flags
                 }
                 else
                 {
@@ -313,7 +312,7 @@ void pickmenuslot()
                     Slot.image_b_path[MAXPATHLEN - 1] = 0;
                     strncpy(Slot.image_b_file, imagebname, MAXFILENAME - 1);
                     Slot.image_b_file[MAXFILENAME - 1] = 0;
-                    Slot.command = Slot.command | COMMAND_IMGB;
+                    Slot.command = Slot.command | COMMAND_IMGB; // Set image B bit in command flags
                 }
             }
         }
@@ -327,7 +326,7 @@ void pickmenuslot()
                 Slot.image_a_path[MAXPATHLEN - 1] = 0;
                 strncpy(Slot.image_a_file, imageaname, MAXFILENAME - 1);
                 Slot.image_a_file[MAXFILENAME - 1] = 0;
-                Slot.command = Slot.command | COMMAND_IMGA;
+                Slot.command = Slot.command | COMMAND_IMGA; // Set image A bit: boot from mounted disk
             }
             else
             {
@@ -367,7 +366,7 @@ void ErrorCheckMmounting()
 }
 
 void mountimage(char device, char *path, char *image)
-// Mount an imamage on an Ultimate emulated drive
+// Mount an image on an Ultimate emulated drive
 // Device = IEC ID, path and image are path and filename to image to mount
 {
 
@@ -451,21 +450,21 @@ void runbootfrommenu(char select)
     cwin_clear(&cw);
     cwin_cursor_move(&cw, 0, 0);
 
-    if (Slot.command & COMMAND_IMGA)
+    if (Slot.command & COMMAND_IMGA) // Disk image A enabled in this slot
     {
         cwin_console_printf(&cw, cfg.colors.text, "%s on ID %d.\n", Slot.image_a_file, Slot.image_a_id);
         ToggleDrivePower(0, 1);
         mountimage(Slot.image_a_id, Slot.image_a_path, Slot.image_a_file);
         delay(1);
     }
-    if (Slot.command & COMMAND_IMGB)
+    if (Slot.command & COMMAND_IMGB) // Disk image B enabled in this slot
     {
         cwin_console_printf(&cw, cfg.colors.text, "%s on ID %d.\n", Slot.image_b_file, Slot.image_b_id);
         ToggleDrivePower(1, 1);
         mountimage(Slot.image_b_id, Slot.image_b_path, Slot.image_b_file);
         delay(1);
     }
-    if (Slot.command & COMMAND_REU)
+    if (Slot.command & COMMAND_REU) // REU image preload enabled in this slot
     {
         cwin_console_printf(&cw, cfg.colors.text, "REU file %s", Slot.reu_image);
         uii_change_dir(Slot.image_a_path);
@@ -710,9 +709,9 @@ char reordermenuslot()
                 switch (key)
                 {
                 case CH_CURS_DOWN:
-                    // Cursor down
                     if (newslot == maxpos)
                     {
+                        // Wrap: shift all slots up by one and place selected slot at position 0
                         for (x = 0; x < maxpos; x++)
                         {
                             cwin_cursor_move(&cw, 0, 2);
@@ -742,6 +741,7 @@ char reordermenuslot()
                 case CH_CURS_UP:
                     if (newslot == 0)
                     {
+                        // Wrap: shift all slots down by one and place selected slot at last position
                         for (x = 0; x < maxpos; x++)
                         {
                             cwin_cursor_move(&cw, 0, 2);
@@ -926,8 +926,8 @@ void editmenuoptions()
 }
 
 void information()
+// Show version information and credits screen
 {
-    // Routine for version information and credits
     cwin_clear(&cw);
 
     // Set sprite logo
@@ -953,6 +953,6 @@ void information()
 
     getkey(2);
 
-    // Disable sprite againb
-    spr_show(0, false); // Enable sprite logo
+    // Disable sprite again
+    spr_show(0, false);
 }

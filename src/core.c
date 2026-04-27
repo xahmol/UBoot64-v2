@@ -94,7 +94,7 @@ void errorexit(const char *msg)
 
 void delay(char seconds)
 // Function to wait for specified number of seconds
-// Inout: seconds - number of seconds to wait
+// Input: seconds - number of seconds to wait
 {
   cia1.tods = 0;
   cia1.todt = 0;
@@ -121,7 +121,7 @@ void mid(const char *src, char start, char length, char *dst, char dstlen)
 }
 
 char *pathconcat()
-// Function to concatinate the path string array to one path string
+// Function to concatenate the path string array to one path string
 {
   char concat[MAXPATHLEN] = "";
   int x;
@@ -430,7 +430,7 @@ const char *getDeviceType(const char device)
   return "!n";
 }
 
-// Core opreations functios
+// Core operations functions
 
 void DoDemoMode()
 // Function to power down all drives but the drive on ID 8

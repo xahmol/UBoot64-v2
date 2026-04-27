@@ -1,0 +1,3 @@
+[codespell]
+skip = build,*.crt,*.prg,*.zip,*.asm,*.map,*.lbl,*.int,*.o,*.docx
+ignore-words-list = reu,uii,uci,petscii,uint,iec,vic,sid,kernal,crt,prg,commodore,datas

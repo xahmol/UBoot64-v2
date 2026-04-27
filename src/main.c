@@ -402,7 +402,7 @@ int main(void)
 	// FC3 init code
 	__asm
 	{
-		sei // Disable interrrupts
+		sei // Disable interrupts
 		ldx #$FF				
 		txs
 		ldx #$05

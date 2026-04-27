@@ -1,0 +1,2525 @@
+--------------------------------------------------------------------
+main: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:309
+$00 R0(P), $02 R1(P), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 312)		STOREG1		<-	V(6 'cfg' A)+0 , CC:2	{}
+0001 ( 313)		STOREG1		<-	V(6 'cfg' A)+1 , CC:1	{}
+0002 ( 314)		STOREG4		<-	V(6 'cfg' A)+83 , CL:7200	{}
+0003 ( 315)		STOREG1		<-	V(6 'cfg' A)+87 , CC:1	{}
+0004 ( 316)		STOREG1		<-	V(6 'cfg' A)+88 , CC:0	{}
+0005 ( 317)		STOREG1		<-	V(6 'cfg' A)+89 , CC:0	{}
+0006 ( 318)		STOREG1		<-	V(6 'cfg' A)+90 , CC:5	{}
+0007 ( 319)		STOREG1		<-	V(6 'cfg' A)+91 , CC:13	{}
+0008 ( 320)		STOREG1		<-	V(6 'cfg' A)+92 , CC:7	{}
+0009 ( 321)		STOREG1		<-	V(6 'cfg' A)+93 , CC:1	{}
+000a ( 322)		STOREG1		<-	V(6 'cfg' A)+94 , CC:3	{}
+000b ( 323)		STOREG1		<-	V(6 'cfg' A)+95 , CC:1	{}
+000c ( 324)		STOREG1		<-	V(6 'cfg' A)+96 , CC:3	{}
+000d ( 325)		STOREG1		<-	V(6 'cfg' A)+97 , CC:2	{}
+000e ( 326)		STOREG1		<-	V(6 'cfg' A)+98 , CC:5	{}
+000f ( 327)		CONST	R0(P)[0..0]	<-	CG0(7:0 '')	{S}
+0010 ( 327)		CONST	R1(P)[2..2]	<-	CG81(6:2 'cfg' A)	{S}
+0011 ( 327)		STRCPYII		<-	R1(PF)+0 {V(6 'cfg' A)} [2..2], R0(PF)+0 {V(7 '')} [0..0]	{}
+0012 ( 330)		CALLN		<-	V(1 'vic_setmode')+0 	{}
+0013 ( 331)		STOREA1		<-	V(-1 '')+53280 , CC:0	{V}
+0014 ( 332)		STOREA1		<-	V(-1 '')+53281 , CC:0	{V}
+0015 ( 335)		CALLN		<-	V(2 'cwin_init')+0 	{}
+0016 ( 336)		CALLN		<-	V(3 'cwin_clear')+0 	{}
+0017 ( 337)		CALLN		<-	V(4 'headertext')+0 	{}
+0018 (  82)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0019 (  83)		STOREG1		<-	V(11 'cw' A)+5 , CC:3	{}
+001a (  63)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+57117 	{V}
+001b (  63)		RELOP19	R0(B)[0..1]	<-	R0(CF)[0..255], CC:201	{}
+001c (  63)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 1
+		==> 2
+L1: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 (  66)		CALLN		<-	V(12 'uii_abort')+0 	{}
+0001 ( 347)		CONST	R0(P)[0..0]	<-	CG0(130:0 '')	{S}
+0002 ( 347)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(130 '')} [0..0]	{}
+0003 ( 347)		CALLN		<-	V(23 'cwin_put_string')+0 	{}
+0004 ( 106)		STOREC2		<-	V(2 '')+0 , CI:2	{}
+0005 ( 348)		CALLN		<-	V(24 'cwin_cursor_newline')+0 	{}
+0006 (  82)		STOREG1		<-	V(40 'uii_target')+0 , CC:1	{}
+0007 ( 104)		COPY2:GG		<-	V(231 'cmd' A)+0 , V(132 '')+0 	{}
+0008 ( 104)		CONST	R0(P)[0..0]	<-	CG2(231:0 'cmd' A)	{S}
+0009 ( 106)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(231 'cmd' A)} [0..0]	{}
+000a ( 106)		CALLN		<-	V(8 'uii_sendcommand')+0 	{}
+000b ( 107)		CALLN		<-	V(9 'uii_readdata')+0 	{}
+000c ( 108)		CALLN		<-	V(10 'uii_readstatus')+0 	{}
+000d ( 109)		CALLN		<-	V(11 'uii_accept')+0 	{}
+000e ( 352)		CONST	R0(P)[0..0]	<-	CG0(133:0 '')	{S}
+000f ( 352)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(133 '')} [0..0]	{}
+0010 ( 352)		CALLN		<-	V(23 'cwin_put_string')+0 	{}
+0011 ( 353)		CONST	R0(P)[0..0]	<-	CG513(55:0 'uii_data' A)	{S}
+0012 ( 353)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(55 'uii_data' A)} [0..0]	{}
+0013 ( 353)		CALLN		<-	V(23 'cwin_put_string')+0 	{}
+0014 ( 354)		CALLN		<-	V(24 'cwin_cursor_newline')+0 	{}
+0015 ( 359)		JUMP		<-		{}
+		==> 10
+L10: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 358)		CALLN	R0(I)	<-	V(25 'reu_count_pages')+0 	{}
+0002 ( 359)		RELOP20	R1(B)[0..1]	<-	R0(I), CI:0	{}
+0003 ( 359)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 3
+		==> 4
+L3: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 361)		CONST	R1(P)[0..0]	<-	CG0(159:0 '')	{S}
+0001 ( 361)		STOREG2		<-	V(-1 'sstack')+4 , R1(PF)+0 {V(159 '')} [0..0]	{}
+0002 ( 361)		BINOP3	R0(I)	<-	R0(IF)[-32768..32767], CI:64	{}
+0003 ( 361)		STOREG2		<-	V(-1 'sstack')+6 , R0(IF)	{}
+0004 ( 361)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0005 ( 359)		JUMP		<-		{}
+		==> 5
+L5: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 370)		STOREA1		<-	V(-1 '')+56329 , CC:0	{V}
+0001 ( 371)		STOREA1		<-	V(-1 '')+56328 , CC:0	{V}
+0002 ( 374)		JUMP		<-		{}
+		==> 6
+L6: <= D-1: (4) Head P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 374)		CALLN		<-	V(26 'uii_change_dir')+0 	{}
+0001 ( 375)		LOADG1	R0(C)[0..255]	<-	V(61 'uii_status' A)+0 	{}
+0002 ( 375)		RELOP20	R0(B)[0..1]	<-	R0(CF)[0..255], CC:48	{}
+0003 ( 375)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 6
+		==> 8
+L8: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 375)		LOADG1	R0(C)[0..255]	<-	V(61 'uii_status' A)+1 	{}
+0001 ( 375)		RELOP20	R0(B)[0..1]	<-	R0(CF)[0..255], CC:48	{}
+0002 ( 375)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 6
+		==> 7
+L7: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 375)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+56329 	{V}
+0001 ( 375)		RELOP27	R0(B)[0..1]	<-	R0(CF)[0..255], CC:4	{}
+0002 ( 375)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 6
+		==> 9
+L9: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 382)		CONST	R0(P)[0..0]	<-	CG0(164:0 '')	{S}
+0001 ( 382)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(164 '')} [0..0]	{}
+0002 ( 382)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0003 ( 383)		CALLN		<-	V(27 'read_old_configfile')+0 	{}
+0004 ( 386)		CONST	R0(P)[0..0]	<-	CG0(180:0 '')	{S}
+0005 ( 386)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(180 '')} [0..0]	{}
+0006 ( 386)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0007 ( 387)		CALLN		<-	V(33 'writeconfigfile')+0 	{}
+0008 ( 390)		CONST	R0(P)[0..0]	<-	CG0(184:0 '')	{S}
+0009 ( 390)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(184 '')} [0..0]	{}
+000a ( 390)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+000b ( 391)		CALLN		<-	V(36 'read_old_slotsfile')+0 	{}
+000c (  82)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+000d ( 394)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+000e ( 394)		BINOP1	R0(C)	<-	R0(CF)[0..255], CI:1	{}
+000f (  83)		STOREG1		<-	V(11 'cw' A)+5 , R0(CF)	{}
+0010 ( 395)		CONST	R0(P)[0..0]	<-	CG0(201:0 '')	{S}
+0011 ( 395)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(201 '')} [0..0]	{}
+0012 ( 395)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0013 ( 396)		CALLN		<-	V(37 'convert_slot_data')+0 	{}
+0014 (  82)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0015 ( 399)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+0016 ( 399)		BINOP1	R0(C)	<-	R0(CF)[0..255], CI:1	{}
+0017 (  83)		STOREG1		<-	V(11 'cw' A)+5 , R0(CF)	{}
+0018 ( 400)		CONST	R0(P)[0..0]	<-	CG0(215:0 '')	{S}
+0019 ( 400)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(215 '')} [0..0]	{}
+001a ( 400)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+001b ( 401)		CALLN		<-	V(40 'write_slotsfile')+0 	{}
+001c (  82)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+001d ( 404)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+001e ( 404)		BINOP1	R0(C)	<-	R0(CF)[0..255], CI:1	{}
+001f (  83)		STOREG1		<-	V(11 'cw' A)+5 , R0(CF)	{}
+0020 ( 405)		CONST	R0(P)[0..0]	<-	CG0(225:0 '')	{S}
+0021 ( 405)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(225 '')} [0..0]	{}
+0022 ( 405)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0023 ( 406)		CONST	R0(P)[0..0]	<-	CG0(226:0 '')	{S}
+0024 ( 406)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(226 '')} [0..0]	{}
+0025 ( 406)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0026 ( 407)		CALLN		<-	V(21 'cwin_getch')+0 	{}
+0027 ( 410)		CALLN		<-	V(3 'cwin_clear')+0 	{}
+0028 ( 412)		RETV		<-	CI:0	{}
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 365)		CONST	R0(P)[0..0]	<-	CG0(160:0 '')	{S}
+0001 ( 365)		STOREG2		<-	V(-1 'sstack')+14 , R0(PF)+0 {V(160 '')} [0..0]	{}
+0002 ( 365)		CALLN		<-	V(13 'error')+0 	{}
+0003 ( 359)		JUMP		<-		{}
+		==> 5
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 343)		CONST	R0(P)[0..0]	<-	CG0(117:0 '')	{S}
+0001 ( 343)		STOREG2		<-	V(-1 'sstack')+14 , R0(PF)+0 {V(117 '')} [0..0]	{}
+0002 ( 343)		CALLN		<-	V(13 'error')+0 	{}
+0003 ( 359)		JUMP		<-		{}
+		==> 10
+--------------------------------------------------------------------
+vic_setmode: /home/xahmol/oscar64/include/c64/vic.h:97
+$00 R0(I), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/vic.c
+0000 (  29)		STOREA1		<-	V(-1 '')+53265 , CC:27	{V}
+0001 (  30)		STOREA1		<-	V(-1 '')+53270 , CC:8	{V}
+0002 (  52)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+56576 	{V}
+0003 (  52)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0004 (  52)		BINOP9	R0(I)[0..252]	<-	R0(IF)[0..255], CI:252	{}
+0005 (  52)		BINOP8	R0(I)[0..255]	<-	R0(IF)[0..252], CI:3	{}
+0006 (  52)		STOREA1		<-	V(-1 '')+56576 , R0(CF)[0..255]	{V}
+0007 (  53)		STOREA1		<-	V(-1 '')+53272 , CC:22	{V}
+0008 (  97)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_init: /home/xahmol/oscar64/include/c64/charwin.h:15
+$00 R0(P), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  43)		STOREG1		<-	V(11 'cw' A)+0 , CC:0	{}
+0001 (  44)		STOREG1		<-	V(11 'cw' A)+1 , CC:0	{}
+0002 (  45)		STOREG1		<-	V(11 'cw' A)+2 , CC:40	{}
+0003 (  46)		STOREG1		<-	V(11 'cw' A)+3 , CC:25	{}
+0004 (  47)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0005 (  48)		STOREG1		<-	V(11 'cw' A)+5 , CC:0	{}
+0006 (  49)		CONST	R0(P)[1024..1024]	<-	CA0(-1:1024 '')	{S}
+0007 (  49)		STOREG2		<-	V(11 'cw' A)+8 , R0(PF)+0 {V(-1 'ABS')} [1024..1024]	{}
+0008 (  50)		CONST	R0(P)[55296..55296]	<-	CA0(-1:55296 '')	{S}
+0009 (  50)		STOREG2		<-	V(11 'cw' A)+10 , R0(PF)+0 {V(-1 'ABS')} [55296..55296]	{}
+000a (  15)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_clear: /home/xahmol/oscar64/include/c64/charwin.h:20
+$00 R0(P), $00 R1(P), $00 R2(I), $00 R3(P), $00 R4(C), $00 R5(C), $00 R6(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  62)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+3 	{}
+0001 (  62)		RELOP28	R0(B)[0..1]	<-	CC:0, R0(CF)[0..255]	{}
+0002 (  62)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 6
+		==> 1
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  62)		CONST	R4(C)[0..0]	<-	CI:0	{}
+0001 (  61)		LOADG2	R0(P)	<-	V(11 'cw' A)+8 	{}
+0002 (  61)		LOADG2	R1(P)	<-	V(11 'cw' A)+10 	{}
+0003 (  64)		JUMP		<-		{}
+		==> 2
+L2: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  64)		LOADG1	R5(C)[0..255]	<-	V(11 'cw' A)+2 	{}
+0001 (  23)		RELOP28	R2(B)[0..1]	<-	CC:0, R5(C)[0..255]	{}
+0002 (  23)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 5
+		==> 3
+L5: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  23)		CONST	R6(C)[0..0]	<-	CI:0	{}
+0001 (  25)		JUMP		<-		{}
+		==> 4
+L4: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  25)		CONV37	R2(I)[0..254]	<-	R6(C)[0..254]	{}
+0001 (  25)		LEAI	R3(P)+0	<-	R0(P)+0, R2(I)[0..254]	{}
+0002 (  25)		STOREI1		<-	R3(PF)+0, CC:32	{}
+0003 (  26)		LEAI	R2(P)+0	<-	R1(P)+0, R2(IF)[0..254]	{}
+0004 (  26)		STOREI1		<-	R2(PF)+0, CC:1	{}
+0005 (  23)		BINOP1	R6(C)[1..255]	<-	R6(CF)[0..254], CI:1	{}
+0006 (  23)		RELOP28	R2(B)[0..1]	<-	R6(C)[1..255], R5(C)[1..255]	{}
+0007 (  23)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 4
+		==> 3
+L3: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  66)		LEAI	R1(P)+0	<-	R1(PF)+0, CI:40	{}
+0001 (  65)		LEAI	R0(P)+0	<-	R0(PF)+0, CI:40	{}
+0002 (  62)		BINOP1	R4(C)[1..255]	<-	R4(CF)[0..254], CI:1	{}
+0003 (  62)		LOADG1	R2(C)[0..255]	<-	V(11 'cw' A)+3 	{}
+0004 (  62)		RELOP28	R2(B)[0..1]	<-	R4(C)[1..255], R2(CF)[0..255]	{}
+0005 (  62)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 2
+		==> 1
+L1: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/charwin.h
+0000 (  20)		RET		<-		{}
+--------------------------------------------------------------------
+headertext: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:99
+$00 R0(P), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 104)		STOREC1		<-	V(0 '')+0 , CC:0	{}
+0001 ( 104)		STOREC1		<-	V(1 '')+0 , CC:40	{}
+0002 ( 104)		STOREC1		<-	V(2 '')+0 , CC:160	{}
+0003 ( 104)		LOADG1	R0(C)[0..255]	<-	V(6 'cfg' A)+90 	{}
+0004 ( 104)		STOREC1		<-	V(3 '')+0 , R0(CF)[0..255]	{}
+0005 ( 104)		CALLN		<-	V(5 'cwin_fill_rect_raw')+0 	{}
+0006 ( 105)		STOREC1		<-	V(0 '')+0 , CC:1	{}
+0007 ( 105)		STOREC1		<-	V(1 '')+0 , CC:40	{}
+0008 ( 105)		STOREC1		<-	V(2 '')+0 , CC:160	{}
+0009 ( 105)		LOADG1	R0(C)[0..255]	<-	V(6 'cfg' A)+91 	{}
+000a ( 105)		STOREC1		<-	V(3 '')+0 , R0(CF)[0..255]	{}
+000b ( 105)		CALLN		<-	V(5 'cwin_fill_rect_raw')+0 	{}
+000c ( 106)		STOREC1		<-	V(2 '')+0 , CC:0	{}
+000d ( 106)		STOREC1		<-	V(3 '')+0 , CC:0	{}
+000e ( 106)		CONST	R0(P)[0..0]	<-	CG0(37:0 '')	{S}
+000f ( 106)		STOREC2		<-	V(4 '')+0 , R0(PF)+0 {V(37 '')} [0..0]	{}
+0010 ( 106)		LOADG1	R0(C)[0..255]	<-	V(6 'cfg' A)+90 	{}
+0011 ( 106)		STOREC1		<-	V(6 '')+0 , R0(CF)[0..255]	{}
+0012 ( 106)		CALLN		<-	V(6 'cwin_putat_string_reverse')+0 	{}
+0013 ( 107)		STOREC1		<-	V(2 '')+0 , CC:0	{}
+0014 ( 107)		STOREC1		<-	V(3 '')+0 , CC:1	{}
+0015 ( 107)		CONST	R0(P)[0..0]	<-	CG0(38:0 '')	{S}
+0016 ( 107)		STOREC2		<-	V(4 '')+0 , R0(PF)+0 {V(38 '')} [0..0]	{}
+0017 ( 107)		LOADG1	R0(C)[0..255]	<-	V(6 'cfg' A)+91 	{}
+0018 ( 107)		STOREC1		<-	V(6 '')+0 , R0(CF)[0..255]	{}
+0019 ( 107)		CALLN		<-	V(6 'cwin_putat_string_reverse')+0 	{}
+001a ( 116)		CONST	R0(P)[0..0]	<-	CG0(71:0 '')	{S}
+001b ( 116)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(71 '')} [0..0]	{}
+001c ( 116)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+001d ( 116)		STOREC1		<-	V(3 '')+0 , CC:1	{}
+001e ( 116)		BINOP2	R0(I)	<-	CI:40, R0(IF)	{}
+001f ( 116)		STOREC1		<-	V(2 '')+0 , R0(CF)	{}
+0020 ( 116)		CONST	R0(P)[0..0]	<-	CG0(72:0 '')	{S}
+0021 ( 116)		STOREC2		<-	V(4 '')+0 , R0(PF)+0 {V(72 '')} [0..0]	{}
+0022 ( 116)		LOADG1	R0(C)[0..255]	<-	V(6 'cfg' A)+91 	{}
+0023 ( 116)		STOREC1		<-	V(6 '')+0 , R0(CF)[0..255]	{}
+0024 ( 116)		CALLN		<-	V(6 'cwin_putat_string_reverse')+0 	{}
+0025 (  99)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_fill_rect_raw: /home/xahmol/oscar64/include/c64/charwin.h:174
+$00 R0(I), $00 R1(P), $00 R2(P), $00 R3(P), $00 R4(C), $00 R5(C), $00 R6(C), $00 R7(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 745)		LOADZ1	R4(C)[0..255]	<-	V(1 '')+0 	{S}
+0001 ( 745)		RELOP27	R0(B)[0..1]	<-	R4(C)[0..255], CC:0	{S}
+0002 ( 745)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 1
+		==> 2
+L1: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 747)		LOADZ1	R0(C)[0..24]	<-	V(0 '')+0 	{S}
+0001 ( 747)		CONV37	R0(I)[0..24]	<-	R0(CF)[0..24]	{S}
+0002 ( 747)		BINOP16	R0(I)[0..48]	<-	R0(IF)[0..24], CI:1	{S}
+0003 ( 747)		LEAG	R0(P)[0..48]	<-	V(12 'mul40')+0 , R0(IF)[0..48]	{S}
+0004 ( 747)		LOADI2	R0(I)[0..65535]	<-	R0(PF)+0 {V(12 'mul40')} [0..48]	{}
+0005 ( 747)		LOADG2	R1(P)	<-	V(11 'cw' A)+8 	{}
+0006 ( 747)		LEAI	R1(P)+0	<-	R1(PF)+0, R0(I)[0..65535]	{}
+0007 ( 748)		LOADG2	R2(P)	<-	V(11 'cw' A)+10 	{}
+0008 ( 748)		LEAI	R2(P)+0	<-	R2(PF)+0, R0(IF)[0..65535]	{}
+0009 (  23)		CONST	R5(C)[0..0]	<-	CI:0	{}
+000a ( 752)		LOADZ1	R6(C)[0..255]	<-	V(2 '')+0 	{S}
+000b ( 752)		LOADZ1	R7(C)[0..255]	<-	V(3 '')+0 	{S}
+000c (  25)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  25)		CONV37	R0(I)[0..254]	<-	R5(C)[0..254]	{}
+0001 (  25)		LEAI	R3(P)+0	<-	R1(P)+0, R0(I)[0..254]	{}
+0002 (  25)		STOREI1		<-	R3(PF)+0, R6(C)[0..255]	{}
+0003 (  26)		LEAI	R0(P)+0	<-	R2(P)+0, R0(IF)[0..254]	{}
+0004 (  26)		STOREI1		<-	R0(PF)+0, R7(C)[0..255]	{}
+0005 (  23)		BINOP1	R5(C)[1..255]	<-	R5(CF)[0..254], CI:1	{}
+0006 (  23)		RELOP28	R0(B)[0..1]	<-	R5(C)[1..255], R4(C)[1..255]	{}
+0007 (  23)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 3
+		==> 2
+L2: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/charwin.h
+0000 ( 174)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_putat_string_reverse: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:80
+$00 R0(I), $00 R1(I), $00 R2(P), $00 R3(P), $00 R4(C), $00 R5(C), $00 R6(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 (  82)		LOADZ2	R3(P)	<-	V(4 '')+0 	{S}
+0001 (  82)		STOREC2		<-	V(0 '')+0 , R3(P)	{}
+0002 (  82)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0003 (  89)		CONST	R4(C)[0..0]	<-	CI:0	{}
+0004 (  80)		LOADZ1	R5(C)[0..255]	<-	V(3 '')+0 	{S}
+0005 (  84)		RELOP27	R1(B)[0..1]	<-	R0(C), CC:99	{}
+0006 (  84)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 1
+		==> 7
+L1: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 (  86)		CONST	R0(C)[99..99]	<-	CI:99	{}
+0001 (  89)		JUMP		<-		{}
+		==> 2
+L2: <= D-1: (3) Head P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 (  91)		CONV37	R1(I)[0..98]	<-	R4(C)[0..98]	{}
+0001 (  91)		LEAI	R2(P)+0	<-	R3(P)+0, R1(I)[0..98]	{}
+0002 (  91)		LOADI1	R6(C)[0..255]	<-	R2(PF)+0	{}
+0003 (  72)		CONV37	R2(I)[0..255]	<-	R6(C)[0..255]	{}
+0004 (  72)		BINOP17	R2(I)[0..7]	<-	R2(IF)[0..255], CI:5	{}
+0005 (  72)		LEAG	R2(P)[0..7]	<-	V(26 'p2smap' A)+0 , R2(IF)[0..7]	{}
+0006 (  72)		LOADI1	R2(C)[0..255]	<-	R2(PF)+0 {V(26 'p2smap' A)} [0..7]	{}
+0007 (  72)		BINOP10	R2(C)	<-	R2(CF)[0..255], R6(CF)[0..255]	{}
+0008 (  91)		CONV37	R2(I)[0..255]	<-	R2(CF)	{}
+0009 (  91)		BINOP8	R2(I)[0..255]	<-	R2(IF)[0..255], CI:128	{}
+000a (  91)		LEAG	R1(P)[0..98]	<-	V(27 'linebuffer' A)+0 , R1(IF)[0..98]	{}
+000b (  91)		STOREI1		<-	R1(PF)+0 {V(27 'linebuffer' A)} [0..98], R2(CF)[0..255]	{}
+000c (  89)		BINOP1	R4(C)[1..99]	<-	R4(CF)[0..98], CI:1	{}
+000d (  89)		RELOP28	R1(B)[0..1]	<-	R4(C)[1..99], R0(C)[1..99]	{}
+000e (  89)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 2
+		==> 3
+L3: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 (  94)		CONV37	R0(I)[0..99]	<-	R0(CF)[0..99]	{}
+0001 (  94)		LEAG	R0(P)[0..99]	<-	V(27 'linebuffer' A)+0 , R0(IF)[0..99]	{}
+0002 (  94)		STOREI1		<-	R0(PF)+0 {V(27 'linebuffer' A)} [0..99], CC:0	{}
+0003 (  96)		LOADZ1	R0(C)[0..255]	<-	V(2 '')+0 	{S}
+0004 ( 379)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{S}
+0005 ( 379)		CONV37	R1(I)[0..1]	<-	R5(CF)[0..1]	{S}
+0006 ( 379)		BINOP16	R1(I)[0..2]	<-	R1(IF)[0..1], CI:1	{S}
+0007 ( 379)		LEAG	R1(P)[0..2]	<-	V(12 'mul40')+0 , R1(IF)[0..2]	{S}
+0008 ( 379)		LOADI2	R1(I)[0..65535]	<-	R1(PF)+0 {V(12 'mul40')} [0..2]	{}
+0009 ( 379)		BINOP1	R0(I)	<-	R1(IF)[0..65535], R0(IF)[0..255]	{}
+000a ( 381)		LOADG2	R1(P)	<-	V(11 'cw' A)+8 	{}
+000b ( 381)		LEAI	R1(P)+0	<-	R1(PF)+0, R0(I)	{}
+000c ( 382)		LOADG2	R2(P)	<-	V(11 'cw' A)+10 	{}
+000d ( 382)		LEAI	R2(P)+0	<-	R2(PF)+0, R0(IF)	{}
+000e ( 384)		CONST	R4(C)[0..0]	<-	CI:0	{}
+000f (  96)		LOADZ1	R5(C)[0..255]	<-	V(6 '')+0 	{S}
+0010 ( 385)		JUMP		<-		{}
+		==> 5
+L5: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 385)		CONV37	R0(I)[0..99]	<-	R4(C)[0..99]	{}
+0001 ( 385)		LEAG	R3(P)[0..99]	<-	V(27 'linebuffer' A)+0 , R0(I)[0..99]	{}
+0002 ( 385)		LOADI1	R6(C)[0..255]	<-	R3(PF)+0 {V(27 'linebuffer' A)} [0..99]	{}
+0003 ( 385)		BRANCH		<-	R6(C)[0..255]	{}
+		==> 6
+		==> 4
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 387)		LEAI	R3(P)+0	<-	R1(P)+0, R0(I)[0..99]	{}
+0001 ( 387)		STOREI1		<-	R3(PF)+0, R6(CF)[0..255]	{}
+0002 ( 388)		LEAI	R0(P)+0	<-	R2(P)+0, R0(IF)[0..99]	{}
+0003 ( 388)		STOREI1		<-	R0(PF)+0, R5(C)[0..255]	{}
+0004 ( 389)		BINOP1	R4(C)[1..100]	<-	R4(CF)[0..99], CI:1	{}
+0005 ( 385)		JUMP		<-		{}
+		==> 5
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 (  80)		RET		<-		{}
+L7: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 (  89)		RELOP28	R1(B)[0..1]	<-	CC:0, R0(C)[0..99]	{}
+0001 (  89)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 2
+		==> 3
+--------------------------------------------------------------------
+strlen: /home/xahmol/oscar64/include/string.h:12
+$00 R0(I), $00 R1(P), $00 R2(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/string.c
+0000 ( 149)		CONST	R0(I)[0..0]	<-	CI:0	{}
+0001 ( 147)		LOADZ2	R1(P)	<-	V(0 '')+0 	{S}
+0002 ( 150)		LOADI1	R2(C)[0..255]	<-	R1(P)+0	{}
+0003 ( 150)		BRANCH		<-	R2(CF)[0..255]	{}
+		==> 1
+		==> 2
+L1: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/string.c
+0000 ( 151)		BINOP1	R0(I)[1..]	<-	R0(IF)[0..], CI:1	{}
+0001 ( 150)		LEAI	R1(P)+0	<-	R1(PF)+0, CI:1	{}
+0002 ( 150)		LOADI1	R2(C)[0..255]	<-	R1(P)+0	{}
+0003 ( 150)		BRANCH		<-	R2(CF)[0..255]	{}
+		==> 1
+		==> 2
+L2: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/string.c
+0000 ( 152)		RETV		<-	R0(IF)[0..]	{}
+--------------------------------------------------------------------
+uii_sendcommand: /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.h:173
+$00 R0(P), $00 R1(I), $00 R2(I), $00 R3(P), $00 R4(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 150)		LOADZ2	R0(P)	<-	V(0 '')+0 	{S}
+0001 ( 150)		LOADG1	R1(C)[0..255]	<-	V(40 'uii_target')+0 	{}
+0002 ( 150)		STOREI1		<-	R0(P)+0, R1(CF)[0..255]	{}
+0003 ( 147)		CONST	R1(I)[0..0]	<-	CI:0	{}
+0004 ( 155)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 158)		JUMP		<-		{}
+		==> 2
+L2: <= D-1: (3) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 158)		LOADA1	R2(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 158)		CONV37	R2(I)[0..255]	<-	R2(CF)[0..255]	{}
+0002 ( 158)		BINOP9	R2(I)[0..32]	<-	R2(IF)[0..255], CI:32	{}
+0003 ( 158)		RELOP20	R2(B)[0..1]	<-	R2(IF)[0..32], CI:0	{}
+0004 ( 158)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 2
+		==> 4
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 158)		LOADA1	R2(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 158)		CONV37	R2(I)[0..255]	<-	R2(CF)[0..255]	{}
+0002 ( 158)		BINOP9	R2(I)[0..16]	<-	R2(IF)[0..255], CI:16	{}
+0003 ( 158)		RELOP20	R2(B)[0..1]	<-	R2(IF)[0..16], CI:0	{}
+0004 ( 158)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 2
+		==> 3
+L3: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 166)		LOADZ2	R2(I)[0..65535]	<-	V(2 '')+0 	{S}
+0001 ( 166)		RELOP28	R3(B)[0..1]	<-	R1(I)[0..65535], R2(I)[0..65535]	{}
+0002 ( 166)		BRANCH		<-	R3(BF)[0..1]	{}
+		==> 11
+		==> 6
+L11: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 167)		LEAI	R3(P)+0	<-	R0(P)+0, R1(I)[0..65534]	{}
+0001 ( 167)		JUMP		<-		{}
+		==> 5
+L5: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 167)		LOADI1	R4(C)[0..255]	<-	R3(P)+0	{}
+0001 ( 167)		STOREA1		<-	V(-1 '')+57117 , R4(CF)[0..255]	{V}
+0002 ( 167)		LEAI	R3(P)+0	<-	R3(PF)+0, CI:1	{}
+0003 ( 167)		BINOP1	R1(I)[1..65535]	<-	R1(IF)[0..65534], CI:1	{}
+0004 ( 166)		RELOP28	R4(B)[0..1]	<-	R1(I)[1..65535], R2(I)[0..65535]	{}
+0005 ( 166)		BRANCH		<-	R4(BF)[0..1]	{}
+		==> 5
+		==> 6
+L6: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 171)		LOADA1	R2(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 171)		BINOP8	R2(C)[0..255]	<-	R2(CF)[0..255], CC:1	{}
+0002 ( 171)		STOREA1		<-	V(-1 '')+57116 , R2(CF)[0..255]	{V}
+0003 ( 176)		LOADA1	R2(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0004 ( 176)		CONV37	R2(I)[0..255]	<-	R2(CF)[0..255]	{}
+0005 ( 176)		BINOP9	R2(I)[0..4]	<-	R2(IF)[0..255], CI:4	{}
+0006 ( 176)		RELOP20	R2(B)[0..1]	<-	R2(IF)[0..4], CI:0	{}
+0007 ( 176)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 7
+		==> 8
+L7: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 179)		LOADA1	R2(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 179)		BINOP8	R2(C)[0..255]	<-	R2(CF)[0..255], CC:8	{}
+0002 ( 179)		STOREA1		<-	V(-1 '')+57116 , R2(CF)[0..255]	{V}
+0003 ( 176)		JUMP		<-		{}
+		==> 1
+L8: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 186)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 186)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 186)		BINOP9	R0(I)[0..32]	<-	R0(IF)[0..255], CI:32	{}
+0003 ( 186)		RELOP19	R0(B)[0..1]	<-	R0(IF)[0..32], CI:0	{}
+0004 ( 186)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 10
+		==> 9
+L10: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 186)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 186)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 186)		BINOP9	R0(I)[0..16]	<-	R0(IF)[0..255], CI:16	{}
+0003 ( 186)		RELOP20	R0(B)[0..1]	<-	R0(IF)[0..16], CI:0	{}
+0004 ( 186)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 8
+		==> 9
+L9: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 196)		RET		<-		{}
+--------------------------------------------------------------------
+uii_readdata: /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.h:179
+$00 R0(I), $00 R1(I), $00 R2(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 258)		STOREG1		<-	V(55 'uii_data' A)+0 , CC:0	{}
+0001 ( 257)		CONST	R0(I)[0..0]	<-	CI:0	{}
+0002 ( 214)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 214)		LOADA1	R1(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 214)		CONV37	R1(I)[0..255]	<-	R1(CF)[0..255]	{}
+0002 ( 214)		BINOP9	R1(I)[0..128]	<-	R1(IF)[0..255], CI:128	{}
+0003 ( 214)		RELOP20	R1(B)[0..1]	<-	R1(IF)[0..128], CI:0	{}
+0004 ( 214)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 3
+		==> 2
+L3: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 265)		RELOP28	R1(B)[0..1]	<-	R0(I)[0..512], CI:512	{}
+0001 ( 265)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 4
+		==> 2
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 267)		LOADA1	R2(C)[0..255]	<-	V(-1 '')+57118 	{V}
+0001 ( 267)		LEAG	R1(P)[0..511]	<-	V(55 'uii_data' A)+0 , R0(I)[0..511]	{}
+0002 ( 267)		STOREI1		<-	R1(PF)+0 {V(55 'uii_data' A)} [0..511], R2(CF)[0..255]	{}
+0003 ( 267)		BINOP1	R0(I)[1..512]	<-	R0(IF)[0..511], CI:1	{}
+0004 ( 265)		JUMP		<-		{}
+		==> 1
+L2: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 276)		LEAG	R1(P)[0..512]	<-	V(55 'uii_data' A)+0 , R0(I)[0..512]	{}
+0001 ( 276)		STOREI1		<-	R1(PF)+0 {V(55 'uii_data' A)} [0..512], CC:0	{}
+0002 ( 277)		RETV		<-	R0(IF)[0..512]	{}
+--------------------------------------------------------------------
+uii_readstatus: /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.h:180
+$00 R0(I), $00 R1(P), $00 R2(I), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 284)		STOREG1		<-	V(61 'uii_status' A)+0 , CC:0	{}
+0001 ( 283)		CONST	R0(I)[0..0]	<-	CI:0	{}
+0002 ( 293)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 293)		LEAG	R1(P)[0..256]	<-	V(61 'uii_status' A)+0 , R0(I)[0..256]	{}
+0001 ( 240)		LOADA1	R2(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0002 ( 240)		CONV37	R2(I)[0..255]	<-	R2(CF)[0..255]	{}
+0003 ( 240)		BINOP9	R2(I)[0..64]	<-	R2(IF)[0..255], CI:64	{}
+0004 ( 240)		RELOP20	R2(B)[0..1]	<-	R2(IF)[0..64], CI:0	{}
+0005 ( 240)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 2
+		==> 3
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 291)		RELOP28	R2(B)[0..1]	<-	R0(I)[0..256], CI:256	{}
+0001 ( 291)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 4
+		==> 3
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 293)		LOADA1	R2(C)[0..255]	<-	V(-1 '')+57119 	{V}
+0001 ( 293)		STOREI1		<-	R1(PF)+0 {V(61 'uii_status' A)} [0..256], R2(CF)[0..255]	{}
+0002 ( 293)		BINOP1	R0(I)[1..256]	<-	R0(IF)[0..255], CI:1	{}
+0003 ( 291)		JUMP		<-		{}
+		==> 1
+L3: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 303)		STOREI1		<-	R1(PF)+0 {V(61 'uii_status' A)} [0..256], CC:0	{}
+0001 ( 304)		RET		<-		{}
+--------------------------------------------------------------------
+uii_accept: /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.h:174
+$00 R0(I), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 203)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 203)		BINOP8	R0(C)[0..255]	<-	R0(CF)[0..255], CC:2	{}
+0002 ( 203)		STOREA1		<-	V(-1 '')+57116 , R0(CF)[0..255]	{V}
+0003 ( 204)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 204)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 204)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 204)		BINOP9	R0(I)[0..2]	<-	R0(IF)[0..255], CI:2	{}
+0003 ( 204)		RELOP20	R0(B)[0..1]	<-	R0(IF)[0..2], CI:0	{}
+0004 ( 204)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 1
+		==> 2
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 209)		RET		<-		{}
+--------------------------------------------------------------------
+uii_abort: /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.h:178
+$00 R0(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 251)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 251)		BINOP8	R0(C)[0..255]	<-	R0(CF)[0..255], CC:4	{}
+0002 ( 251)		STOREA1		<-	V(-1 '')+57116 , R0(CF)[0..255]	{V}
+0003 ( 252)		RET		<-		{}
+--------------------------------------------------------------------
+error: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:58
+$00 R0(P), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 (  60)		CONST	R0(P)[0..0]	<-	CG0(116:0 '')	{S}
+0001 (  60)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(116 '')} [0..0]	{}
+0002 (  60)		LOADG2	R0(P)	<-	V(-1 'sstack')+14 	{S}
+0003 (  60)		STOREG2		<-	V(-1 'sstack')+6 , R0(PF)	{}
+0004 (  60)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0005 (  62)		STOREC2		<-	V(0 '')+0 , CI:1	{}
+0006 (  61)		CALLN		<-	V(21 'cwin_getch')+0 	{}
+0007 (  62)		CALLN		<-	V(22 'exit')+0 	{}
+0008 (  63)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_console_printf: /home/xahmol/oscar64/include/c64/charwin.h:206
+$00 R0(P), $00 R1(P), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 982)		CONST	R1(P)[0..0]	<-	CG200(115:0 'buff' A)	{S}
+0001 ( 983)		STOREC2		<-	V(9 '')+0 , R1(P)+0 {V(115 'buff' A)} [0..0]	{}
+0002 ( 983)		LOADG2	R0(P)	<-	V(-1 'sstack')+4 	{}
+0003 ( 983)		STOREG2		<-	V(-1 'sstack')+0 , R0(PF)	{}
+0004 ( 983)		CONST	R0(P)[2..2]	<-	CG2(-1:6 'sstack')	{S}
+0005 ( 983)		STOREG2		<-	V(-1 'sstack')+2 , R0(PF)+0 {V(16 '')} [2..2]	{}
+0006 ( 983)		CALLN		<-	V(15 'sformat')+0 	{}
+0007 ( 984)		STOREC2		<-	V(4 '')+0 , R1(PF)+0 {V(115 'buff' A)} [0..0]	{}
+0008 ( 984)		CALLN		<-	V(19 'cwin_console_write_string')+0 	{}
+0009 ( 985)		RET		<-		{}
+--------------------------------------------------------------------
+sformat: /home/xahmol/oscar64/include/c64/charwin.c:978
+$03 R0(L), $00 R1(I), $05 R2(P), $00 R3(P), $02 R4(C), $00 R5(B), $00 R6(B), $00 R7(B), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 356)		CONST	R4(C)[0..0]	<-	CI:0	{}
+0001 ( 353)		LOADG2	R2(P)	<-	V(-1 'sstack')+0 	{}
+0002 ( 354)		LOADZ2	R3(P)	<-	V(9 '')+0 	{}
+0003 ( 359)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (10) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 359)		LOADI1	R1(C)[0..255]	<-	R2(P)+0	{}
+0001 ( 359)		BRANCH		<-	R1(C)[0..255]	{}
+		==> 2
+		==> 3
+L2: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 361)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:37	{}
+0001 ( 361)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 4
+		==> 5
+L4: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 382)		STOREG1		<-	V(88 'si' A)+7 , CB:0	{}
+0001 ( 363)		BRANCH		<-	R4(C)	{}
+		==> 6
+		==> 7
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 363)		CONV37	R0(I)[0..255]	<-	R4(CF)	{}
+0001 ( 371)		LEAI	R3(P)+0	<-	R3(PF)+0, R0(IF)[0..255]	{}
+0002 ( 372)		CONST	R4(C)[0..0]	<-	CI:0	{}
+0003 ( 363)		JUMP		<-		{}
+		==> 7
+L7: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 380)		STOREG1		<-	V(88 'si' A)+5 , CB:0	{}
+0001 ( 381)		STOREG1		<-	V(88 'si' A)+6 , CB:0	{}
+0002 ( 374)		LOADI1	R1(C)[0..255]	<-	R2(P)+1	{}
+0003 ( 379)		STOREG1		<-	V(88 'si' A)+0 , CC:32	{}
+0004 ( 377)		STOREG1		<-	V(88 'si' A)+1 , CC:0	{}
+0005 ( 378)		STOREG1		<-	V(88 'si' A)+2 , CC:255	{}
+0006 ( 376)		STOREG1		<-	V(88 'si' A)+4 , CC:10	{}
+0007 ( 374)		LEAI	R2(P)+0	<-	R2(PF)+0, CI:2	{}
+0008 ( 386)		JUMP		<-		{}
+		==> 8
+L8: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 386)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:43	{}
+0001 ( 386)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 10
+		==> 11
+L10: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 387)		STOREG1		<-	V(88 'si' A)+5 , CB:1	{}
+0001 ( 384)		JUMP		<-		{}
+		==> 74
+L74: <= D-1: (4)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 396)		LOADI1	R1(C)[0..255]	<-	R2(P)+0	{}
+0001 ( 396)		LEAI	R2(P)+0	<-	R2(PF)+0, CI:1	{}
+0002 ( 384)		JUMP		<-		{}
+		==> 8
+L11: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 388)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:48	{}
+0001 ( 388)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 12
+		==> 13
+L12: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 389)		STOREG1		<-	V(88 'si' A)+0 , CC:48	{}
+0001 ( 384)		JUMP		<-		{}
+		==> 74
+L13: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 390)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:35	{}
+0001 ( 390)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 14
+		==> 15
+L14: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 391)		STOREG1		<-	V(88 'si' A)+7 , CB:1	{}
+0001 ( 384)		JUMP		<-		{}
+		==> 74
+L15: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 392)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:45	{}
+0001 ( 392)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 16
+		==> 9
+L16: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 393)		STOREG1		<-	V(88 'si' A)+6 , CB:1	{}
+0001 ( 384)		JUMP		<-		{}
+		==> 74
+L9: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 399)		RELOP25	R0(B)[0..1]	<-	R1(C)[0..255], CC:48	{}
+0001 ( 399)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 19
+		==> 18
+L19: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 399)		RELOP26	R0(B)[0..1]	<-	R1(C)[48..255], CC:57	{}
+0001 ( 399)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 17
+		==> 24
+L17: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 401)		CONST	R0(C)[0..0]	<-	CI:0	{}
+0001 ( 402)		JUMP		<-		{}
+		==> 22
+L22: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 402)		RELOP26	R5(B)[0..1]	<-	R1(C)[48..255], CC:57	{}
+0001 ( 402)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 20
+		==> 21
+L20: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 402)		CONV37	R1(I)[48..57]	<-	R1(CF)[48..57]	{}
+0001 ( 404)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..2559]	{}
+0002 ( 404)		BINOP3	R0(I)[0..2550]	<-	R0(IF)[0..255], CI:10	{}
+0003 ( 404)		BINOP1	R0(I)[48..2607]	<-	R0(IF)[0..2550], R1(IF)[48..57]	{}
+0004 ( 404)		BINOP2	R0(I)[0..2559]	<-	R0(IF)[48..2607], CI:48	{}
+0005 ( 405)		LOADI1	R1(C)[0..255]	<-	R2(P)+0	{}
+0006 ( 405)		LEAI	R2(P)+0	<-	R2(PF)+0, CI:1	{}
+0007 ( 402)		RELOP25	R5(B)[0..1]	<-	R1(C)[0..255], CC:48	{}
+0008 ( 402)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 22
+		==> 21
+L21: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 407)		STOREG1		<-	V(88 'si' A)+1 , R0(CF)[0..2559]	{}
+0001 ( 410)		JUMP		<-		{}
+		==> 18
+L18: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 410)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:46	{}
+0001 ( 410)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 23
+		==> 24
+L23: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 412)		CONST	R0(C)[0..0]	<-	CI:0	{}
+0001 ( 417)		JUMP		<-		{}
+		==> 69
+L69: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 417)		LOADI1	R1(C)[0..255]	<-	R2(P)+0	{}
+0001 ( 417)		LEAI	R2(P)+0	<-	R2(PF)+0, CI:1	{}
+0002 ( 414)		RELOP25	R5(B)[0..1]	<-	R1(C)[0..255], CC:48	{}
+0003 ( 414)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 27
+		==> 26
+L27: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 414)		RELOP26	R5(B)[0..1]	<-	R1(C)[48..255], CC:57	{}
+0001 ( 414)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 25
+		==> 26
+L25: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 414)		CONV37	R1(I)[48..57]	<-	R1(CF)[48..57]	{}
+0001 ( 416)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..2559]	{}
+0002 ( 416)		BINOP3	R0(I)[0..2550]	<-	R0(IF)[0..255], CI:10	{}
+0003 ( 416)		BINOP1	R0(I)[48..2607]	<-	R0(IF)[0..2550], R1(IF)[48..57]	{}
+0004 ( 416)		BINOP2	R0(I)[0..2559]	<-	R0(IF)[48..2607], CI:48	{}
+0005 ( 414)		JUMP		<-		{}
+		==> 69
+L26: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 419)		STOREG1		<-	V(88 'si' A)+2 , R0(CF)[0..2559]	{}
+0001 ( 422)		JUMP		<-		{}
+		==> 24
+L24: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 422)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:100	{}
+0001 ( 422)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 28
+		==> 32
+L28: <= D-1: (4)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 424)		STOREC1		<-	V(6 '')+0 , CB:1	{}
+0001 ( 422)		JUMP		<-		{}
+		==> 71
+L71: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 424)		STOREC2		<-	V(2 '')+0 , R3(P)	{}
+0001 ( 428)		LOADG2	R0(P)	<-	V(-1 'sstack')+2 	{}
+0002 ( 428)		LOADI2	R1(I)[-32768..32767]	<-	R0(P)+0	{}
+0003 ( 428)		STOREC2		<-	V(4 '')+0 , R1(IF)[-32768..32767]	{}
+0004 ( 428)		LEAI	R0(P)+0	<-	R0(PF)+0, CI:2	{}
+0005 ( 428)		STOREG2		<-	V(-1 'sstack')+2 , R0(PF)	{}
+0006 ( 428)		CONST	R0(P)[0..0]	<-	CG8(88:0 'si' A)	{S}
+0007 ( 428)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(88 'si' A)} [0..0]	{}
+0008 ( 428)		CALLN	R4(C)	<-	V(17 'nformi')+0 	{}
+0009 ( 426)		JUMP		<-		{}
+		==> 1
+L32: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 422)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:68	{}
+0001 ( 422)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 28
+		==> 31
+L31: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 422)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:105	{}
+0001 ( 422)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 28
+		==> 30
+L30: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 422)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:73	{}
+0001 ( 422)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 28
+		==> 29
+L29: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 426)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:117	{}
+0001 ( 426)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 33
+		==> 35
+L33: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 428)		STOREC1		<-	V(6 '')+0 , CB:0	{}
+0001 ( 426)		JUMP		<-		{}
+		==> 71
+L35: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 426)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:85	{}
+0001 ( 426)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 33
+		==> 34
+L34: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 422)		CONV37	R0(I)[0..255]	<-	R1(C)[0..255]	{}
+0001 ( 430)		RELOP19	R5(B)[0..1]	<-	R1(C)[0..255], CC:120	{}
+0002 ( 430)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 36
+		==> 38
+L36: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 434)		STOREC1		<-	V(6 '')+0 , CB:0	{}
+0001 ( 433)		STOREG1		<-	V(88 'si' A)+4 , CC:16	{}
+0002 ( 432)		BINOP9	R0(I)[0..224]	<-	R0(IF)[0..255], CI:224	{}
+0003 ( 432)		BINOP8	R0(I)[0..255]	<-	R0(IF)[0..224], CI:1	{}
+0004 ( 432)		STOREG1		<-	V(88 'si' A)+3 , R0(CF)[0..255]	{}
+0005 ( 430)		JUMP		<-		{}
+		==> 71
+L38: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 430)		RELOP19	R5(B)[0..1]	<-	R1(C)[0..255], CC:88	{}
+0001 ( 430)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 36
+		==> 37
+L37: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 437)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:108	{}
+0001 ( 437)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 39
+		==> 41
+L39: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 439)		LOADG2	R0(P)	<-	V(-1 'sstack')+2 	{}
+0001 ( 441)		LEAI	R1(P)+0	<-	R0(P)+0, CI:4	{}
+0002 ( 441)		STOREG2		<-	V(-1 'sstack')+2 , R1(PF)	{}
+0003 ( 443)		LOADI1	R5(C)[0..255]	<-	R2(P)+0	{}
+0004 ( 443)		LEAI	R2(P)+0	<-	R2(PF)+0, CI:1	{}
+0005 ( 439)		LOADI4	R0(L)[-2147483648..2147483647]	<-	R0(PF)+0	{}
+0006 ( 444)		RELOP19	R1(B)[0..1]	<-	R5(C)[0..255], CC:100	{}
+0007 ( 444)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 42
+		==> 46
+L42: <= D-1: (4)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 446)		STOREC1		<-	V(8 '')+0 , CB:1	{}
+0001 ( 444)		JUMP		<-		{}
+		==> 72
+L72: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 446)		STOREC2		<-	V(2 '')+0 , R3(P)	{}
+0001 ( 446)		STOREC4		<-	V(4 '')+0 , R0(LF)[-2147483648..2147483647]	{}
+0002 ( 450)		CONST	R0(P)[0..0]	<-	CG8(88:0 'si' A)	{S}
+0003 ( 450)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(88 'si' A)} [0..0]	{}
+0004 ( 450)		CALLN	R4(C)	<-	V(18 'nforml')+0 	{}
+0005 ( 448)		JUMP		<-		{}
+		==> 1
+L46: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 444)		RELOP19	R1(B)[0..1]	<-	R5(C)[0..255], CC:68	{}
+0001 ( 444)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 42
+		==> 45
+L45: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 444)		RELOP19	R1(B)[0..1]	<-	R5(C)[0..255], CC:105	{}
+0001 ( 444)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 42
+		==> 44
+L44: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 444)		RELOP19	R1(B)[0..1]	<-	R5(C)[0..255], CC:73	{}
+0001 ( 444)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 42
+		==> 43
+L43: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 448)		RELOP19	R1(B)[0..1]	<-	R5(C)[0..255], CC:117	{}
+0001 ( 448)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 47
+		==> 49
+L47: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 450)		STOREC1		<-	V(8 '')+0 , CB:0	{}
+0001 ( 448)		JUMP		<-		{}
+		==> 72
+L49: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 448)		RELOP19	R1(B)[0..1]	<-	R5(C)[0..255], CC:85	{}
+0001 ( 448)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 47
+		==> 48
+L48: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 444)		CONV37	R1(I)[0..255]	<-	R5(C)[0..255]	{}
+0001 ( 452)		RELOP19	R6(B)[0..1]	<-	R5(C)[0..255], CC:120	{}
+0002 ( 452)		BRANCH		<-	R6(BF)[0..1]	{}
+		==> 50
+		==> 51
+L50: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 456)		STOREC1		<-	V(8 '')+0 , CB:0	{}
+0001 ( 455)		STOREG1		<-	V(88 'si' A)+4 , CC:16	{}
+0002 ( 454)		BINOP9	R1(I)[0..224]	<-	R1(IF)[0..255], CI:224	{}
+0003 ( 454)		BINOP8	R1(I)[0..255]	<-	R1(IF)[0..224], CI:1	{}
+0004 ( 454)		STOREG1		<-	V(88 'si' A)+3 , R1(CF)[0..255]	{}
+0005 ( 452)		JUMP		<-		{}
+		==> 72
+L51: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 452)		RELOP19	R5(B)[0..1]	<-	R5(CF)[0..255], CC:88	{}
+0001 ( 452)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 50
+		==> 1
+L41: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 437)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:76	{}
+0001 ( 437)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 39
+		==> 40
+L40: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 472)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:115	{}
+0001 ( 472)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 52
+		==> 54
+L52: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 474)		LOADG2	R0(P)	<-	V(-1 'sstack')+2 	{}
+0001 ( 474)		LEAI	R1(P)+0	<-	R0(P)+0, CI:2	{}
+0002 ( 474)		STOREG2		<-	V(-1 'sstack')+2 , R1(PF)	{}
+0003 ( 474)		LOADI2	R0(I)[-32768..32767]	<-	R0(PF)+0	{}
+0004 ( 474)		CAST	R0(P)	<-	R0(IF)[-32768..32767]	{}
+0005 ( 476)		CONST	R5(C)[0..0]	<-	CI:0	{}
+0006 ( 477)		LOADG1	R6(C)[0..255]	<-	V(88 'si' A)+1 	{}
+0007 ( 477)		BRANCH		<-	R6(C)[0..255]	{}
+		==> 56
+		==> 55
+L56: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 479)		CONV37	R1(I)[0..255]	<-	R5(C)[0..]	{}
+0001 ( 479)		LEAI	R1(P)+0	<-	R0(P)+0, R1(IF)[0..255]	{}
+0002 ( 479)		LOADI1	R1(C)[0..255]	<-	R1(PF)+0	{}
+0003 ( 479)		BRANCH		<-	R1(CF)[0..255]	{}
+		==> 57
+		==> 55
+L57: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 480)		BINOP1	R5(C)[1..]	<-	R5(CF)[0..], CI:1	{}
+0001 ( 479)		JUMP		<-		{}
+		==> 56
+L55: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 483)		LOADG1	R7(B)[0..1]	<-	V(88 'si' A)+6 	{}
+0001 ( 483)		BRANCH		<-	R7(B)[0..1]	{}
+		==> 66
+		==> 67
+L66: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 504)		LOADI1	R6(C)[0..255]	<-	R0(P)+0	{}
+0001 ( 504)		BRANCH		<-	R6(C)[0..255]	{}
+		==> 68
+		==> 59
+L68: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 504)		LEAI	R0(P)+0	<-	R0(PF)+0, CI:1	{}
+0001 ( 505)		JUMP		<-		{}
+		==> 60
+L60: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 505)		CONV37	R1(I)[0..255]	<-	R4(C)[0..]	{}
+0001 ( 505)		LEAI	R1(P)+0	<-	R3(P)+0, R1(IF)[0..255]	{}
+0002 ( 505)		STOREI1		<-	R1(PF)+0, R6(CF)[0..255]	{}
+0003 ( 505)		BINOP1	R4(C)[1..]	<-	R4(CF)[0..], CI:1	{}
+0004 ( 504)		LOADI1	R6(C)[0..255]	<-	R0(P)+0	{}
+0005 ( 504)		LEAI	R0(P)+0	<-	R0(PF)+0, CI:1	{}
+0006 ( 504)		BRANCH		<-	R6(C)[0..255]	{}
+		==> 60
+		==> 59
+L59: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 509)		BRANCH		<-	R7(BF)[0..1]	{}
+		==> 70
+		==> 1
+L70: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 511)		LOADG1	R0(C)[0..255]	<-	V(88 'si' A)+1 	{}
+0001 ( 511)		RELOP28	R0(B)[0..1]	<-	R5(C)[0..], R0(CF)[0..255]	{}
+0002 ( 511)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 61
+		==> 1
+L61: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 513)		CONV37	R0(I)[0..255]	<-	R4(C)[0..]	{}
+0001 ( 513)		LOADG1	R1(C)[0..255]	<-	V(88 'si' A)+0 	{}
+0002 ( 513)		LEAI	R0(P)+0	<-	R3(P)+0, R0(IF)[0..255]	{}
+0003 ( 513)		STOREI1		<-	R0(PF)+0, R1(CF)[0..255]	{}
+0004 ( 514)		BINOP1	R5(C)[1..255]	<-	R5(CF)[0..254], CI:1	{}
+0005 ( 513)		BINOP1	R4(C)[1..]	<-	R4(CF)[0..], CI:1	{}
+0006 ( 511)		JUMP		<-		{}
+		==> 70
+L67: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 485)		RELOP28	R1(B)[0..1]	<-	R5(C)[0..], R6(CF)[0..255]	{}
+0001 ( 485)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 58
+		==> 66
+L58: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 487)		CONV37	R1(I)[0..255]	<-	R4(C)[0..]	{}
+0001 ( 487)		LOADG1	R6(C)[0..255]	<-	V(88 'si' A)+0 	{}
+0002 ( 487)		LEAI	R1(P)+0	<-	R3(P)+0, R1(IF)[0..255]	{}
+0003 ( 487)		STOREI1		<-	R1(PF)+0, R6(CF)[0..255]	{}
+0004 ( 488)		BINOP1	R5(C)[1..255]	<-	R5(CF)[0..254], CI:1	{}
+0005 ( 487)		BINOP1	R4(C)[1..]	<-	R4(CF)[0..], CI:1	{}
+0006 ( 485)		LOADG1	R6(C)[0..255]	<-	V(88 'si' A)+1 	{}
+0007 ( 485)		JUMP		<-		{}
+		==> 67
+L54: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 472)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:83	{}
+0001 ( 472)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 52
+		==> 53
+L53: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 518)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:99	{}
+0001 ( 518)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 62
+		==> 64
+L62: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 520)		LOADG2	R0(P)	<-	V(-1 'sstack')+2 	{}
+0001 ( 520)		LOADI2	R1(I)[-32768..32767]	<-	R0(P)+0	{}
+0002 ( 520)		LEAI	R0(P)+0	<-	R0(PF)+0, CI:2	{}
+0003 ( 520)		STOREG2		<-	V(-1 'sstack')+2 , R0(PF)	{}
+0004 ( 518)		JUMP		<-		{}
+		==> 73
+L73: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 520)		STOREI1		<-	R3(P)+0, R1(CF)[-32768..32767]	{}
+0001 ( 524)		CONST	R4(C)[1..1]	<-	CI:1	{}
+0002 ( 522)		JUMP		<-		{}
+		==> 1
+L64: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 518)		RELOP19	R0(B)[0..1]	<-	R1(C)[0..255], CC:67	{}
+0001 ( 518)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 62
+		==> 63
+L63: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 522)		BRANCH		<-	R1(C)[0..255]	{}
+		==> 73
+		==> 1
+L5: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 529)		CONV37	R0(I)[0..255]	<-	R4(C)	{}
+0001 ( 529)		LEAI	R0(P)+0	<-	R3(P)+0, R0(IF)[0..255]	{}
+0002 ( 529)		STOREI1		<-	R0(PF)+0, R1(CF)[0..255]	{}
+0003 ( 359)		LEAI	R2(P)+0	<-	R2(PF)+0, CI:1	{}
+0004 ( 529)		BINOP1	R4(C)	<-	R4(CF), CI:1	{}
+0005 ( 530)		RELOP25	R0(B)[0..1]	<-	R4(C), CC:40	{}
+0006 ( 530)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 65
+		==> 1
+L65: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 530)		CONV37	R0(I)[40..255]	<-	R4(CF)[40..255]	{}
+0001 ( 538)		LEAI	R3(P)+0	<-	R3(PF)+0, R0(IF)[40..255]	{}
+0002 ( 539)		CONST	R4(C)[0..0]	<-	CI:0	{}
+0003 ( 530)		JUMP		<-		{}
+		==> 1
+L3: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 543)		CONV37	R0(I)[0..255]	<-	R4(CF)	{}
+0001 ( 543)		LEAI	R0(P)+0	<-	R3(PF)+0, R0(IF)[0..255]	{}
+0002 ( 543)		STOREI1		<-	R0(PF)+0, CC:0	{}
+0003 ( 552)		RET		<-		{}
+--------------------------------------------------------------------
+puts: /home/xahmol/oscar64/include/stdio.h:12
+$00 R0(P), $00 R1(P), $00 R2(B), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  18)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (3) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  18)		LOADZ2	R0(P)	<-	V(0 '')+0 	{}
+0001 (  18)		LEAI	R1(P)+0	<-	R0(P)+0, CI:1	{}
+0002 (  18)		STOREZ2		<-	V(0 '')+0 , R1(PF)	{}
+0003 (  18)		LOADI1	R0(C)[0..255]	<-	R0(PF)+0	{}
+0004 (  18)		BRANCH		<-	R0(C)[0..255]	{}
+		==> 2
+		==> 3
+L2: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/conio.c
+0000 ( 206)		RELOP19	R1(B)[0..1]	<-	R0(C)[0..255], CC:10	{}
+0001 ( 206)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 4
+		==> 5
+L4: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/conio.c
+0000 ( 207)		CONST	R0(I)[13..13]	<-	CI:13	{S}
+0001 ( 239)		JUMP		<-		{}
+		==> 8
+L8: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/conio.c
+0000 ( 193)		JSR		<-	R0(CF)[0..255], V(-1 '')+0 	{}
+0001 ( 239)		JUMP		<-		{}
+		==> 1
+L5: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/conio.c
+0000 ( 208)		RELOP19	R1(B)[0..1]	<-	R0(C)[0..255], CC:9	{}
+0001 ( 208)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 6
+		==> 8
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/conio.c
+0000 ( 413)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+211 	{V}
+0001 ( 210)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 210)		BINOP9	R0(I)[0..3]	<-	R0(IF)[0..255], CI:3	{}
+0003 ( 212)		CONST	R1(C)[32..32]	<-	CI:32	{IS}
+0004 ( 193)		JUMP		<-		{}
+		==> 7
+L7: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/conio.c
+0000 ( 193)		JSR		<-	R1(C)[32..32], V(-1 '')+0 	{}
+0001 ( 213)		BINOP1	R0(C)[1..4]	<-	R0(CF)[0..3], CI:1	{}
+0002 ( 213)		RELOP28	R2(B)[0..1]	<-	R0(C)[1..4], CC:4	{}
+0003 ( 213)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 7
+		==> 1
+L3: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  20)		RET		<-		{}
+--------------------------------------------------------------------
+nformi: /home/xahmol/oscar64/include/stdio.c:79
+$00 R0(I), $00 R1(P), $00 R2(I), $00 R3(I), $00 R4(I), $00 R5(B), $01 R6(C), $02 R7(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  85)		CONST	R5(B)[0..0]	<-	CI:0	{}
+0001 (  84)		LOADZ2	R0(I)[-32768..32767]	<-	V(4 '')+0 	{}
+0002 (  82)		LOADZ2	R1(P)	<-	V(0 '')+0 	{S}
+0003 (  82)		LOADI1	R6(C)[0..255]	<-	R1(P)+4	{}
+0004 (  79)		LOADZ1	R2(B)[0..1]	<-	V(6 '')+0 	{S}
+0005 (  87)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 2
+		==> 22
+L2: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  87)		RELOP24	R2(B)[0..1]	<-	R0(I)[-32768..32767], CI:0	{S}
+0001 (  87)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 1
+		==> 22
+L1: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  90)		UNOP11	R0(I)[1..32768]	<-	R0(IF)[-32768..-1]	{}
+0001 (  89)		CONST	R5(B)[1..1]	<-	CI:1	{}
+0002 (  94)		JUMP		<-		{}
+		==> 22
+L22: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  93)		CONST	R7(C)[16..16]	<-	CI:16	{}
+0001 (  94)		RELOP27	R2(B)[0..1]	<-	R0(I)[-32768..32768], CI:0	{}
+0002 (  94)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 25
+		==> 4
+L25: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  96)		CONV37	R2(I)[0..255]	<-	R6(C)[0..255]	{I}
+0001 (  96)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  96)		BINOP6	R3(I)[0..254]	<-	R0(I)[1..], R2(I)[0..255]	{}
+0001 (  99)		BINOP4	R0(I)[0..]	<-	R0(IF)[1..], R2(I)[0..255]	{}
+0002 (  97)		RELOP25	R4(B)[0..1]	<-	R3(C)[0..254], CC:10	{}
+0003 (  97)		BRANCH		<-	R4(BF)[0..1]	{}
+		==> 26
+		==> 27
+L26: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  97)		LOADI1	R4(C)[0..255]	<-	R1(P)+3	{}
+0001 (  97)		CONV37	R4(I)[0..255]	<-	R4(CF)[0..255]	{}
+0002 (  97)		BINOP2	R4(I)[-10..245]	<-	R4(IF)[0..255], CI:10	{}
+0003 (  97)		JUMP		<-		{}
+		==> 28
+L28: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  97)		CONV37	R3(I)[0..254]	<-	R3(CF)[0..254]	{}
+0001 (  97)		BINOP1	R3(I)[-10..499]	<-	R3(IF)[0..254], R4(IF)[-10..245]	{}
+0002 (  98)		CONV37	R4(I)[1..16]	<-	R7(C)[1..16]	{}
+0003 (  98)		LEAG	R4(P)[0..15]	<-	V(84 'buffer' A)+-1 , R4(IF)[1..16]	{}
+0004 (  98)		STOREI1		<-	R4(PF)+0 {V(84 'buffer' A)} [0..15], R3(CF)[-10..499]	{}
+0005 (  98)		BINOP1	R7(C)[0..15]	<-	R7(CF)[1..16], CI:-1	{}
+0006 (  94)		RELOP27	R3(B)[0..1]	<-	R0(I)[0..], CI:0	{}
+0007 (  94)		BRANCH		<-	R3(BF)[0..1]	{}
+		==> 3
+		==> 4
+L4: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 102)		LOADI1	R0(C)[0..255]	<-	R1(P)+2	{}
+0001 ( 102)		RELOP20	R2(B)[0..1]	<-	R0(C)[0..255], CC:255	{}
+0002 ( 102)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 29
+		==> 30
+L29: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 102)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0001 ( 102)		BINOP2	R0(I)[-239..16]	<-	CI:16, R0(IF)[0..255]	{}
+0002 ( 102)		JUMP		<-		{}
+		==> 31
+L31: <= D-1: (3) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 104)		RELOP27	R2(B)[0..1]	<-	R7(C)[0..16], R0(C)[-239..16]	{}
+0001 ( 104)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 5
+		==> 6
+L5: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 105)		CONV37	R2(I)[1..16]	<-	R7(C)[1..16]	{}
+0001 ( 105)		LEAG	R2(P)[0..15]	<-	V(84 'buffer' A)+-1 , R2(IF)[1..16]	{}
+0002 ( 105)		STOREI1		<-	R2(PF)+0 {V(84 'buffer' A)} [0..15], CC:48	{}
+0003 ( 105)		BINOP1	R7(C)[0..15]	<-	R7(CF)[1..16], CI:-1	{}
+0004 ( 104)		JUMP		<-		{}
+		==> 31
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 107)		LOADI1	R0(B)[0..1]	<-	R1(P)+7	{}
+0001 ( 107)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 9
+		==> 8
+L9: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 107)		RELOP19	R0(B)[0..1]	<-	R6(CF)[0..255], CC:16	{}
+0001 ( 107)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 7
+		==> 8
+L7: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 109)		LOADI1	R2(C)[0..255]	<-	R1(P)+3	{}
+0001 ( 109)		CONV37	R0(I)[2..16]	<-	R7(C)[2..16]	{}
+0002 ( 110)		LEAG	R0(P)[0..14]	<-	V(84 'buffer' A)+-2 , R0(IF)[2..16]	{}
+0003 ( 110)		STOREI1		<-	R0(P)+0 {V(84 'buffer' A)} [0..14], CC:48	{}
+0004 ( 109)		BINOP1	R2(C)[23..278]	<-	R2(CF)[0..255], CI:23	{}
+0005 ( 109)		STOREI1		<-	R0(PF)+1 {V(84 'buffer' A)} [0..14], R2(CF)[23..278]	{}
+0006 ( 110)		BINOP1	R7(C)[0..14]	<-	R7(CF)[2..16], CI:-2	{}
+0007 ( 113)		JUMP		<-		{}
+		==> 8
+L8: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 118)		CONST	R4(C)[0..0]	<-	CI:0	{}
+0001 ( 113)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 10
+		==> 11
+L10: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 114)		CONV37	R0(I)[1..16]	<-	R7(C)[1..16]	{}
+0001 ( 114)		LEAG	R0(P)[0..15]	<-	V(84 'buffer' A)+-1 , R0(IF)[1..16]	{}
+0002 ( 114)		STOREI1		<-	R0(PF)+0 {V(84 'buffer' A)} [0..15], CC:45	{}
+0003 ( 119)		JUMP		<-		{}
+		==> 33
+L33: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 116)		BINOP1	R7(C)[0..15]	<-	R7(CF)[1..16], CI:-1	{}
+0001 ( 119)		JUMP		<-		{}
+		==> 32
+L32: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 119)		LOADI1	R0(B)[0..1]	<-	R1(P)+6	{}
+0001 ( 119)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 20
+		==> 17
+L20: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 121)		RELOP28	R0(B)[0..1]	<-	R7(C)[0..16], CC:16	{}
+0001 ( 121)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 23
+		==> 15
+L23: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 122)		LOADZ2	R0(P)	<-	V(2 '')+0 	{IS}
+0001 ( 122)		JUMP		<-		{}
+		==> 14
+L14: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 122)		CONV37	R2(I)[0..255]	<-	R4(C)[0..]	{}
+0001 ( 122)		CONV37	R3(I)[0..15]	<-	R7(C)[0..15]	{}
+0002 ( 122)		LEAG	R3(P)[0..15]	<-	V(84 'buffer' A)+0 , R3(IF)[0..15]	{}
+0003 ( 122)		LOADI1	R3(C)[0..255]	<-	R3(PF)+0 {V(84 'buffer' A)} [0..15]	{}
+0004 ( 122)		LEAI	R2(P)+0	<-	R0(P)+0, R2(IF)[0..255]	{}
+0005 ( 122)		STOREI1		<-	R2(PF)+0, R3(CF)[0..255]	{}
+0006 ( 122)		BINOP1	R4(C)[1..]	<-	R4(CF)[0..], CI:1	{}
+0007 ( 122)		BINOP1	R7(C)[1..16]	<-	R7(CF)[0..15], CI:1	{}
+0008 ( 121)		RELOP28	R2(B)[0..1]	<-	R7(C)[1..16], CC:16	{}
+0009 ( 121)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 14
+		==> 15
+L15: <= D-1: (3) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 123)		LOADI1	R0(C)[0..255]	<-	R1(P)+1	{}
+0001 ( 123)		RELOP28	R0(B)[0..1]	<-	R4(C)[0..], R0(CF)[0..255]	{}
+0002 ( 123)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 16
+		==> 13
+L16: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 123)		CONV37	R0(I)[0..254]	<-	R4(C)[0..254]	{}
+0001 ( 124)		LOADZ2	R2(P)	<-	V(2 '')+0 	{S}
+0002 ( 124)		LEAI	R2(P)+0	<-	R2(PF)+0, R0(IF)[0..254]	{}
+0003 ( 124)		LOADI1	R0(C)[0..255]	<-	R1(P)+0	{}
+0004 ( 124)		STOREI1		<-	R2(PF)+0, R0(CF)[0..255]	{}
+0005 ( 124)		BINOP1	R4(C)[1..255]	<-	R4(CF)[0..254], CI:1	{}
+0006 ( 123)		JUMP		<-		{}
+		==> 15
+L13: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 134)		RETV		<-	R4(CF)[0..]	{}
+L17: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 128)		LOADI1	R0(C)[0..255]	<-	R1(P)+1	{}
+0001 ( 128)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 128)		CONV37	R2(I)[0..16]	<-	R7(C)[0..16]	{}
+0003 ( 128)		BINOP1	R0(I)[0..271]	<-	R2(I)[0..16], R0(IF)[0..255]	{}
+0004 ( 128)		RELOP27	R0(B)[0..1]	<-	R0(IF)[0..271], CI:16	{}
+0005 ( 128)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 18
+		==> 21
+L18: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 129)		LOADI1	R3(C)[0..255]	<-	R1(P)+0	{}
+0001 ( 129)		LEAG	R0(P)[0..15]	<-	V(84 'buffer' A)+-1 , R2(IF)[1..16]	{}
+0002 ( 129)		STOREI1		<-	R0(PF)+0 {V(84 'buffer' A)} [0..15], R3(CF)[0..255]	{}
+0003 ( 129)		BINOP1	R7(C)[0..15]	<-	R7(CF)[1..16], CI:-1	{}
+0004 ( 128)		JUMP		<-		{}
+		==> 17
+L21: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 130)		RELOP28	R0(B)[0..1]	<-	R7(C)[0..16], CC:16	{}
+0001 ( 130)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 24
+		==> 13
+L24: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 131)		LOADZ2	R0(P)	<-	V(2 '')+0 	{IS}
+0001 ( 131)		JUMP		<-		{}
+		==> 19
+L19: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 131)		CONV37	R1(I)[0..255]	<-	R4(C)[0..]	{}
+0001 ( 131)		CONV37	R2(I)[0..15]	<-	R7(C)[0..15]	{}
+0002 ( 131)		LEAG	R2(P)[0..15]	<-	V(84 'buffer' A)+0 , R2(IF)[0..15]	{}
+0003 ( 131)		LOADI1	R2(C)[0..255]	<-	R2(PF)+0 {V(84 'buffer' A)} [0..15]	{}
+0004 ( 131)		LEAI	R1(P)+0	<-	R0(P)+0, R1(IF)[0..255]	{}
+0005 ( 131)		STOREI1		<-	R1(PF)+0, R2(CF)[0..255]	{}
+0006 ( 131)		BINOP1	R4(C)[1..]	<-	R4(CF)[0..], CI:1	{}
+0007 ( 131)		BINOP1	R7(C)[1..16]	<-	R7(CF)[0..15], CI:1	{}
+0008 ( 130)		RELOP28	R1(B)[0..1]	<-	R7(C)[1..16], CC:16	{}
+0009 ( 130)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 19
+		==> 13
+L11: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 115)		LOADI1	R0(B)[0..1]	<-	R1(P)+5	{}
+0001 ( 115)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 12
+		==> 32
+L12: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 116)		CONV37	R0(I)[1..16]	<-	R7(C)[1..16]	{}
+0001 ( 116)		LEAG	R0(P)[0..15]	<-	V(84 'buffer' A)+-1 , R0(IF)[1..16]	{}
+0002 ( 116)		STOREI1		<-	R0(PF)+0 {V(84 'buffer' A)} [0..15], CC:43	{}
+0003 ( 119)		JUMP		<-		{}
+		==> 33
+L30: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 102)		CONST	R0(I)[15..15]	<-	CI:15	{}
+0001 ( 102)		JUMP		<-		{}
+		==> 31
+L27: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 (  97)		CONST	R4(I)[48..48]	<-	CI:48	{}
+0001 (  97)		JUMP		<-		{}
+		==> 28
+--------------------------------------------------------------------
+nforml: /home/xahmol/oscar64/include/stdio.c:137
+$00 R0(L), $00 R1(L), $00 R2(L), $00 R3(P), $00 R4(B), $01 R5(C), $00 R6(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 142)		CONST	R4(B)[0..0]	<-	CI:0	{}
+0001 ( 141)		LOADZ4	R0(L)[-2147483648..2147483647]	<-	V(4 '')+0 	{}
+0002 ( 137)		LOADZ1	R1(B)[0..1]	<-	V(8 '')+0 	{S}
+0003 ( 144)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 2
+		==> 22
+L2: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 144)		RELOP24	R1(B)[0..1]	<-	R0(L)[-2147483648..2147483647], CL:0	{S}
+0001 ( 144)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 1
+		==> 22
+L1: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 147)		UNOP11	R0(L)[1..2147483648]	<-	R0(LF)[-2147483648..-1]	{}
+0001 ( 146)		CONST	R4(B)[1..1]	<-	CI:1	{}
+0002 ( 152)		JUMP		<-		{}
+		==> 22
+L22: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 150)		CONST	R5(C)[16..16]	<-	CI:16	{}
+0001 ( 152)		RELOP27	R1(B)[0..1]	<-	R0(L)[-2147483648..2147483648], CL:0	{}
+0002 ( 152)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 25
+		==> 4
+L25: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 154)		LOADZ2	R3(P)	<-	V(0 '')+0 	{IS}
+0001 ( 154)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 154)		LOADI1	R1(C)[0..255]	<-	R3(P)+4	{}
+0001 ( 154)		CONV38	R1(L)[0..255]	<-	R1(CF)[0..255]	{}
+0002 ( 157)		BINOP4	R2(L)[0..]	<-	R0(L)[1..], R1(L)[0..255]	{}
+0003 ( 154)		BINOP6	R0(L)[0..254]	<-	R0(LF)[1..], R1(LF)[0..255]	{}
+0004 ( 155)		RELOP25	R1(B)[0..1]	<-	R0(I)[0..254], CI:10	{}
+0005 ( 155)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 26
+		==> 27
+L26: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 155)		LOADI1	R1(C)[0..255]	<-	R3(P)+3	{}
+0001 ( 155)		CONV37	R1(I)[0..255]	<-	R1(CF)[0..255]	{}
+0002 ( 155)		BINOP2	R1(I)[-10..245]	<-	R1(IF)[0..255], CI:10	{}
+0003 ( 155)		JUMP		<-		{}
+		==> 28
+L28: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 155)		BINOP1	R0(I)[-10..499]	<-	R1(IF)[-10..245], R0(IF)[0..254]	{}
+0001 ( 156)		CONV37	R1(I)[1..16]	<-	R5(C)[1..16]	{}
+0002 ( 156)		LEAG	R1(P)[0..15]	<-	V(86 'buffer' A)+-1 , R1(IF)[1..16]	{}
+0003 ( 156)		STOREI1		<-	R1(PF)+0 {V(86 'buffer' A)} [0..15], R0(CF)[-10..499]	{}
+0004 ( 156)		BINOP1	R5(C)[0..15]	<-	R5(CF)[1..16], CI:-1	{}
+0005 ( 157)		MOVE	R0(L)[0..]	<-	R2(L)[0..]	{}
+0006 ( 152)		RELOP27	R1(B)[0..1]	<-	R2(LF)[0..], CL:0	{}
+0007 ( 152)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 3
+		==> 4
+L4: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 160)		LOADZ2	R0(P)	<-	V(0 '')+0 	{S}
+0001 ( 160)		LOADI1	R1(C)[0..255]	<-	R0(P)+2	{}
+0002 ( 160)		RELOP20	R2(B)[0..1]	<-	R1(C)[0..255], CC:255	{}
+0003 ( 160)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 29
+		==> 30
+L29: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 160)		CONV37	R1(I)[0..255]	<-	R1(CF)[0..255]	{}
+0001 ( 160)		BINOP2	R1(I)[-239..16]	<-	CI:16, R1(IF)[0..255]	{}
+0002 ( 160)		JUMP		<-		{}
+		==> 31
+L31: <= D-1: (3) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 162)		RELOP27	R2(B)[0..1]	<-	R5(C)[0..16], R1(C)[-239..16]	{}
+0001 ( 162)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 5
+		==> 6
+L5: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 163)		CONV37	R2(I)[1..16]	<-	R5(C)[1..16]	{}
+0001 ( 163)		LEAG	R2(P)[0..15]	<-	V(86 'buffer' A)+-1 , R2(IF)[1..16]	{}
+0002 ( 163)		STOREI1		<-	R2(PF)+0 {V(86 'buffer' A)} [0..15], CC:48	{}
+0003 ( 163)		BINOP1	R5(C)[0..15]	<-	R5(CF)[1..16], CI:-1	{}
+0004 ( 162)		JUMP		<-		{}
+		==> 31
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 165)		LOADI1	R1(B)[0..1]	<-	R0(P)+7	{}
+0001 ( 165)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 9
+		==> 8
+L9: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 165)		LOADI1	R1(C)[0..255]	<-	R0(P)+4	{}
+0001 ( 165)		RELOP19	R1(B)[0..1]	<-	R1(CF)[0..255], CC:16	{}
+0002 ( 165)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 7
+		==> 8
+L7: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 167)		LOADI1	R2(C)[0..255]	<-	R0(P)+3	{}
+0001 ( 167)		CONV37	R1(I)[2..16]	<-	R5(C)[2..16]	{}
+0002 ( 168)		LEAG	R1(P)[0..14]	<-	V(86 'buffer' A)+-2 , R1(IF)[2..16]	{}
+0003 ( 168)		STOREI1		<-	R1(P)+0 {V(86 'buffer' A)} [0..14], CC:48	{}
+0004 ( 167)		BINOP1	R2(C)[23..278]	<-	R2(CF)[0..255], CI:23	{}
+0005 ( 167)		STOREI1		<-	R1(PF)+1 {V(86 'buffer' A)} [0..14], R2(CF)[23..278]	{}
+0006 ( 168)		BINOP1	R5(C)[0..14]	<-	R5(CF)[2..16], CI:-2	{}
+0007 ( 171)		JUMP		<-		{}
+		==> 8
+L8: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 176)		CONST	R6(C)[0..0]	<-	CI:0	{}
+0001 ( 171)		BRANCH		<-	R4(BF)[0..1]	{}
+		==> 10
+		==> 11
+L10: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 172)		CONV37	R1(I)[1..16]	<-	R5(C)[1..16]	{}
+0001 ( 172)		LEAG	R1(P)[0..15]	<-	V(86 'buffer' A)+-1 , R1(IF)[1..16]	{}
+0002 ( 172)		STOREI1		<-	R1(PF)+0 {V(86 'buffer' A)} [0..15], CC:45	{}
+0003 ( 177)		JUMP		<-		{}
+		==> 33
+L33: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 174)		BINOP1	R5(C)[0..15]	<-	R5(CF)[1..16], CI:-1	{}
+0001 ( 177)		JUMP		<-		{}
+		==> 32
+L32: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 177)		LOADI1	R1(B)[0..1]	<-	R0(P)+6	{}
+0001 ( 177)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 20
+		==> 17
+L20: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 179)		RELOP28	R1(B)[0..1]	<-	R5(C)[0..16], CC:16	{}
+0001 ( 179)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 23
+		==> 15
+L23: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 180)		LOADZ2	R1(P)	<-	V(2 '')+0 	{IS}
+0001 ( 180)		JUMP		<-		{}
+		==> 14
+L14: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 180)		CONV37	R2(I)[0..255]	<-	R6(C)[0..]	{}
+0001 ( 180)		CONV37	R3(I)[0..15]	<-	R5(C)[0..15]	{}
+0002 ( 180)		LEAG	R3(P)[0..15]	<-	V(86 'buffer' A)+0 , R3(IF)[0..15]	{}
+0003 ( 180)		LOADI1	R3(C)[0..255]	<-	R3(PF)+0 {V(86 'buffer' A)} [0..15]	{}
+0004 ( 180)		LEAI	R2(P)+0	<-	R1(P)+0, R2(IF)[0..255]	{}
+0005 ( 180)		STOREI1		<-	R2(PF)+0, R3(CF)[0..255]	{}
+0006 ( 180)		BINOP1	R6(C)[1..]	<-	R6(CF)[0..], CI:1	{}
+0007 ( 180)		BINOP1	R5(C)[1..16]	<-	R5(CF)[0..15], CI:1	{}
+0008 ( 179)		RELOP28	R2(B)[0..1]	<-	R5(C)[1..16], CC:16	{}
+0009 ( 179)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 14
+		==> 15
+L15: <= D-1: (3) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 181)		LOADI1	R1(C)[0..255]	<-	R0(P)+1	{}
+0001 ( 181)		RELOP28	R1(B)[0..1]	<-	R6(C)[0..], R1(CF)[0..255]	{}
+0002 ( 181)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 16
+		==> 13
+L16: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 181)		CONV37	R1(I)[0..254]	<-	R6(C)[0..254]	{}
+0001 ( 182)		LOADZ2	R2(P)	<-	V(2 '')+0 	{S}
+0002 ( 182)		LEAI	R2(P)+0	<-	R2(PF)+0, R1(IF)[0..254]	{}
+0003 ( 182)		LOADI1	R1(C)[0..255]	<-	R0(P)+0	{}
+0004 ( 182)		STOREI1		<-	R2(PF)+0, R1(CF)[0..255]	{}
+0005 ( 182)		BINOP1	R6(C)[1..255]	<-	R6(CF)[0..254], CI:1	{}
+0006 ( 181)		JUMP		<-		{}
+		==> 15
+L13: <= D-1: (3)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 192)		RETV		<-	R6(CF)[0..]	{}
+L17: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 186)		LOADI1	R1(C)[0..255]	<-	R0(P)+1	{}
+0001 ( 186)		CONV37	R1(I)[0..255]	<-	R1(CF)[0..255]	{}
+0002 ( 186)		CONV37	R2(I)[0..16]	<-	R5(C)[0..16]	{}
+0003 ( 186)		BINOP1	R1(I)[0..271]	<-	R2(I)[0..16], R1(IF)[0..255]	{}
+0004 ( 186)		RELOP27	R1(B)[0..1]	<-	R1(IF)[0..271], CI:16	{}
+0005 ( 186)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 18
+		==> 21
+L18: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 187)		LOADI1	R3(C)[0..255]	<-	R0(P)+0	{}
+0001 ( 187)		LEAG	R1(P)[0..15]	<-	V(86 'buffer' A)+-1 , R2(IF)[1..16]	{}
+0002 ( 187)		STOREI1		<-	R1(PF)+0 {V(86 'buffer' A)} [0..15], R3(CF)[0..255]	{}
+0003 ( 187)		BINOP1	R5(C)[0..15]	<-	R5(CF)[1..16], CI:-1	{}
+0004 ( 186)		JUMP		<-		{}
+		==> 17
+L21: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 188)		RELOP28	R0(B)[0..1]	<-	R5(C)[0..16], CC:16	{}
+0001 ( 188)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 24
+		==> 13
+L24: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 189)		LOADZ2	R0(P)	<-	V(2 '')+0 	{IS}
+0001 ( 189)		JUMP		<-		{}
+		==> 19
+L19: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 189)		CONV37	R1(I)[0..255]	<-	R6(C)[0..]	{}
+0001 ( 189)		CONV37	R2(I)[0..15]	<-	R5(C)[0..15]	{}
+0002 ( 189)		LEAG	R2(P)[0..15]	<-	V(86 'buffer' A)+0 , R2(IF)[0..15]	{}
+0003 ( 189)		LOADI1	R2(C)[0..255]	<-	R2(PF)+0 {V(86 'buffer' A)} [0..15]	{}
+0004 ( 189)		LEAI	R1(P)+0	<-	R0(P)+0, R1(IF)[0..255]	{}
+0005 ( 189)		STOREI1		<-	R1(PF)+0, R2(CF)[0..255]	{}
+0006 ( 189)		BINOP1	R6(C)[1..]	<-	R6(CF)[0..], CI:1	{}
+0007 ( 189)		BINOP1	R5(C)[1..16]	<-	R5(CF)[0..15], CI:1	{}
+0008 ( 188)		RELOP28	R1(B)[0..1]	<-	R5(C)[1..16], CC:16	{}
+0009 ( 188)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 19
+		==> 13
+L11: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 173)		LOADI1	R1(B)[0..1]	<-	R0(P)+5	{}
+0001 ( 173)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 12
+		==> 32
+L12: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 174)		CONV37	R1(I)[1..16]	<-	R5(C)[1..16]	{}
+0001 ( 174)		LEAG	R1(P)[0..15]	<-	V(86 'buffer' A)+-1 , R1(IF)[1..16]	{}
+0002 ( 174)		STOREI1		<-	R1(PF)+0 {V(86 'buffer' A)} [0..15], CC:43	{}
+0003 ( 177)		JUMP		<-		{}
+		==> 33
+L30: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 160)		CONST	R1(I)[15..15]	<-	CI:15	{}
+0001 ( 160)		JUMP		<-		{}
+		==> 31
+L27: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdio.c
+0000 ( 155)		CONST	R1(I)[48..48]	<-	CI:48	{}
+0001 ( 155)		JUMP		<-		{}
+		==> 28
+--------------------------------------------------------------------
+cwin_console_write_string: /home/xahmol/oscar64/include/c64/charwin.h:183
+$00 R0(I), $02 R1(I), $04 R2(I), $00 R3(P), $07 R4(C), $08 R5(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 795)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+4 	{}
+0001 ( 795)		STOREG1		<-	V(11 'cw' A)+6 , R0(CF)[0..255]	{}
+0002 ( 794)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+0003 ( 794)		STOREG1		<-	V(11 'cw' A)+7 , R0(CF)[0..255]	{}
+0004 ( 797)		CONST	R4(C)[0..0]	<-	CI:0	{}
+0005 ( 798)		LOADZ2	R3(P)	<-	V(4 '')+0 	{IS}
+0006 ( 798)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 798)		CONV37	R0(I)[0..255]	<-	R4(C)[0..]	{}
+0001 ( 798)		LEAI	R0(P)+0	<-	R3(P)+0, R0(IF)[0..255]	{}
+0002 ( 798)		LOADI1	R5(C)[0..255]	<-	R0(PF)+0	{}
+0003 ( 798)		BRANCH		<-	R5(C)[0..255]	{}
+		==> 2
+		==> 3
+L2: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 800)		RELOP19	R0(B)[0..1]	<-	R5(C)[0..255], CC:10	{}
+0001 ( 800)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 4
+		==> 5
+L4: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 801)		CALLN		<-	V(20 'cwin_console_newline')+0 	{}
+0001 ( 798)		JUMP		<-		{}
+		==> 8
+L8: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 804)		BINOP1	R4(C)[1..]	<-	R4(CF)[0..], CI:1	{}
+0001 ( 798)		JUMP		<-		{}
+		==> 1
+L5: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 782)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+2 	{}
+0001 ( 782)		LOADG1	R1(C)[0..255]	<-	V(11 'cw' A)+4 	{}
+0002 ( 782)		RELOP19	R0(B)[0..1]	<-	R1(CF)[0..255], R0(CF)[0..255]	{}
+0003 ( 782)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 6
+		==> 7
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 783)		CALLN		<-	V(20 'cwin_console_newline')+0 	{}
+0001 ( 782)		JUMP		<-		{}
+		==> 7
+L7: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 785)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+4 	{}
+0001 ( 785)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 785)		LOADG1	R1(C)[0..24]	<-	V(11 'cw' A)+5 	{}
+0003 ( 785)		CONV37	R1(I)[0..24]	<-	R1(CF)[0..24]	{}
+0004 ( 785)		BINOP16	R1(I)[0..48]	<-	R1(IF)[0..24], CI:1	{}
+0005 ( 785)		LEAG	R1(P)[0..48]	<-	V(12 'mul40')+0 , R1(IF)[0..48]	{}
+0006 ( 785)		LOADI2	R1(I)[0..65535]	<-	R1(PF)+0 {V(12 'mul40')} [0..48]	{}
+0007 ( 785)		BINOP1	R0(I)	<-	R1(IF)[0..65535], R0(IF)[0..255]	{}
+0008 ( 787)		LOADG2	R1(P)	<-	V(11 'cw' A)+8 	{}
+0009 ( 798)		CONV37	R2(I)[0..255]	<-	R5(C)[0..255]	{}
+000a ( 184)		BINOP17	R2(I)[0..7]	<-	R2(IF)[0..255], CI:5	{}
+000b ( 184)		LEAG	R2(P)[0..7]	<-	V(92 'p2smap' A)+0 , R2(IF)[0..7]	{}
+000c ( 184)		LOADI1	R2(C)[0..255]	<-	R2(PF)+0 {V(92 'p2smap' A)} [0..7]	{}
+000d ( 184)		BINOP10	R2(C)	<-	R2(CF)[0..255], R5(CF)[0..255]	{}
+000e ( 787)		LEAI	R1(P)+0	<-	R1(PF)+0, R0(I)	{}
+000f ( 787)		STOREI1		<-	R1(PF)+0, R2(CF)	{}
+0010 ( 788)		LOADG2	R1(P)	<-	V(11 'cw' A)+10 	{}
+0011 ( 788)		LEAI	R1(P)+0	<-	R1(PF)+0, R0(IF)	{}
+0012 ( 788)		STOREI1		<-	R1(PF)+0, CC:7	{}
+0013 ( 789)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+4 	{}
+0014 ( 789)		BINOP1	R0(C)	<-	R0(CF)[0..255], CI:1	{}
+0015 ( 789)		STOREG1		<-	V(11 'cw' A)+4 , R0(CF)	{}
+0016 ( 798)		JUMP		<-		{}
+		==> 8
+L3: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.h
+0000 ( 183)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_console_newline: /home/xahmol/oscar64/include/c64/charwin.h:177
+$00 R0(P), $00 R1(P), $02 R2(I), $04 R3(I), $00 R4(I), $00 R5(P), $00 R6(C), $06 R7(C), $00 R8(C), $00 R9(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 774)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0001 ( 775)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+0002 ( 775)		BINOP1	R1(C)	<-	R0(C)[0..255], CI:1	{}
+0003 ( 775)		STOREG1		<-	V(11 'cw' A)+5 , R1(C)	{}
+0004 ( 776)		LOADG1	R2(C)[0..255]	<-	V(11 'cw' A)+3 	{}
+0005 ( 776)		RELOP19	R1(B)[0..1]	<-	R1(CF), R2(CF)[0..255]	{}
+0006 ( 776)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 1
+		==> 2
+L1: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 766)		STOREG1		<-	V(11 'cw' A)+5 , R0(CF)[0..255]	{}
+0001 ( 767)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+7 	{}
+0002 ( 767)		BINOP1	R0(C)[-1..254]	<-	R0(CF)[0..255], CI:-1	{}
+0003 ( 767)		STOREG1		<-	V(11 'cw' A)+7 , R0(CF)[-1..254]	{}
+0004 ( 718)		CONST	R6(C)[0..0]	<-	CI:0	{}
+0005 ( 715)		LOADG1	R7(C)[0..255]	<-	V(11 'cw' A)+2 	{}
+0006 ( 712)		LOADG2	R0(P)	<-	V(11 'cw' A)+8 	{}
+0007 ( 713)		LOADG2	R1(P)	<-	V(11 'cw' A)+10 	{}
+0008 ( 718)		JUMP		<-		{}
+		==> 4
+L4: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 718)		CONV37	R2(I)[0..255]	<-	R6(C)[0..]	{}
+0001 ( 718)		LOADG1	R3(C)[0..255]	<-	V(11 'cw' A)+3 	{}
+0002 ( 718)		CONV37	R3(I)[0..255]	<-	R3(CF)[0..255]	{}
+0003 ( 718)		BINOP2	R3(I)[-1..254]	<-	R3(IF)[0..255], CI:1	{}
+0004 ( 718)		RELOP28	R2(B)[0..1]	<-	R2(IF)[0..255], R3(I)[-1..254]	{}
+0005 ( 718)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 5
+		==> 3
+L5: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 720)		LEAI	R2(P)+0	<-	R1(P)+0, CI:40	{}
+0001 ( 720)		LEAI	R3(P)+0	<-	R0(P)+0, CI:40	{}
+0002 (  14)		RELOP28	R4(B)[0..1]	<-	CC:0, R7(C)[0..255]	{}
+0003 (  14)		BRANCH		<-	R4(BF)[0..1]	{}
+		==> 8
+		==> 6
+L8: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  14)		CONST	R8(C)[0..0]	<-	CI:0	{}
+0001 (  16)		JUMP		<-		{}
+		==> 7
+L7: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 (  16)		CONV37	R4(I)[0..254]	<-	R8(C)[0..254]	{}
+0001 (  16)		LEAI	R5(P)+0	<-	R3(P)+0, R4(I)[0..254]	{}
+0002 (  16)		LOADI1	R9(C)[0..255]	<-	R5(PF)+0	{}
+0003 (  16)		LEAI	R5(P)+0	<-	R0(P)+0, R4(I)[0..254]	{}
+0004 (  16)		STOREI1		<-	R5(PF)+0, R9(CF)[0..255]	{}
+0005 (  17)		LEAI	R5(P)+0	<-	R2(P)+0, R4(I)[0..254]	{}
+0006 (  17)		LOADI1	R5(C)[0..255]	<-	R5(PF)+0	{}
+0007 (  17)		LEAI	R4(P)+0	<-	R1(P)+0, R4(IF)[0..254]	{}
+0008 (  17)		STOREI1		<-	R4(PF)+0, R5(CF)[0..255]	{}
+0009 (  14)		BINOP1	R8(C)[1..255]	<-	R8(CF)[0..254], CI:1	{}
+000a (  14)		RELOP28	R4(B)[0..1]	<-	R8(C)[1..255], R7(C)[1..255]	{}
+000b (  14)		BRANCH		<-	R4(BF)[0..1]	{}
+		==> 7
+		==> 6
+L6: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 721)		MOVE	R0(P)+0	<-	R3(PF)+0	{}
+0001 ( 722)		MOVE	R1(P)+0	<-	R2(PF)+0	{}
+0002 ( 718)		BINOP1	R6(C)[1..]	<-	R6(CF)[0..], CI:1	{}
+0003 ( 718)		JUMP		<-		{}
+		==> 4
+L3: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 761)		STOREC1		<-	V(0 '')+0 , R3(CF)[-1..254]	{}
+0001 ( 769)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+2 	{}
+0002 ( 761)		STOREC1		<-	V(1 '')+0 , R0(CF)[0..255]	{}
+0003 ( 761)		STOREC1		<-	V(3 '')+0 , CC:1	{}
+0004 ( 184)		LOADG1	R0(C)[0..255]	<-	V(92 'p2smap' A)+1 	{}
+0005 ( 184)		BINOP10	R0(C)[0..255]	<-	R0(CF)[0..255], CC:32	{}
+0006 ( 761)		STOREC1		<-	V(2 '')+0 , R0(CF)[0..255]	{}
+0007 ( 761)		CALLN		<-	V(5 'cwin_fill_rect_raw')+0 	{}
+0008 ( 769)		JUMP		<-		{}
+		==> 2
+L2: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/charwin.h
+0000 ( 177)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_getch: /home/xahmol/oscar64/include/c64/charwin.h:147
+
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 594)		JSR		<-	V(-1 '')+0 	{}
+0001 ( 602)		RET		<-		{}
+--------------------------------------------------------------------
+exit: /home/xahmol/oscar64/include/stdlib.h:54
+
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/stdlib.c
+0000 ( 593)		JSR		<-	V(0 '')+0 , V(-1 '')+0 	{}
+0001 ( 604)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_put_string: /home/xahmol/oscar64/include/c64/charwin.h:64
+$00 R0(I), $00 R1(I), $00 R2(P), $00 R3(I), $00 R4(P), $00 R5(C), $00 R6(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 254)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+4 	{}
+0001 ( 331)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 254)		LOADG1	R1(C)[0..24]	<-	V(11 'cw' A)+5 	{}
+0003 ( 331)		CONV37	R1(I)[0..24]	<-	R1(CF)[0..24]	{}
+0004 ( 331)		BINOP16	R1(I)[0..48]	<-	R1(IF)[0..24], CI:1	{}
+0005 ( 331)		LEAG	R1(P)[0..48]	<-	V(12 'mul40')+0 , R1(IF)[0..48]	{}
+0006 ( 331)		LOADI2	R1(I)[0..65535]	<-	R1(PF)+0 {V(12 'mul40')} [0..48]	{}
+0007 ( 331)		BINOP1	R0(I)	<-	R1(IF)[0..65535], R0(IF)[0..255]	{}
+0008 ( 333)		LOADG2	R1(P)	<-	V(11 'cw' A)+8 	{}
+0009 ( 333)		LEAI	R1(P)+0	<-	R1(PF)+0, R0(I)	{}
+000a ( 334)		LOADG2	R2(P)	<-	V(11 'cw' A)+10 	{}
+000b ( 334)		LEAI	R2(P)+0	<-	R2(PF)+0, R0(IF)	{}
+000c ( 336)		CONST	R5(C)[0..0]	<-	CI:0	{}
+000d ( 254)		LOADZ2	R0(P)	<-	V(0 '')+0 	{S}
+000e ( 337)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 337)		CONV37	R3(I)[0..255]	<-	R5(C)[0..]	{}
+0001 ( 337)		LEAI	R4(P)+0	<-	R0(P)+0, R3(I)[0..255]	{}
+0002 ( 337)		LOADI1	R6(C)[0..255]	<-	R4(PF)+0	{}
+0003 ( 337)		BRANCH		<-	R6(C)[0..255]	{}
+		==> 2
+		==> 3
+L2: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 337)		CONV37	R4(I)[0..255]	<-	R6(C)[0..255]	{}
+0001 ( 184)		BINOP17	R4(I)[0..7]	<-	R4(IF)[0..255], CI:5	{}
+0002 ( 184)		LEAG	R4(P)[0..7]	<-	V(92 'p2smap' A)+0 , R4(IF)[0..7]	{}
+0003 ( 184)		LOADI1	R4(C)[0..255]	<-	R4(PF)+0 {V(92 'p2smap' A)} [0..7]	{}
+0004 ( 184)		BINOP10	R6(C)	<-	R4(CF)[0..255], R6(CF)[0..255]	{}
+0005 ( 339)		LEAI	R4(P)+0	<-	R1(P)+0, R3(I)[0..255]	{}
+0006 ( 339)		STOREI1		<-	R4(PF)+0, R6(CF)	{}
+0007 ( 340)		LEAI	R3(P)+0	<-	R2(P)+0, R3(IF)[0..255]	{}
+0008 ( 340)		STOREI1		<-	R3(PF)+0, CC:7	{}
+0009 ( 341)		BINOP1	R5(C)[1..]	<-	R5(CF)[0..], CI:1	{}
+000a ( 337)		JUMP		<-		{}
+		==> 1
+L3: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 255)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+4 	{}
+0001 ( 255)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 255)		BINOP1	R0(I)[0..510]	<-	R0(IF)[0..255], R3(IF)[0..255]	{}
+0003 ( 255)		STOREG1		<-	V(11 'cw' A)+4 , R0(C)[0..510]	{}
+0004 ( 256)		LOADG1	R1(C)[0..255]	<-	V(11 'cw' A)+2 	{}
+0005 ( 256)		RELOP25	R0(B)[0..1]	<-	R0(CF)[0..510], R1(CF)[0..255]	{}
+0006 ( 256)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 4
+		==> 5
+L4: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 258)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0001 ( 259)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+0002 ( 259)		BINOP1	R0(C)	<-	R0(CF)[0..255], CI:1	{}
+0003 ( 259)		STOREG1		<-	V(11 'cw' A)+5 , R0(CF)	{}
+0004 ( 256)		JUMP		<-		{}
+		==> 5
+L5: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 261)		RET		<-		{}
+--------------------------------------------------------------------
+cwin_cursor_newline: /home/xahmol/oscar64/include/c64/charwin.h:44
+$00 R0(I), $00 R1(I), $00 R2(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 133)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0001 ( 134)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+3 	{}
+0002 ( 134)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0003 ( 134)		LOADG1	R2(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+0004 ( 134)		CONV37	R1(I)[0..255]	<-	R2(C)[0..255]	{}
+0005 ( 134)		BINOP1	R1(I)[1..256]	<-	R1(IF)[0..255], CI:1	{}
+0006 ( 134)		RELOP28	R0(B)[0..1]	<-	R1(IF)[1..256], R0(IF)[0..255]	{}
+0007 ( 134)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 1
+		==> 2
+L1: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 136)		BINOP1	R2(C)	<-	R2(CF)[0..255], CI:1	{}
+0001 ( 136)		STOREG1		<-	V(11 'cw' A)+5 , R2(CF)	{}
+0002 ( 137)		RET		<-		{}
+L2: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/charwin.c
+0000 ( 140)		RET		<-		{}
+--------------------------------------------------------------------
+reu_count_pages: /home/xahmol/oscar64/include/c64/reu.h:48
+$00 R0(L), $00 R1(L), $00 R2(I), $00 R3(I), $00 R4(I), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/reu.c
+0000 (   7)		STOREG1		<-	V(134 'c' A)+0 , CC:0	{V}
+0001 (   5)		CONST	R0(P)[0..0]	<-	CG1(134:0 'c' A)	{S}
+0002 (  41)		CAST	R2(I)	<-	R0(PF)+0 {V(134 'c' A)} [0..0]	{S}
+0003 (  41)		STOREA2		<-	V(-1 '')+57090 , R2(I)	{V}
+0004 (  42)		STOREA2		<-	V(-1 '')+57092 , CI:0	{V}
+0005 (  43)		STOREA1		<-	V(-1 '')+57094 , CC:0	{V}
+0006 (  44)		STOREA2		<-	V(-1 '')+57095 , CI:1	{V}
+0007 (  45)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+0008 (  46)		STOREA1		<-	V(-1 '')+57089 , CC:144	{V}
+0009 (   5)		CONST	R0(P)[0..0]	<-	CG1(135:0 'd' A)	{S}
+000a (  52)		CAST	R3(I)	<-	R0(PF)+0 {V(135 'd' A)} [0..0]	{S}
+000b (  52)		STOREA2		<-	V(-1 '')+57090 , R3(I)	{V}
+000c (  53)		STOREA2		<-	V(-1 '')+57092 , CI:0	{V}
+000d (  54)		STOREA1		<-	V(-1 '')+57094 , CC:0	{V}
+000e (  55)		STOREA2		<-	V(-1 '')+57095 , CI:1	{V}
+000f (  56)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+0010 (  57)		STOREA1		<-	V(-1 '')+57089 , CC:145	{V}
+0011 (  11)		LOADG1	R0(C)[0..255]	<-	V(135 'd' A)+0 	{V}
+0012 (  11)		BRANCH		<-	R0(CF)[0..255]	{}
+		==> 2
+		==> 1
+L2: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/c64/reu.c
+0000 (  36)		RETV		<-	CI:0	{}
+L1: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/reu.c
+0000 (  13)		STOREG1		<-	V(134 'c' A)+0 , CC:71	{V}
+0001 (  41)		STOREA2		<-	V(-1 '')+57090 , R2(I)	{V}
+0002 (  42)		STOREA2		<-	V(-1 '')+57092 , CI:0	{V}
+0003 (  43)		STOREA1		<-	V(-1 '')+57094 , CC:0	{V}
+0004 (  44)		STOREA2		<-	V(-1 '')+57095 , CI:1	{V}
+0005 (  45)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+0006 (  46)		STOREA1		<-	V(-1 '')+57089 , CC:144	{V}
+0007 (  52)		STOREA2		<-	V(-1 '')+57090 , R3(I)	{V}
+0008 (  53)		STOREA2		<-	V(-1 '')+57092 , CI:0	{V}
+0009 (  54)		STOREA1		<-	V(-1 '')+57094 , CC:0	{V}
+000a (  55)		STOREA2		<-	V(-1 '')+57095 , CI:1	{V}
+000b (  56)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+000c (  57)		STOREA1		<-	V(-1 '')+57089 , CC:145	{V}
+000d (  17)		LOADG1	R0(C)[0..255]	<-	V(135 'd' A)+0 	{V}
+000e (  17)		RELOP19	R0(B)[0..1]	<-	R0(CF)[0..255], CC:71	{}
+000f (  17)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 3
+		==> 2
+L3: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/reu.c
+0000 (  19)		CONST	R4(I)[1..1]	<-	CI:1	{}
+0001 (  22)		JUMP		<-		{}
+		==> 4
+L4: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/c64/reu.c
+0000 (  22)		STOREG1		<-	V(134 'c' A)+0 , CC:71	{V}
+0001 (  41)		STOREA2		<-	V(-1 '')+57090 , R2(I)	{V}
+0002 (  21)		CONV42	R0(L)[1..255]	<-	R4(I)[1..255]	{}
+0003 (  21)		BINOP16	R0(L)[65536..16711680]	<-	R0(LF)[1..255], CL:16	{}
+0004 (  42)		STOREA2		<-	V(-1 '')+57092 , R0(I)[65536..16711680]	{V}
+0005 (  43)		BINOP17	R1(L)[1..255]	<-	R0(L)[65536..16711680], CL:16	{}
+0006 (  43)		STOREA1		<-	V(-1 '')+57094 , R1(C)[1..255]	{V}
+0007 (  44)		STOREA2		<-	V(-1 '')+57095 , CI:1	{V}
+0008 (  45)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+0009 (  46)		STOREA1		<-	V(-1 '')+57089 , CC:144	{V}
+000a (  24)		STOREG1		<-	V(134 'c' A)+0 , CC:0	{V}
+000b (  41)		STOREA2		<-	V(-1 '')+57090 , R2(I)	{V}
+000c (  42)		STOREA2		<-	V(-1 '')+57092 , CI:0	{V}
+000d (  43)		STOREA1		<-	V(-1 '')+57094 , CC:0	{V}
+000e (  44)		STOREA2		<-	V(-1 '')+57095 , CI:1	{V}
+000f (  45)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+0010 (  46)		STOREA1		<-	V(-1 '')+57089 , CC:144	{V}
+0011 (  52)		STOREA2		<-	V(-1 '')+57090 , R3(I)	{V}
+0012 (  53)		STOREA2		<-	V(-1 '')+57092 , R0(IF)[65536..16711680]	{V}
+0013 (  54)		STOREA1		<-	V(-1 '')+57094 , R1(CF)[1..255]	{V}
+0014 (  55)		STOREA2		<-	V(-1 '')+57095 , CI:1	{V}
+0015 (  56)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+0016 (  57)		STOREA1		<-	V(-1 '')+57089 , CC:145	{V}
+0017 (  28)		LOADG1	R0(C)[0..255]	<-	V(135 'd' A)+0 	{V}
+0018 (  28)		RELOP20	R0(B)[0..1]	<-	R0(CF)[0..255], CC:71	{}
+0019 (  28)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 7
+		==> 5
+L7: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/reu.c
+0000 (  29)		RETV		<-	R4(IF)[1..255]	{}
+L5: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/reu.c
+0000 (  19)		BINOP1	R4(I)[2..256]	<-	R4(IF)[1..255], CI:1	{}
+0001 (  19)		RELOP28	R0(B)[0..1]	<-	R4(I)[2..256], CI:256	{}
+0002 (  19)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 4
+		==> 6
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/c64/reu.c
+0000 (  32)		RETV		<-	CI:256	{}
+--------------------------------------------------------------------
+uii_change_dir: /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.h:25
+$00 R0(I), $02 R1(P), $03 R2(P), $00 R3(P), $00 R4(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/defines.h
+0000 ( 181)		CONST	R1(P)[0..0]	<-	CG8(161:0 'configpath' A)	{S}
+0001 (  86)		STOREC2		<-	V(0 '')+0 , R1(P)+0 {V(161 'configpath' A)} [0..0]	{}
+0002 (  86)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0003 (  86)		BINOP1	R0(I)	<-	R0(IF), CI:2	{}
+0004 (  86)		MALLOC	R2(P)+0{R1}	<-	R0(IF)	{}
+0005 (  87)		BRANCH		<-	R2(P)+0{R1}	{}
+		==> 2
+		==> 1
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 (  91)		STOREC2		<-	V(0 '')+0 , R1(PF)+0 {V(161 'configpath' A)} [0..0]	{}
+0001 (  88)		STOREI1		<-	R2(P)+0{R1}, CC:0	{}
+0002 (  89)		STOREI1		<-	R2(P)+1{R1}, CC:17	{}
+0003 (  91)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0004 (  91)		RELOP28	R0(B)[0..1]	<-	CI:0, R0(IF)	{}
+0005 (  91)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 5
+		==> 4
+L5: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 (  91)		CONST	R1(I)[0..0]	<-	CI:0	{}
+0001 ( 181)		CONST	R3(P)[0..0]	<-	CG8(161:0 'configpath' A)	{IS}
+0002 (  91)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 (  91)		STOREC2		<-	V(0 '')+0 , R3(P)+0 {V(161 'configpath' A)} [0..0]	{}
+0001 (  92)		LEAG	R0(P)[0..7]	<-	V(161 'configpath' A)+0 , R1(I)[0..7]	{}
+0002 (  92)		LOADI1	R4(C)[0..255]	<-	R0(PF)+0 {V(161 'configpath' A)} [0..7]	{}
+0003 (  92)		LEAI	R0(P)+0{R1}	<-	R2(P)+0{R1}, R1(I)[0..7]	{}
+0004 (  92)		STOREI1		<-	R0(PF)+2{R1}, R4(CF)[0..255]	{}
+0005 (  91)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0006 (  91)		BINOP1	R1(I)[1..8]	<-	R1(IF)[0..7], CI:1	{}
+0007 (  91)		RELOP28	R0(B)[0..1]	<-	R1(I)[1..8], R0(IF)	{}
+0008 (  91)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 3
+		==> 4
+L4: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 (  82)		STOREG1		<-	V(40 'uii_target')+0 , CC:1	{}
+0001 ( 181)		CONST	R0(P)[0..0]	<-	CG8(161:0 'configpath' A)	{S}
+0002 (  95)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(161 'configpath' A)} [0..0]	{}
+0003 (  95)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0004 (  95)		STOREC2		<-	V(0 '')+0 , R2(P)+0{R1}	{}
+0005 (  95)		BINOP1	R0(I)	<-	R0(IF), CI:2	{}
+0006 (  95)		STOREC2		<-	V(2 '')+0 , R0(IF)	{}
+0007 (  95)		CALLN		<-	V(8 'uii_sendcommand')+0 	{}
+0008 (  97)		FREE		<-	R2(PF)+0{R1}	{}
+0009 (  99)		CALLN		<-	V(10 'uii_readstatus')+0 	{}
+000a ( 100)		CALLN		<-	V(11 'uii_accept')+0 	{}
+000b ( 101)		RET		<-		{}
+L1: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 (  87)		RET		<-		{}
+--------------------------------------------------------------------
+read_old_configfile: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:180
+$00 R0(L), $00 R1(L), $04 R2(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 185)		STOREC1		<-	V(4 '')+0 , CC:1	{}
+0001 ( 185)		CONST	R0(P)[0..0]	<-	CG11(166:0 'configfilename' A)	{S}
+0002 ( 185)		STOREC2		<-	V(5 '')+0 , R0(PF)+0 {V(166 'configfilename' A)} [0..0]	{}
+0003 ( 185)		CALLN		<-	V(28 'uii_open_file')+0 	{}
+0004 ( 188)		CONST	R0(P)[0..0]	<-	CG257(61:0 'uii_status' A)	{S}
+0005 ( 188)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(61 'uii_status' A)} [0..0]	{}
+0006 ( 188)		CONST	R0(P)[0..0]	<-	CG0(167:0 '')	{S}
+0007 ( 188)		STOREC2		<-	V(2 '')+0 , R0(PF)+0 {V(167 '')} [0..0]	{}
+0008 ( 188)		CALLN	R0(C)	<-	V(29 'strcmp')+0 	{}
+0009 ( 188)		BRANCH		<-	R0(CF)	{}
+		==> 1
+		==> 2
+L1: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 190)		CONST	R0(P)[0..0]	<-	CG0(168:0 '')	{S}
+0001 ( 190)		STOREG2		<-	V(-1 'sstack')+14 , R0(PF)+0 {V(168 '')} [0..0]	{}
+0002 ( 190)		CALLN		<-	V(13 'error')+0 	{}
+0003 ( 191)		STOREC2		<-	V(0 '')+0 , CI:1	{}
+0004 ( 191)		CALLN		<-	V(22 'exit')+0 	{}
+0005 ( 188)		JUMP		<-		{}
+		==> 2
+L2: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 194)		STOREC2		<-	V(4 '')+0 , CI:86	{}
+0001 ( 194)		CALLN		<-	V(30 'uii_read_file')+0 	{}
+0002 ( 195)		CONST	R0(P)[0..0]	<-	CG0(175:0 '')	{S}
+0003 ( 195)		STOREG2		<-	V(-1 'sstack')+16 , R0(PF)+0 {V(175 '')} [0..0]	{}
+0004 ( 195)		CALLN		<-	V(31 'CheckStatus')+0 	{}
+0005 ( 196)		CALLN		<-	V(9 'uii_readdata')+0 	{}
+0006 ( 197)		CALLN		<-	V(11 'uii_accept')+0 	{}
+0007 ( 200)		LOADG1	R0(C)[0..255]	<-	V(55 'uii_data' A)+1 	{}
+0008 ( 200)		STOREG1		<-	V(6 'cfg' A)+1 , R0(CF)[0..255]	{}
+0009 ( 202)		LOADG1	R0(C)[0..255]	<-	V(55 'uii_data' A)+4 	{}
+000a ( 202)		CONV38	R0(L)[0..255]	<-	R0(CF)[0..255]	{}
+000b ( 202)		BINOP16	R0(L)[0..65280]	<-	R0(LF)[0..255], CL:8	{}
+000c ( 202)		LOADG1	R1(C)[0..255]	<-	V(55 'uii_data' A)+5 	{}
+000d ( 202)		CONV38	R1(L)[0..255]	<-	R1(CF)[0..255]	{}
+000e ( 202)		BINOP8	R0(L)[0..65535]	<-	R1(LF)[0..255], R0(LF)[0..65280]	{}
+000f ( 202)		LOADG1	R1(C)[0..255]	<-	V(55 'uii_data' A)+3 	{}
+0010 ( 202)		CONV38	R1(L)[0..255]	<-	R1(CF)[0..255]	{}
+0011 ( 202)		BINOP16	R1(L)[0..16711680]	<-	R1(LF)[0..255], CL:16	{}
+0012 ( 202)		BINOP8	R0(L)[0..16777215]	<-	R1(LF)[0..16711680], R0(LF)[0..65535]	{}
+0013 ( 202)		LOADG1	R1(C)[0..255]	<-	V(55 'uii_data' A)+2 	{}
+0014 ( 202)		CONV38	R1(L)[0..255]	<-	R1(CF)[0..255]	{}
+0015 ( 202)		BINOP16	R1(L)[0..4278190080]	<-	R1(LF)[0..255], CL:24	{}
+0016 ( 202)		BINOP8	R0(L)	<-	R1(LF)[0..4278190080], R0(LF)[0..16777215]	{}
+0017 ( 202)		STOREG4		<-	V(6 'cfg' A)+83 , R0(LF)	{}
+0018 ( 204)		CONST	R2(C)[0..0]	<-	CI:0	{}
+0019 ( 206)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 206)		CONV37	R0(I)[0..79]	<-	R2(C)[0..79]	{}
+0001 ( 206)		LEAG	R1(P)[6..85]	<-	V(55 'uii_data' A)+6 , R0(I)[0..79]	{}
+0002 ( 206)		LOADI1	R1(C)[0..255]	<-	R1(PF)+0 {V(55 'uii_data' A)} [6..85]	{}
+0003 ( 206)		LEAG	R0(P)[2..81]	<-	V(6 'cfg' A)+2 , R0(IF)[0..79]	{}
+0004 ( 206)		STOREI1		<-	R0(PF)+0 {V(6 'cfg' A)} [2..81], R1(CF)[0..255]	{}
+0005 ( 204)		BINOP1	R2(C)[1..80]	<-	R2(CF)[0..79], CI:1	{}
+0006 ( 204)		RELOP28	R0(B)[0..1]	<-	R2(C)[1..80], CC:80	{}
+0007 ( 204)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 3
+		==> 4
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 206)		CONST	R1(P)[2..2]	<-	CG81(6:2 'cfg' A)	{IS}
+0001 ( 210)		STOREC2		<-	V(0 '')+0 , R1(P)+0 {V(6 'cfg' A)} [2..2]	{}
+0002 ( 210)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0003 ( 210)		RELOP19	R0(B)[0..1]	<-	R0(IF), CI:0	{}
+0004 ( 210)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 5
+		==> 6
+L5: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 212)		CONST	R0(P)[0..0]	<-	CG0(176:0 '')	{S}
+0001 ( 212)		STRCPYII		<-	R1(PF)+0 {V(6 'cfg' A)} [2..2], R0(PF)+0 {V(176 '')} [0..0]	{}
+0002 ( 215)		CALLN		<-	V(32 'uii_close_file')+0 	{}
+0003 ( 216)		RET		<-		{}
+L6: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 215)		CALLN		<-	V(32 'uii_close_file')+0 	{}
+0001 ( 216)		RET		<-		{}
+--------------------------------------------------------------------
+uii_open_file: /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.h:31
+$00 R0(I), $00 R1(P), $02 R2(P), $04 R3(I), $00 R4(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 231)		LOADZ2	R1(P)	<-	V(5 '')+0 	{S}
+0001 ( 231)		STOREC2		<-	V(0 '')+0 , R1(P)	{}
+0002 ( 231)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0003 ( 231)		BINOP1	R0(I)	<-	R0(IF), CI:3	{}
+0004 ( 231)		MALLOC	R2(P)+0{R1}	<-	R0(IF)	{}
+0005 ( 232)		BRANCH		<-	R2(P)+0{R1}	{}
+		==> 2
+		==> 1
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 233)		STOREI1		<-	R2(P)+0{R1}, CC:0	{}
+0001 ( 234)		STOREI1		<-	R2(P)+1{R1}, CC:2	{}
+0002 (  31)		LOADZ1	R0(C)[1..255]	<-	V(4 '')+0 	{S}
+0003 ( 235)		STOREI1		<-	R2(P)+2{R1}, R0(CF)[1..6]	{}
+0004 ( 237)		CONST	R3(I)[0..0]	<-	CI:0	{}
+0005 ( 237)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 237)		STOREC2		<-	V(0 '')+0 , R1(P)	{}
+0001 ( 237)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0002 ( 237)		RELOP28	R0(B)[0..1]	<-	R3(I)[0..], R0(IF)	{}
+0003 ( 237)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 4
+		==> 5
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 238)		LEAI	R0(P)+0	<-	R1(P)+0, R3(I)[0..]	{}
+0001 ( 238)		LOADI1	R4(C)[0..255]	<-	R0(PF)+0	{}
+0002 ( 238)		LEAI	R0(P)+0{R1}	<-	R2(P)+0{R1}, R3(I)[0..]	{}
+0003 ( 238)		STOREI1		<-	R0(PF)+3{R1}, R4(CF)[0..255]	{}
+0004 ( 237)		BINOP1	R3(I)[1..]	<-	R3(IF)[0..], CI:1	{}
+0005 ( 237)		JUMP		<-		{}
+		==> 3
+L5: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 241)		STOREC2		<-	V(0 '')+0 , R1(PF)	{}
+0001 (  82)		STOREG1		<-	V(40 'uii_target')+0 , CC:1	{}
+0002 ( 241)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0003 ( 241)		STOREC2		<-	V(0 '')+0 , R2(P)+0{R1}	{}
+0004 ( 241)		BINOP1	R0(I)	<-	R0(IF), CI:3	{}
+0005 ( 241)		STOREC2		<-	V(2 '')+0 , R0(IF)	{}
+0006 ( 241)		CALLN		<-	V(8 'uii_sendcommand')+0 	{}
+0007 ( 243)		FREE		<-	R2(PF)+0{R1}	{}
+0008 ( 245)		CALLN		<-	V(9 'uii_readdata')+0 	{}
+0009 ( 246)		CALLN		<-	V(10 'uii_readstatus')+0 	{}
+000a ( 247)		CALLN		<-	V(11 'uii_accept')+0 	{}
+000b (  31)		RET		<-		{}
+L1: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 232)		RET		<-		{}
+--------------------------------------------------------------------
+strcmp: /home/xahmol/oscar64/include/string.h:8
+
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/string.c
+0000 (  70)		JSR		<-	V(2 '')+0 , V(0 '')+0 , V(-1 '')+0 	{}
+0001 (  99)		RET		<-		{}
+--------------------------------------------------------------------
+uii_read_file: /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.h:34
+$00 R0(I), $00 R1(I), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 313)		STOREC2		<-	V(2 '')+0 , CI:4	{}
+0001 (  82)		STOREG1		<-	V(40 'uii_target')+0 , CC:1	{}
+0002 ( 307)		COPY4:GG		<-	V(170 'cmd' A)+0 , V(169 '')+0 	{}
+0003 (  34)		LOADZ2	R0(I)[0..65535]	<-	V(4 '')+0 	{S}
+0004 ( 309)		BINOP9	R1(I)[0..255]	<-	R0(I)[86..8784], CI:255	{S}
+0005 ( 309)		STOREG1		<-	V(170 'cmd' A)+2 , R1(CF)[0..255]	{}
+0006 ( 310)		BINOP17	R0(I)[0..34]	<-	R0(IF)[86..8784], CI:8	{S}
+0007 ( 310)		STOREG1		<-	V(170 'cmd' A)+3 , R0(CF)[0..34]	{}
+0008 ( 307)		CONST	R0(P)[0..0]	<-	CG4(170:0 'cmd' A)	{S}
+0009 ( 313)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(170 'cmd' A)} [0..0]	{}
+000a ( 313)		CALLN		<-	V(8 'uii_sendcommand')+0 	{}
+000b (  34)		RET		<-		{}
+--------------------------------------------------------------------
+CheckStatus: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:121
+$00 R0(P), $00 R1(P), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 124)		CONST	R1(P)[0..0]	<-	CG1(61:0 'uii_status' A)	{S}
+0001 ( 124)		LOADG1	R0(C)[0..255]	<-	V(61 'uii_status' A)+0 	{}
+0002 ( 124)		RELOP20	R0(B)[0..1]	<-	R0(CF)[0..255], CC:48	{}
+0003 ( 124)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 1
+		==> 3
+L1: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 126)		CONST	R0(P)[0..0]	<-	CG0(172:0 '')	{S}
+0001 ( 126)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(172 '')} [0..0]	{}
+0002 ( 126)		LOADG2	R0(P)	<-	V(-1 'sstack')+16 	{S}
+0003 ( 126)		STOREG2		<-	V(-1 'sstack')+6 , R0(PF)	{}
+0004 ( 126)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0005 ( 127)		STOREG2		<-	V(-1 'sstack')+6 , R1(PF)+0 {V(61 'uii_status' A)} [0..0]	{}
+0006 ( 127)		CONST	R0(P)[0..0]	<-	CG0(173:0 '')	{S}
+0007 ( 127)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(173 '')} [0..0]	{}
+0008 ( 127)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0009 ( 128)		CALLN		<-	V(12 'uii_abort')+0 	{}
+000a ( 129)		CONST	R0(P)[0..0]	<-	CG0(174:0 '')	{S}
+000b ( 129)		STOREG2		<-	V(-1 'sstack')+14 , R0(PF)+0 {V(174 '')} [0..0]	{}
+000c ( 129)		CALLN		<-	V(13 'error')+0 	{}
+000d ( 124)		JUMP		<-		{}
+		==> 2
+L2: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 131)		RET		<-		{}
+L3: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 124)		LOADG1	R0(C)[0..255]	<-	V(61 'uii_status' A)+1 	{}
+0001 ( 124)		RELOP20	R0(B)[0..1]	<-	R0(CF)[0..255], CC:48	{}
+0002 ( 124)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 1
+		==> 2
+--------------------------------------------------------------------
+uii_close_file: /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.h:32
+$00 R0(P), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 259)		STOREC2		<-	V(2 '')+0 , CI:2	{}
+0001 (  82)		STOREG1		<-	V(40 'uii_target')+0 , CC:1	{}
+0002 ( 256)		COPY2:GG		<-	V(178 'cmd' A)+0 , V(177 '')+0 	{}
+0003 ( 256)		CONST	R0(P)[0..0]	<-	CG2(178:0 'cmd' A)	{S}
+0004 ( 259)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(178 'cmd' A)} [0..0]	{}
+0005 ( 259)		CALLN		<-	V(8 'uii_sendcommand')+0 	{}
+0006 ( 261)		CALLN		<-	V(9 'uii_readdata')+0 	{}
+0007 ( 262)		CALLN		<-	V(10 'uii_readstatus')+0 	{}
+0008 ( 263)		CALLN		<-	V(11 'uii_accept')+0 	{}
+0009 ( 264)		RET		<-		{}
+--------------------------------------------------------------------
+writeconfigfile: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:169
+$00 R0(P), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 173)		CONST	R0(P)[0..0]	<-	CG11(166:0 'configfilename' A)	{S}
+0001 ( 173)		STOREC2		<-	V(4 '')+0 , R0(P)+0 {V(166 'configfilename' A)} [0..0]	{}
+0002 ( 173)		CALLN		<-	V(34 'uii_delete_file')+0 	{}
+0003 ( 174)		STOREC1		<-	V(4 '')+0 , CC:6	{}
+0004 ( 174)		STOREC2		<-	V(5 '')+0 , R0(PF)+0 {V(166 'configfilename' A)} [0..0]	{}
+0005 ( 174)		CALLN		<-	V(28 'uii_open_file')+0 	{}
+0006 ( 175)		STOREC2		<-	V(6 '')+0 , CI:99	{}
+0007 ( 175)		CONST	R0(P)[0..0]	<-	CG99(6:0 'cfg' A)	{S}
+0008 ( 175)		STOREC2		<-	V(4 '')+0 , R0(PF)+0 {V(6 'cfg' A)} [0..0]	{}
+0009 ( 175)		CALLN		<-	V(35 'uii_write_file')+0 	{}
+000a ( 176)		CONST	R0(P)[0..0]	<-	CG0(183:0 '')	{S}
+000b ( 176)		STOREG2		<-	V(-1 'sstack')+16 , R0(PF)+0 {V(183 '')} [0..0]	{}
+000c ( 176)		CALLN		<-	V(31 'CheckStatus')+0 	{}
+000d ( 177)		CALLN		<-	V(32 'uii_close_file')+0 	{}
+000e ( 178)		RET		<-		{}
+--------------------------------------------------------------------
+uii_delete_file: /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.h:38
+$00 R0(I), $00 R1(P), $02 R2(P), $04 R3(I), $00 R4(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 396)		LOADZ2	R1(P)	<-	V(4 '')+0 	{S}
+0001 ( 396)		STOREC2		<-	V(0 '')+0 , R1(P)	{}
+0002 ( 396)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0003 ( 396)		BINOP1	R0(I)	<-	R0(IF), CI:2	{}
+0004 ( 396)		MALLOC	R2(P)+0{R1}	<-	R0(IF)	{}
+0005 ( 397)		BRANCH		<-	R2(P)+0{R1}	{}
+		==> 2
+		==> 1
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 398)		STOREI1		<-	R2(P)+0{R1}, CC:0	{}
+0001 ( 399)		STOREI1		<-	R2(P)+1{R1}, CC:9	{}
+0002 ( 401)		CONST	R3(I)[0..0]	<-	CI:0	{}
+0003 ( 401)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 401)		STOREC2		<-	V(0 '')+0 , R1(P)	{}
+0001 ( 401)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0002 ( 401)		RELOP28	R0(B)[0..1]	<-	R3(I)[0..], R0(IF)	{}
+0003 ( 401)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 4
+		==> 5
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 402)		LEAI	R0(P)+0	<-	R1(P)+0, R3(I)[0..]	{}
+0001 ( 402)		LOADI1	R4(C)[0..255]	<-	R0(PF)+0	{}
+0002 ( 402)		LEAI	R0(P)+0{R1}	<-	R2(P)+0{R1}, R3(I)[0..]	{}
+0003 ( 402)		STOREI1		<-	R0(PF)+2{R1}, R4(CF)[0..255]	{}
+0004 ( 401)		BINOP1	R3(I)[1..]	<-	R3(IF)[0..], CI:1	{}
+0005 ( 401)		JUMP		<-		{}
+		==> 3
+L5: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 405)		STOREC2		<-	V(0 '')+0 , R1(PF)	{}
+0001 (  82)		STOREG1		<-	V(40 'uii_target')+0 , CC:1	{}
+0002 ( 405)		CALLN	R0(I)	<-	V(7 'strlen')+0 	{E}
+0003 ( 405)		STOREC2		<-	V(0 '')+0 , R2(P)+0{R1}	{}
+0004 ( 405)		BINOP1	R0(I)	<-	R0(IF), CI:2	{}
+0005 ( 405)		STOREC2		<-	V(2 '')+0 , R0(IF)	{}
+0006 ( 405)		CALLN		<-	V(8 'uii_sendcommand')+0 	{}
+0007 ( 407)		FREE		<-	R2(PF)+0{R1}	{}
+0008 ( 409)		CALLN		<-	V(10 'uii_readstatus')+0 	{}
+0009 ( 410)		CALLN		<-	V(11 'uii_accept')+0 	{}
+000a ( 411)		RET		<-		{}
+L1: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 397)		RET		<-		{}
+--------------------------------------------------------------------
+uii_write_file: /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.h:33
+$00 R0(I), $02 R1(I), $04 R2(P), $00 R3(P), $00 R4(P), $00 R5(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 275)		LOADZ2	R0(I)[0..65535]	<-	V(6 '')+0 	{S}
+0001 ( 275)		BINOP1	R1(I)	<-	R0(I)[0..65535], CI:4	{S}
+0002 ( 275)		MALLOC	R4(P)+0{R1}	<-	R1(I)	{}
+0003 ( 276)		BRANCH		<-	R4(P)+0{R1}	{}
+		==> 2
+		==> 1
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 277)		STOREI1		<-	R4(P)+0{R1}, CC:0	{}
+0001 ( 278)		STOREI1		<-	R4(P)+1{R1}, CC:5	{}
+0002 ( 279)		STOREI1		<-	R4(P)+2{R1}, CC:0	{}
+0003 ( 280)		STOREI1		<-	R4(P)+3{R1}, CC:0	{}
+0004 ( 282)		RELOP28	R2(B)[0..1]	<-	CI:0, R0(I)[0..65535]	{S}
+0005 ( 282)		BRANCH		<-	R2(BF)[0..1]	{}
+		==> 5
+		==> 4
+L5: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 283)		MOVE	R2(P)+0{R1}	<-	R4(P)+0{R1}	{}
+0001 ( 283)		LOADZ2	R3(P)	<-	V(4 '')+0 	{I}
+0002 ( 283)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 283)		LOADI1	R5(C)[0..255]	<-	R3(P)+0	{}
+0001 ( 283)		STOREI1		<-	R2(P)+4{R1}, R5(CF)[0..255]	{}
+0002 ( 283)		LEAI	R2(P)+0{R1}	<-	R2(PF)+0{R1}, CI:1	{}
+0003 ( 283)		LEAI	R3(P)+0	<-	R3(PF)+0, CI:1	{}
+0004 ( 282)		BINOP2	R0(I)[0..65534]	<-	R0(IF)[1..65535], CI:1	{}
+0005 ( 282)		RELOP27	R5(B)[0..1]	<-	R0(I)[0..65534], CI:0	{}
+0006 ( 282)		BRANCH		<-	R5(BF)[0..1]	{}
+		==> 3
+		==> 4
+L4: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 286)		STOREC2		<-	V(0 '')+0 , R4(P)+0{R1}	{}
+0001 ( 286)		STOREC2		<-	V(2 '')+0 , R1(IF)	{}
+0002 (  82)		STOREG1		<-	V(40 'uii_target')+0 , CC:1	{}
+0003 ( 286)		CALLN		<-	V(8 'uii_sendcommand')+0 	{}
+0004 ( 288)		FREE		<-	R4(PF)+0{R1}	{}
+0005 ( 290)		CALLN		<-	V(9 'uii_readdata')+0 	{}
+0006 ( 291)		CALLN		<-	V(10 'uii_readstatus')+0 	{}
+0007 ( 292)		CALLN		<-	V(11 'uii_accept')+0 	{}
+0008 ( 293)		RET		<-		{}
+L1: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_dos_lib.c
+0000 ( 276)		RET		<-		{}
+--------------------------------------------------------------------
+read_old_slotsfile: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:218
+$00 R0(L), $09 R1(L), $0d R2(I), $10 R3(I), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 228)		CALLN		<-	V(26 'uii_change_dir')+0 	{}
+0001 ( 230)		STOREC1		<-	V(4 '')+0 , CC:1	{}
+0002 ( 230)		CONST	R0(P)[0..0]	<-	CG11(185:0 'slotfilename' A)	{S}
+0003 ( 230)		STOREC2		<-	V(5 '')+0 , R0(PF)+0 {V(185 'slotfilename' A)} [0..0]	{}
+0004 ( 230)		CALLN		<-	V(28 'uii_open_file')+0 	{}
+0005 ( 233)		CONST	R0(P)[0..0]	<-	CG257(61:0 'uii_status' A)	{S}
+0006 ( 233)		STOREC2		<-	V(0 '')+0 , R0(PF)+0 {V(61 'uii_status' A)} [0..0]	{}
+0007 ( 233)		CONST	R0(P)[0..0]	<-	CG0(186:0 '')	{S}
+0008 ( 233)		STOREC2		<-	V(2 '')+0 , R0(PF)+0 {V(186 '')} [0..0]	{}
+0009 ( 233)		CALLN	R0(C)	<-	V(29 'strcmp')+0 	{}
+000a ( 222)		CONST	R1(L)[24480..24480]	<-	CI:24480	{}
+000b ( 233)		BRANCH		<-	R0(CF)	{}
+		==> 1
+		==> 2
+L1: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 235)		CONST	R0(P)[0..0]	<-	CG0(187:0 '')	{S}
+0001 ( 235)		STOREG2		<-	V(-1 'sstack')+14 , R0(PF)+0 {V(187 '')} [0..0]	{}
+0002 ( 235)		CALLN		<-	V(13 'error')+0 	{}
+0003 ( 236)		STOREC2		<-	V(0 '')+0 , CI:1	{}
+0004 ( 236)		CALLN		<-	V(22 'exit')+0 	{}
+0005 ( 233)		JUMP		<-		{}
+		==> 2
+L2: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 240)		STOREG4		<-	V(-1 'sstack')+6 , CL:24480	{}
+0001 ( 240)		STOREG4		<-	V(-1 'sstack')+10 , CL:33264	{}
+0002 ( 240)		CONST	R0(P)[0..0]	<-	CG0(188:0 '')	{S}
+0003 ( 240)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(188 '')} [0..0]	{}
+0004 ( 239)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+0005 ( 240)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0006 ( 239)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0007 ( 239)		BINOP1	R2(I)[1..256]	<-	R0(IF)[0..255], CI:1	{}
+0008 ( 242)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 242)		RELOP24	R0(B)[0..1]	<-	R1(L), CL:33264	{}
+0001 ( 242)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 4
+		==> 5
+L4: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 244)		STOREC2		<-	V(4 '')+0 , CI:8784	{}
+0001 ( 244)		CALLN		<-	V(30 'uii_read_file')+0 	{}
+0002 ( 214)		JUMP		<-		{}
+		==> 6
+L6: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 214)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 214)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 214)		BINOP9	R0(I)[0..128]	<-	R0(IF)[0..255], CI:128	{}
+0003 ( 214)		RELOP20	R0(B)[0..1]	<-	R0(IF)[0..128], CI:0	{}
+0004 ( 214)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 7
+		==> 8
+L7: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 248)		CALLN	R3(I)	<-	V(9 'uii_readdata')+0 	{}
+0001 ( 249)		CALLN		<-	V(11 'uii_accept')+0 	{}
+0002 ( 250)		CONST	R0(P)[0..0]	<-	CG0(189:0 '')	{S}
+0003 ( 250)		STOREG2		<-	V(-1 'sstack')+16 , R0(PF)+0 {V(189 '')} [0..0]	{}
+0004 ( 250)		CALLN		<-	V(31 'CheckStatus')+0 	{}
+0005 (  82)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0006 (  83)		STOREG1		<-	V(11 'cw' A)+5 , R2(C)[1..256]	{}
+0007 ( 251)		CONST	R0(P)[0..0]	<-	CG513(55:0 'uii_data' A)	{S}
+0008 (  41)		CAST	R0(I)	<-	R0(PF)+0 {V(55 'uii_data' A)} [0..0]	{S}
+0009 (  41)		STOREA2		<-	V(-1 '')+57090 , R0(IF)	{V}
+000a (  42)		STOREA2		<-	V(-1 '')+57092 , R1(I)	{V}
+000b (  43)		BINOP17	R0(L)[0..65536]	<-	R1(L), CL:16	{}
+000c (  43)		STOREA1		<-	V(-1 '')+57094 , R0(CF)[0..65536]	{V}
+000d (  44)		STOREA2		<-	V(-1 '')+57095 , R3(I)	{V}
+000e (  45)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+000f (  46)		STOREA1		<-	V(-1 '')+57089 , CC:144	{V}
+0010 ( 254)		CONST	R0(P)[0..0]	<-	CG0(190:0 '')	{S}
+0011 ( 254)		STOREG2		<-	V(-1 'sstack')+4 , R0(PF)+0 {V(190 '')} [0..0]	{}
+0012 ( 252)		CONV39	R0(L)[0..65535]	<-	R3(IF)	{}
+0013 ( 252)		BINOP1	R1(L)	<-	R0(LF)[0..65535], R1(LF)	{}
+0014 ( 254)		STOREG4		<-	V(-1 'sstack')+6 , R1(L)	{}
+0015 ( 254)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0016 ( 246)		JUMP		<-		{}
+		==> 6
+L8: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/include/ultimate_common_lib.c
+0000 ( 227)		LOADA1	R0(C)[0..255]	<-	V(-1 '')+57116 	{V}
+0001 ( 227)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0002 ( 227)		BINOP9	R0(I)[0..48]	<-	R0(IF)[0..255], CI:48	{}
+0003 ( 227)		RELOP19	R0(B)[0..1]	<-	R0(IF)[0..48], CI:48	{}
+0004 ( 227)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 7
+		==> 3
+L5: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 258)		CALLN		<-	V(32 'uii_close_file')+0 	{}
+0001 ( 260)		CALLN		<-	V(24 'cwin_cursor_newline')+0 	{}
+0002 ( 261)		RET		<-		{}
+--------------------------------------------------------------------
+convert_slot_data: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:263
+$09 R0(L), $0b R1(L), $00 R2(P), $00 R3(I), $00 R4(P), $00 R5(I), $0d R6(I), $0e R7(I), $00 R8(P), $00 R9(P), $00 R10(P), $00 R11(P), $00 R12(P), $00 R13(P), $00 R14(P), $00 R15(P), $00 R16(P), $00 R17(P), $00 R18(P), $00 R19(P), $00 R20(P), $00 R21(P), $00 R22(P), $00 R23(P), $00 R24(P), $00 R25(P), $00 R26(P), $00 R27(P), $00 R28(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 280)		CONST	R2(P)[0..0]	<-	CG488(203:0 'OldSlot' A)	{IS}
+0001 (  52)		CAST	R3(I)	<-	R2(P)+0 {V(203 'OldSlot' A)} [0..0]	{IS}
+0002 ( 284)		CONST	R4(P)[0..0]	<-	CG1360(204:0 'Slot' A)	{IS}
+0003 (  41)		CAST	R5(I)	<-	R4(P)+0 {V(204 'Slot' A)} [0..0]	{IS}
+0004 ( 271)		LOADG1	R0(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+0005 ( 271)		CONV37	R0(I)[0..255]	<-	R0(CF)[0..255]	{}
+0006 ( 271)		BINOP1	R6(I)[1..256]	<-	R0(IF)[0..255], CI:1	{}
+0007 ( 277)		CONST	R7(I)[0..0]	<-	CI:0	{}
+0008 ( 267)		CONST	R0(L)[0..0]	<-	CI:0	{}
+0009 ( 268)		CONST	R1(L)[24480..24480]	<-	CI:24480	{}
+000a ( 277)		CONST	R8(P)[0..0]	<-	CG0(202:0 '')	{IS}
+000b ( 286)		CONST	R9(P)[1..1]	<-	CG256(204:1 'Slot' A)	{IS}
+000c ( 287)		CONST	R10(P)[257..257]	<-	CG31(204:257 'Slot' A)	{IS}
+000d ( 287)		CONST	R11(P)[100..100]	<-	CG21(203:100 'OldSlot' A)	{IS}
+000e ( 288)		CONST	R12(P)[288..288]	<-	CG51(204:288 'Slot' A)	{IS}
+000f ( 288)		CONST	R13(P)[121..121]	<-	CG20(203:121 'OldSlot' A)	{IS}
+0010 ( 289)		CONST	R14(P)[339..339]	<-	CG81(204:339 'Slot' A)	{IS}
+0011 ( 289)		CONST	R15(P)[141..141]	<-	CG80(203:141 'OldSlot' A)	{IS}
+0012 ( 290)		CONST	R16(P)[420..420]	<-	CG51(204:420 'Slot' A)	{IS}
+0013 ( 290)		CONST	R17(P)[221..221]	<-	CG20(203:221 'OldSlot' A)	{IS}
+0014 ( 295)		CONST	R18(P)[731..731]	<-	CG256(204:731 'Slot' A)	{IS}
+0015 ( 295)		CONST	R19(P)[246..246]	<-	CG100(203:246 'OldSlot' A)	{IS}
+0016 ( 296)		CONST	R20(P)[987..987]	<-	CG51(204:987 'Slot' A)	{IS}
+0017 ( 296)		CONST	R21(P)[346..346]	<-	CG20(203:346 'OldSlot' A)	{IS}
+0018 ( 298)		CONST	R22(P)[1039..1039]	<-	CG256(204:1039 'Slot' A)	{IS}
+0019 ( 298)		CONST	R23(P)[367..367]	<-	CG100(203:367 'OldSlot' A)	{IS}
+001a ( 299)		CONST	R24(P)[1295..1295]	<-	CG51(204:1295 'Slot' A)	{IS}
+001b ( 299)		CONST	R25(P)[467..467]	<-	CG20(203:467 'OldSlot' A)	{IS}
+001c ( 301)		CONST	R26(P)[1347..1347]	<-	CG13(204:1347 'Slot' A)	{IS}
+001d ( 301)		CONST	R27(P)[0..0]	<-	CG0(205:0 '')	{IS}
+001e ( 277)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 277)		STOREG2		<-	V(-1 'sstack')+6 , R7(I)[0..17]	{}
+0001 (  82)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0002 (  83)		STOREG1		<-	V(11 'cw' A)+5 , R6(C)[1..256]	{}
+0003 ( 277)		STOREG2		<-	V(-1 'sstack')+4 , R8(P)+0 {V(202 '')} [0..0]	{}
+0004 ( 277)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0005 ( 284)		STOREC2		<-	V(2 '')+0 , CI:0	{}
+0006 ( 284)		STOREC2		<-	V(4 '')+0 , CI:1360	{}
+0007 (  52)		STOREA2		<-	V(-1 '')+57090 , R3(I)	{V}
+0008 (  53)		STOREA2		<-	V(-1 '')+57092 , R1(I)[24480..32776]	{V}
+0009 (  54)		STOREA1		<-	V(-1 '')+57094 , CC:0	{V}
+000a (  55)		STOREA2		<-	V(-1 '')+57095 , CI:488	{V}
+000b (  56)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+000c (  57)		STOREA1		<-	V(-1 '')+57089 , CC:145	{V}
+000d ( 284)		STOREC2		<-	V(0 '')+0 , R4(P)+0 {V(204 'Slot' A)} [0..0]	{}
+000e ( 284)		CALLN		<-	V(38 'memset')+0 	{}
+000f ( 286)		STOREC2		<-	V(2 '')+0 , R2(P)+0 {V(203 'OldSlot' A)} [0..0]	{}
+0010 ( 286)		STOREC2		<-	V(4 '')+0 , CI:255	{}
+0011 ( 285)		STOREG1		<-	V(204 'Slot' A)+0 , CC:2	{}
+0012 ( 286)		STOREC2		<-	V(0 '')+0 , R9(P)+0 {V(204 'Slot' A)} [1..1]	{}
+0013 ( 286)		CALLN		<-	V(39 'strncpy')+0 	{}
+0014 ( 287)		STOREC2		<-	V(0 '')+0 , R10(P)+0 {V(204 'Slot' A)} [257..257]	{}
+0015 ( 287)		STOREC2		<-	V(2 '')+0 , R11(P)+0 {V(203 'OldSlot' A)} [100..100]	{}
+0016 ( 287)		STOREC2		<-	V(4 '')+0 , CI:30	{}
+0017 ( 287)		CALLN		<-	V(39 'strncpy')+0 	{}
+0018 ( 288)		STOREC2		<-	V(0 '')+0 , R12(P)+0 {V(204 'Slot' A)} [288..288]	{}
+0019 ( 288)		STOREC2		<-	V(2 '')+0 , R13(P)+0 {V(203 'OldSlot' A)} [121..121]	{}
+001a ( 288)		STOREC2		<-	V(4 '')+0 , CI:50	{}
+001b ( 288)		CALLN		<-	V(39 'strncpy')+0 	{}
+001c ( 289)		STOREC2		<-	V(0 '')+0 , R14(P)+0 {V(204 'Slot' A)} [339..339]	{}
+001d ( 289)		STOREC2		<-	V(2 '')+0 , R15(P)+0 {V(203 'OldSlot' A)} [141..141]	{}
+001e ( 289)		STOREC2		<-	V(4 '')+0 , CI:80	{}
+001f ( 289)		CALLN		<-	V(39 'strncpy')+0 	{}
+0020 ( 290)		STOREC2		<-	V(0 '')+0 , R16(P)+0 {V(204 'Slot' A)} [420..420]	{}
+0021 ( 290)		STOREC2		<-	V(2 '')+0 , R17(P)+0 {V(203 'OldSlot' A)} [221..221]	{}
+0022 ( 290)		STOREC2		<-	V(4 '')+0 , CI:50	{}
+0023 ( 290)		CALLN		<-	V(39 'strncpy')+0 	{}
+0024 ( 295)		STOREC2		<-	V(0 '')+0 , R18(P)+0 {V(204 'Slot' A)} [731..731]	{}
+0025 ( 295)		STOREC2		<-	V(2 '')+0 , R19(P)+0 {V(203 'OldSlot' A)} [246..246]	{}
+0026 ( 295)		STOREC2		<-	V(4 '')+0 , CI:255	{}
+0027 ( 291)		LOADG1	R28(C)[0..255]	<-	V(203 'OldSlot' A)+241 	{}
+0028 ( 291)		STOREG1		<-	V(204 'Slot' A)+727 , R28(CF)[0..255]	{}
+0029 ( 292)		LOADG1	R28(C)[0..255]	<-	V(203 'OldSlot' A)+242 	{}
+002a ( 292)		STOREG1		<-	V(204 'Slot' A)+728 , R28(CF)[0..255]	{}
+002b ( 293)		LOADG1	R28(C)[0..255]	<-	V(203 'OldSlot' A)+243 	{}
+002c ( 293)		STOREG1		<-	V(204 'Slot' A)+729 , R28(CF)[0..255]	{}
+002d ( 294)		LOADG1	R28(C)[0..255]	<-	V(203 'OldSlot' A)+244 	{}
+002e ( 294)		STOREG1		<-	V(204 'Slot' A)+730 , R28(CF)[0..255]	{}
+002f ( 295)		CALLN		<-	V(39 'strncpy')+0 	{}
+0030 ( 296)		STOREC2		<-	V(0 '')+0 , R20(P)+0 {V(204 'Slot' A)} [987..987]	{}
+0031 ( 296)		STOREC2		<-	V(2 '')+0 , R21(P)+0 {V(203 'OldSlot' A)} [346..346]	{}
+0032 ( 296)		STOREC2		<-	V(4 '')+0 , CI:50	{}
+0033 ( 296)		CALLN		<-	V(39 'strncpy')+0 	{}
+0034 ( 298)		STOREC2		<-	V(0 '')+0 , R22(P)+0 {V(204 'Slot' A)} [1039..1039]	{}
+0035 ( 298)		STOREC2		<-	V(2 '')+0 , R23(P)+0 {V(203 'OldSlot' A)} [367..367]	{}
+0036 ( 298)		STOREC2		<-	V(4 '')+0 , CI:255	{}
+0037 ( 297)		LOADG1	R28(C)[0..255]	<-	V(203 'OldSlot' A)+366 	{}
+0038 ( 297)		STOREG1		<-	V(204 'Slot' A)+1038 , R28(CF)[0..255]	{}
+0039 ( 298)		CALLN		<-	V(39 'strncpy')+0 	{}
+003a ( 299)		STOREC2		<-	V(0 '')+0 , R24(P)+0 {V(204 'Slot' A)} [1295..1295]	{}
+003b ( 299)		STOREC2		<-	V(2 '')+0 , R25(P)+0 {V(203 'OldSlot' A)} [467..467]	{}
+003c ( 299)		STOREC2		<-	V(4 '')+0 , CI:50	{}
+003d ( 299)		CALLN		<-	V(39 'strncpy')+0 	{}
+003e ( 301)		STOREC2		<-	V(0 '')+0 , R26(P)+0 {V(204 'Slot' A)} [1347..1347]	{}
+003f ( 301)		STOREC2		<-	V(2 '')+0 , R27(P)+0 {V(205 '')} [0..0]	{}
+0040 ( 301)		STOREC2		<-	V(4 '')+0 , CI:13	{}
+0041 ( 300)		LOADG1	R28(C)[0..255]	<-	V(203 'OldSlot' A)+487 	{}
+0042 ( 300)		STOREG1		<-	V(204 'Slot' A)+1346 , R28(CF)[0..255]	{}
+0043 ( 301)		CALLN		<-	V(39 'strncpy')+0 	{}
+0044 (  41)		STOREA2		<-	V(-1 '')+57090 , R5(I)	{V}
+0045 (  42)		STOREA2		<-	V(-1 '')+57092 , R0(I)[0..23120]	{V}
+0046 (  43)		STOREA1		<-	V(-1 '')+57094 , CC:0	{V}
+0047 (  44)		STOREA2		<-	V(-1 '')+57095 , CI:1360	{V}
+0048 (  45)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+0049 (  46)		STOREA1		<-	V(-1 '')+57089 , CC:144	{V}
+004a ( 305)		BINOP1	R0(L)[1360..24480]	<-	R0(LF)[0..23120], CL:1360	{}
+004b ( 281)		BINOP1	R1(L)[24968..33264]	<-	R1(LF)[24480..32776], CL:488	{}
+004c ( 277)		BINOP1	R7(I)[1..18]	<-	R7(IF)[0..17], CI:1	{}
+004d ( 273)		RELOP20	R28(B)[0..1]	<-	R7(I)[1..18], CI:18	{}
+004e ( 273)		BRANCH		<-	R28(BF)[0..1]	{}
+		==> 1
+		==> 2
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 307)		RET		<-		{}
+--------------------------------------------------------------------
+memset: /home/xahmol/oscar64/include/string.h:28
+
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/string.c
+0000 ( 270)		JSR		<-	V(0 '')+0 , V(4 '')+0 , V(2 '')+0 , V(-1 '')+0 	{}
+0001 ( 291)		RET		<-		{}
+--------------------------------------------------------------------
+strncpy: /home/xahmol/oscar64/include/string.h:6
+$00 R0(P), $00 R1(P), $00 R2(I), $00 R3(I), $00 R4(B), 
+L0: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/string.c
+0000 (  48)		LOADZ2	R0(P)	<-	V(0 '')+0 	{}
+0001 (  49)		LOADZ2	R1(P)	<-	V(2 '')+0 	{}
+0002 (  51)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/string.c
+0000 (  51)		LOADZ2	R2(I)[-32768..32767]	<-	V(4 '')+0 	{}
+0001 (  51)		BINOP1	R3(I)	<-	R2(I)[-32768..32767], CI:-1	{}
+0002 (  51)		STOREZ2		<-	V(4 '')+0 , R3(I)	{}
+0003 (  51)		RELOP20	R4(B)[0..1]	<-	R2(I)[-32768..32767], CI:0	{}
+0004 (  51)		BRANCH		<-	R4(BF)[0..1]	{}
+		==> 2
+		==> 5
+L2: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/string.c
+0000 (  51)		LOADI1	R4(C)[0..255]	<-	R1(P)+0	{}
+0001 (  51)		STOREI1		<-	R0(P)+0, R4(C)[0..255]	{}
+0002 (  51)		LEAI	R1(P)+0	<-	R1(PF)+0, CI:1	{}
+0003 (  51)		LEAI	R0(P)+0	<-	R0(PF)+0, CI:1	{}
+0004 (  51)		BRANCH		<-	R4(CF)[0..255]	{}
+		==> 1
+		==> 5
+L5: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/string.c
+0000 (  56)		RELOP23	R1(B)[0..1]	<-	R2(IF)[-32768..32767], CI:1	{}
+0001 (  56)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 6
+		==> 4
+L6: <= D-1: (1)  P-1 /home/xahmol/oscar64/include/string.c
+0001 (  57)		JUMP		<-		{}
+		==> 3
+L3: <= D-1: (2) Head P-1 /home/xahmol/oscar64/include/string.c
+0000 (  57)		STOREI1		<-	R0(P)+0, CC:0	{}
+0001 (  57)		LEAI	R0(P)+0	<-	R0(PF)+0, CI:1	{}
+0002 (  56)		BINOP1	R3(I)	<-	R3(IF), CI:-1	{}
+0003 (  56)		RELOP23	R1(B)[0..1]	<-	R3(I), CI:0	{}
+0004 (  56)		BRANCH		<-	R1(BF)[0..1]	{}
+		==> 3
+		==> 4
+L4: <= D-1: (2)  P-1 /home/xahmol/oscar64/include/string.c
+0000 (  59)		RET		<-		{}
+--------------------------------------------------------------------
+write_slotsfile: /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c:133
+$00 R0(L), $09 R1(L), $0d R2(I), $00 R3(P), $00 R4(B), $0f R5(C), 
+L0: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 140)		LOADG1	R5(C)[0..255]	<-	V(11 'cw' A)+5 	{}
+0001 ( 143)		CALLN		<-	V(26 'uii_change_dir')+0 	{}
+0002 ( 146)		CONST	R0(P)[0..0]	<-	CG11(185:0 'slotfilename' A)	{S}
+0003 ( 146)		STOREC2		<-	V(4 '')+0 , R0(P)+0 {V(185 'slotfilename' A)} [0..0]	{}
+0004 ( 146)		CALLN		<-	V(34 'uii_delete_file')+0 	{}
+0005 ( 149)		STOREC1		<-	V(4 '')+0 , CC:6	{}
+0006 ( 149)		STOREC2		<-	V(5 '')+0 , R0(PF)+0 {V(185 'slotfilename' A)} [0..0]	{}
+0007 ( 149)		CALLN		<-	V(28 'uii_open_file')+0 	{}
+0008 ( 136)		CONST	R1(L)[0..0]	<-	CI:0	{}
+0009 ( 139)		CONST	R2(I)[500..500]	<-	CI:500	{}
+000a ( 154)		CONST	R3(P)[0..0]	<-	CG0(216:0 '')	{IS}
+000b ( 154)		JUMP		<-		{}
+		==> 1
+L1: <= D-1: (2) Head P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 154)		STOREG2		<-	V(-1 'sstack')+4 , R3(P)+0 {V(216 '')} [0..0]	{}
+0001 ( 154)		STOREG4		<-	V(-1 'sstack')+6 , R1(L)[0..24479]	{}
+0002 (  82)		STOREG1		<-	V(11 'cw' A)+4 , CC:0	{}
+0003 (  83)		STOREG1		<-	V(11 'cw' A)+5 , R5(C)[0..255]	{}
+0004 ( 154)		CALLN		<-	V(14 'cwin_console_printf')+0 	{}
+0005 ( 155)		FILLG500		<-	V(218 'save_buffer' A)+0 , CC:0	{}
+0006 ( 156)		BINOP2	R0(L)[1..24480]	<-	CL:24480, R1(L)[0..24479]	{}
+0007 ( 156)		RELOP28	R4(B)[0..1]	<-	R0(L)[1..24480], CL:500	{}
+0008 ( 156)		BRANCH		<-	R4(BF)[0..1]	{}
+		==> 3
+		==> 4
+L3: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 158)		MOVE	R2(I)[1..499]	<-	R0(IF)[1..499]	{}
+0001 ( 156)		JUMP		<-		{}
+		==> 4
+L4: <= D-1: (2)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 161)		STOREC2		<-	V(6 '')+0 , R2(I)[-32768..500]	{}
+0001 ( 155)		CONST	R0(P)[0..0]	<-	CG500(218:0 'save_buffer' A)	{IS}
+0002 ( 161)		STOREC2		<-	V(4 '')+0 , R0(P)+0 {V(218 'save_buffer' A)} [0..0]	{}
+0003 (  52)		CAST	R0(I)	<-	R0(PF)+0 {V(218 'save_buffer' A)} [0..0]	{IS}
+0004 (  52)		STOREA2		<-	V(-1 '')+57090 , R0(IF)	{V}
+0005 (  53)		STOREA2		<-	V(-1 '')+57092 , R1(I)[0..24479]	{V}
+0006 (  54)		STOREA1		<-	V(-1 '')+57094 , CC:0	{V}
+0007 (  55)		STOREA2		<-	V(-1 '')+57095 , R2(I)[-32768..500]	{V}
+0008 (  56)		STOREA1		<-	V(-1 '')+57098 , CC:0	{V}
+0009 (  57)		STOREA1		<-	V(-1 '')+57089 , CC:145	{V}
+000a ( 161)		CALLN		<-	V(35 'uii_write_file')+0 	{}
+000b ( 162)		CONST	R0(P)[0..0]	<-	CG0(217:0 '')	{IS}
+000c ( 162)		STOREG2		<-	V(-1 'sstack')+16 , R0(PF)+0 {V(217 '')} [0..0]	{}
+000d ( 162)		CALLN		<-	V(31 'CheckStatus')+0 	{}
+000e ( 163)		BINOP1	R1(L)[500..24979]	<-	R1(LF)[0..24479], CL:500	{}
+000f ( 151)		RELOP28	R0(B)[0..1]	<-	R1(L)[500..24979], CL:24480	{}
+0010 ( 151)		BRANCH		<-	R0(BF)[0..1]	{}
+		==> 1
+		==> 2
+L2: <= D-1: (1)  P-1 /home/xahmol/git/UBoot64-v2/src/uboot_upd12.c
+0000 ( 166)		CALLN		<-	V(32 'uii_close_file')+0 	{}
+0001 ( 167)		RET		<-		{}

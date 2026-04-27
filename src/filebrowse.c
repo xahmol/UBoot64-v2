@@ -73,7 +73,9 @@
 #include "filebrowse.h"
 #include "petscii_ascii.h"
 
-// Switching code generation to bank 2 common routine section
+// Bank 2: file browser — reads IEC or UCI directories into a doubly-linked list stored in REU
+// (REU addresses act as pointers: next/prev fields hold the raw REU byte address of each node).
+// Handles drive switching, dir navigation, disk image mounting, and slot selection from browse.
 #pragma code(bcode2)
 #pragma data(bdata2)
 
@@ -156,7 +158,7 @@ char pathbuffer[256];
 
 // Directory reader Functions
 void dir_close(char lfn)
-// Closse a directory opened for reading
+// Close a directory opened for reading
 // Input: lfn = logical file number
 {
   // Reset channels
@@ -526,7 +528,7 @@ char dir_read(char sort)
   presentdir.position = 0;
   presentdir.present = 0;
 
-  // Open dir dependend on IEC or UCI mode
+  // Open dir dependent on IEC or UCI mode
   if (!fb_uci_mode)
   {
     strcpy(presentdir.path, "");
@@ -608,17 +610,17 @@ char dir_read(char sort)
       break;
     }
 
-    // Set direntry pointers
-    // Is this the first entry?
+    // Link new entry into the REU-backed list.
+    // `present` and `previous` are raw REU byte addresses used as pointers.
     if (!previous)
     {
+      // First entry: initialize list head
       presentdir.firstelement = present;
       presentdir.firstprint = present;
       presentdirelement.meta.prev = 0;
       previous = present;
       presentdirelement.meta.next = 0;
     }
-    // All next entries
     else
     {
       // Does the list need to be sorted?
@@ -946,6 +948,7 @@ void dir_draw(unsigned char readdir)
 }
 
 void browse_menu(void)
+// Draw the key-reference side panel; also shows current UCI/IEC, trace, comma1, and demo state
 {
   char menuy = 3;
 
@@ -1020,6 +1023,8 @@ void browse_menu(void)
 }
 
 char dir_changedir(char *dirname)
+// Navigate into dirname (or "" for root); handles UCI and IEC, disk image mounting, REU selection
+// Returns 0 on success, non-zero on failure
 {
   char ret;
   char l = strlen(dirname);
@@ -1134,6 +1139,7 @@ char dir_changedir(char *dirname)
 }
 
 void browse_updatescreen()
+// Clear screen, draw header, side menu, and refresh directory listing
 {
   cwin_clear(&cw);
   headertext("Filebrowser", 1);
@@ -1142,6 +1148,7 @@ void browse_updatescreen()
 }
 
 void FindFirstIECDrive()
+// Scan IEC devices 8-MAXDEVID and open the first active one for directory listing
 {
   char i;
 
@@ -1273,7 +1280,7 @@ void dir_last_of_page()
       dir_get_element(element);
     }
 
-    // Set new variables and pint old and new entries in correct colour
+    // Set new variables and print old and new entries in correct colour
     presentdir.position = position;
     dir_get_element(present);
     dir_print_entry(oldpos);
@@ -1432,6 +1439,7 @@ void dir_bottom()
 }
 
 void mainLoopBrowse(void)
+// Main file browser event loop — starts in UCI mode; sets fb_selection_made and global path vars on exit
 {
   char key;
   char done = 0;

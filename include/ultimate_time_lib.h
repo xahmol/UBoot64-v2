@@ -9,7 +9,7 @@ Based on ultimate_dos-1.2.docx and command interface.docx
 https://github.com/markusC64/1541ultimate2/tree/master/doc
 
 Disclaimer:  Because of the nature of DOS commands, use this code
-soley at your own risk.
+solely at your own risk.
 
 Patches and pull requests are welcome
 ******************************************************************/
@@ -18,8 +18,8 @@ Patches and pull requests are welcome
 #define _ULTIMATE_TIME_LIB_H_
 
 // prototypes
-void uii_get_time(void);
-void uii_set_time(char*);
+void uii_get_time(void);      // Read current time from Ultimate RTC into uii_data
+void uii_set_time(char*);     // Set Ultimate RTC time from formatted string
 
 #pragma compile("ultimate_time_lib.c")
 

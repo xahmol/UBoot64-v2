@@ -9,7 +9,7 @@ Based on ultimate_dos-1.2.docx and command interface.docx
 https://github.com/markusC64/1541ultimate2/tree/master/doc
 
 Disclaimer:  Because of the nature of DOS commands, use this code
-soley at your own risk.
+solely at your own risk.
 
 Patches and pull requests are welcome
 ******************************************************************/
@@ -27,7 +27,7 @@ void uii_getipaddress(void)
 // Get IP address
 {
 	char tempTarget = uii_target;
-	char cmd[] = {0x00, NET_CMD_GET_IP_ADDRESS, 0x00}; // interface 0 (theres only one)
+	char cmd[] = {0x00, NET_CMD_GET_IP_ADDRESS, 0x00}; // interface 0 (there's only one)
 
 	uii_settarget(TARGET_NETWORK);
 	uii_sendcommand(cmd, 0x03);

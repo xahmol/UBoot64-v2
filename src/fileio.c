@@ -130,7 +130,7 @@ void write_slotsfile(char verbose)
   // Delete old config file as I can not (yet) get overwrite to work
   uii_delete_file(slotfilename);
 
-  // Save slots via UCI, one slot at a time due to 512 char limit
+  // UCI data queue is 512 bytes max; SAVE_BUF_SIZE (500) keeps each write within that limit
   uii_open_file(0x06, slotfilename);
 
   while (count < end)
@@ -224,6 +224,7 @@ void read_slotsfile(unsigned char verbose)
     return;
   }
 
+  // UCI returns data in chunks up to DATA_QUEUE_SZ (512); drain until full file is read
   while (count < end)
   {
     uii_read_file(sizeof(Slot) * SLOTS);

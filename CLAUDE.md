@@ -77,13 +77,122 @@ Cross-bank calls use `fc3_call(bank, function)` / `fc3_callr(bank, function, &re
 | `include/ultimate_*` | — | UCI protocol implementation (Ultimate II+ hardware interface) |
 | `include/fc3.*` | — | Cartridge banking control |
 
-### Key Data Structures (`include/defines.h`)
+### Key Data Structures
 
-**`SlotStruct`** (~128 bytes per slot, 18 slots total): stores a single boot configuration — paths, filenames, device IDs, REU image, disk images A/B, command flags.
+#### `SlotStruct` — one boot slot (`include/defines.h`, 18 slots total)
 
-**`ConfigStruct`**: global preferences — NTP host, UTC offset, verbose flag, UI color palette.
+| Field | Type | Size | Purpose |
+|-------|------|------|---------|
+| `cfgvs` | char | 1 | Config version stamp — must equal `CFGVERSION` (0x02) |
+| `path` | char[] | 256 | USB path to the boot file's directory |
+| `menu` | char[] | 31 | Display name shown in the boot menu |
+| `file` | char[] | 51 | Boot filename |
+| `cmd` | char[] | 81 | Optional BASIC/machine code command to execute after boot |
+| `reu_image` | char[] | 51 | REU image filename to preload |
+| `reu_path` | char[] | 256 | USB path to the REU image |
+| `reusize` | char | 1 | REU size index (maps into `reusizelist`) |
+| `runboot` | char | 1 | Run/boot mode selector (bitmask of `EXEC_*` flags) |
+| `device` | char | 1 | IEC device ID to use for boot (8–30) |
+| `command` | char | 1 | Bitmask: `COMMAND_CMD`/`COMMAND_REU`/`COMMAND_IMGA`/`COMMAND_IMGB` |
+| `image_a_path` | char[] | 256 | USB path to disk image for drive A |
+| `image_a_file` | char[] | 51 | Filename of disk image for drive A |
+| `image_a_id` | char | 1 | IEC device ID to mount drive A image on |
+| `image_b_path` | char[] | 256 | USB path to disk image for drive B |
+| `image_b_file` | char[] | 51 | Filename of disk image for drive B |
+| `image_b_id` | char | 1 | IEC device ID to mount drive B image on |
+| `padding` | char[] | 13 | Reserved; pads struct to multiple of 16 bytes |
 
-**`DirMeta`**: doubly-linked list node for directory entries in the file browser.
+#### `ConfigStruct` — global preferences (`include/defines.h`)
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `version` | char | Config file version — must equal `CFGVERSION` (0x02) |
+| `timeon` | char | NTP sync enabled: 0=off, 1=on |
+| `host` | char[81] | NTP hostname |
+| `secondsfromutc` | long | UTC offset in seconds (e.g. 3600 = UTC+1) |
+| `verbose` | char | Verbose/debug output level |
+| `colors` | ColorPalette | Embedded UI color palette (see below) |
+
+#### `ColorPalette` — UI color scheme (nested inside `ConfigStruct`)
+
+| Field | Purpose |
+|-------|---------|
+| `background` | Screen background color |
+| `border` | Screen border color |
+| `header1` | Primary header text color |
+| `header2` | Secondary header/title color |
+| `text` | Normal body text color |
+| `text_input` | User input field color |
+| `key` | Highlighted key / shortcut color |
+| `diritem_normal` | Directory entry color (unselected) |
+| `diritem_select` | Directory entry color (highlighted) |
+| `error` | Error message color |
+| `ok` | Success/confirmation message color |
+
+#### File browser structs (`src/filebrowse.c`)
+
+Directory entries are stored in REU memory as a doubly-linked list. The `next`/`prev` fields hold raw REU byte addresses (not CPU pointers).
+
+**`DirMeta`** — metadata node:
+
+| Field | Purpose |
+|-------|---------|
+| `next` | REU address of next entry (0 = end of list) |
+| `prev` | REU address of previous entry (0 = start of list) |
+| `type` | Entry type (`CBM_T_PRG`, `CBM_T_DIR`, etc.) |
+| `length` | Filename byte length (including null) |
+| `select` | Selection flag: 0=unselected, 1=selected |
+| `size` | Size in 256-byte blocks |
+| `access` | Access flags (`CBM_A_RO`/`CBM_A_RW`) |
+| `stub[5]` | Reserved for future use |
+
+**`DirElement`** — one directory entry (name + metadata):
+
+| Field | Purpose |
+|-------|---------|
+| `name[51]` | Null-terminated entry name (ASCII for UCI, PETSCII for IEC) |
+| `meta` | Embedded `DirMeta` metadata |
+
+**`Directory`** — state for the active pane:
+
+| Field | Purpose |
+|-------|---------|
+| `firstelement` | REU address of list head |
+| `firstprint` | REU address of first visible entry (scroll position) |
+| `lastprint` | REU address of last visible entry on screen |
+| `present` | REU address of currently highlighted entry |
+| `drive` | Drive number (0=A, 1=B) |
+| `position` | Cursor row on screen (0–18) |
+| `path[256]` | Current directory path string |
+| `free` | Free blocks on device (IEC only) |
+| `address` | Next available REU write address for new entries |
+
+#### UCI hardware structs (`include/ultimate_common_lib.h`)
+
+**`UII_READ`** — memory-mapped read registers at `$DF1C`:
+
+| Field | Offset | Purpose |
+|-------|--------|---------|
+| `status` | +0 | Status/state bits (busy, error, data-available) |
+| `id` | +1 | Identity byte — `0xC9` confirms UCI present |
+| `respdata` | +2 | Response data FIFO byte |
+| `statusdata` | +3 | Status string FIFO byte |
+
+**`UII_WRITE`** — memory-mapped write registers at `$DF1C`:
+
+| Field | Offset | Purpose |
+|-------|--------|---------|
+| `control` | +0 | Control bits: push command, acknowledge, abort, clear |
+| `cmddata` | +1 | Command data byte to send |
+
+**`DevInfo`** — connected drive state (array `uii_devinfo[4]`, indexed by target ID minus 1):
+
+| Field | Purpose |
+|-------|---------|
+| `exist` | Drive present: 0=absent, 1=present |
+| `type` | Drive type code |
+| `power` | Drive power state |
+| `id` | IEC device ID assigned to this drive |
 
 ### Persistence Model
 
