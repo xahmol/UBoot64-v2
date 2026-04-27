@@ -385,18 +385,15 @@ char dir_readentry_iec(struct DirElement *l_dirent)
     disk_id_buf[b] = 0;
 
     // strip disk name
-    for (b = 15; b > 0; --b)
+    for (b = 1; b < 16; ++b)
     {
-      if (l_dirent->name[b] == 0 ||
-          l_dirent->name[b] == ' ' ||
-          l_dirent->name[b] == 0xA0)
+      if (l_dirent->name[16-b] == 0 ||
+          l_dirent->name[16-b] == ' ' ||
+          l_dirent->name[16-b] == 0xA0)
       {
-        l_dirent->name[b] = 0;
-        continue;
+        l_dirent->name[16-b] = 0;
       }
-      break;
     }
-
     return 0;
   }
 
@@ -584,28 +581,17 @@ char dir_read(char sort)
       if (presentdirelement.meta.type == CBM_T_HEADER)
       {
         strcpy(presentdir.path, presentdirelement.name);
-        {
-          unsigned char namelen = strlen(presentdirelement.name);
-          presentdir.path[namelen] = ',';
-          memcpy(&presentdir.path[namelen + 1], disk_id_buf, DISK_ID_LEN);
-          presentdir.path[namelen + 1 + DISK_ID_LEN] = 0;
-          if (namelen + 1 + DISK_ID_LEN > 20)
-          {
-            presentdir.path[20] = 0;
-          }
-        }
-        // If disk name was empty, path[0] is still $00 — force non-zero so subsequent
-        // file entries are not mistaken for another header.
-        if (!presentdir.path[0])
-        {
-          presentdir.path[0] = ' ';
-        }
+        unsigned char namelen = strlen(presentdirelement.name);
+        presentdir.path[namelen] = ',';
+        memcpy(&presentdir.path[namelen + 1], disk_id_buf, DISK_ID_LEN);
+        presentdir.path[namelen + 1 + DISK_ID_LEN] = 0;
+        presentdir.path[20] = 0; // Ensure path is always null-terminated at max length
       }
       else
       {
         strcpy(presentdir.path, "Unknown type");
       }
-      continue;  // header is not stored in the listing; keep reading file entries
+      continue; // header is not stored in the listing; keep reading file entries
     }
 
     // Check if blocks free entry is found
@@ -912,15 +898,15 @@ void dir_draw(unsigned char readdir)
   unsigned long element;
   unsigned long nextaddr;
 
-  // Print header
-  dir_print_id_and_path();
-
   // Read directory contents
   if (readdir)
   {
     dir_read(sorted);
     presentdir.present = presentdir.firstprint;
   }
+
+  // Print header after dir_read() so it reflects the newly read directory path
+  dir_print_id_and_path();
 
   // Read firstprint into local so the zero-check uses a plain variable
   element = presentdir.firstprint;
@@ -976,7 +962,7 @@ void browse_menu(void)
   cwin_putat_string(&cw, 26, ++menuy, "  \x5e Root dir", cfg.colors.text);
   cwin_putat_string(&cw, 26, ++menuy, "  T Top", cfg.colors.text);
   cwin_putat_string(&cw, 26, ++menuy, "  E End", cfg.colors.text);
-  cwin_putat_string(&cw, 26, ++menuy, "P/U Page up/do", cfg.colors.text);
+  cwin_putat_string(&cw, 26, ++menuy, "P/U Page do/up", cfg.colors.text);
   cwin_putat_string(&cw, 26, ++menuy, "Cur Navigate", cfg.colors.text);
   if (!fb_uci_mode)
   {
@@ -1401,7 +1387,7 @@ void dir_bottom()
 {
   unsigned long nextaddr;
   unsigned long prevaddr;
-  unsigned char count;  // backward loop counter
+  unsigned char count; // backward loop counter
 
   // Are there dir entries? And is there a next dir entry
   nextaddr = presentdirelement.meta.next;
