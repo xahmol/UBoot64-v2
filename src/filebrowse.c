@@ -1106,12 +1106,6 @@ char dir_changedir(char *dirname)
         sprintf(linebuffer, "cd/%s/", dirname);
       }
     }
-
-    if (trace == 1)
-    {
-      strncpy(path[depth], dirname, MAXFILENAME);
-      path[depth][MAXFILENAME - 1] = 0;
-    }
   }
   else
   {
@@ -1711,7 +1705,7 @@ void mainLoopBrowse(void)
       {
         if (trace == 1)
         {
-          strncpy(path[depth], presentdirelement.name, MAXFILENAME);
+          strncpy(path[depth++], presentdirelement.name, MAXFILENAME);
           path[depth][MAXFILENAME - 1] = 0;
         }
         dir_changedir(presentdirelement.name);
