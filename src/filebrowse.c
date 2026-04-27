@@ -864,6 +864,7 @@ void dir_print_entry(char printpos)
   {
     // Prepare name
     strncpy(namebuffer, presentdirelement.name, 16);
+    namebuffer[16] = 0;
 
     // Get file type to string
     strcpy(linebuffer2, (char *)fileTypeToStr(presentdirelement.meta.type));
