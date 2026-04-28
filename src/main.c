@@ -350,7 +350,7 @@ __noinline void mainloop(void)
 			fc3_call(2, mainLoopBrowse);
 			if (fb_selection_made == 1)
 			{
-				//			pickmenuslot();
+				fc3_call(1,pickmenuslot);
 			}
 			break;
 

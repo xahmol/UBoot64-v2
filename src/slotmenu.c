@@ -216,7 +216,7 @@ void pickmenuslot()
     char selected = 0;
 
     cwin_clear(&cw);
-    headertext("Choose menuslot.");
+    headertext("Choose menuslot.",1);
     presentmenuslots();
     cwin_cursor_move(&cw, 0, 21);
     cwin_console_printf(&cw, cfg.colors.text, "Choose slot by pressing key: ");
@@ -348,6 +348,8 @@ void pickmenuslot()
         }
 
         cwin_cursor_move(&cw, 0, 24);
+
+        save_slot_to_reu(menuslot);
         cwin_console_printf(&cw, cfg.colors.text, "Saving. Please wait.          ");
         write_slotsfile(0);
     }
@@ -617,7 +619,7 @@ void printnewmenuslot(char pos, char select, char *name)
     cwin_fill_rect_raw(&cw, 0, pos + 3, 40, 1, SC_SPACE, cfg.colors.text);
 
     // Key print
-    cwin_console_printf(&cw, cfg.colors.text, linebuffer, " %s%c ", (select) ? "-" : " ", menuslotkey(pos));
+    sprintf(linebuffer, " %s%c ", (select) ? "-" : " ", menuslotkey(pos));
     cwin_putat_string_reverse(&cw, 0, pos + 3, linebuffer, color_key);
 
     // Name print
@@ -831,7 +833,7 @@ char edituserdefinedcommand()
 
         cwin_putat_string(&cw, 0, 3, "Chosen slot:", cfg.colors.text);
 
-        cwin_console_printf(&cw, cfg.colors.text, linebuffer, "  %c ", menuslotkey(menuslot));
+        sprintf(linebuffer, "  %c ", menuslotkey(menuslot));
         cwin_putat_string_reverse(&cw, 0, 4, linebuffer, cfg.colors.key);
         cwin_putat_string(&cw, 5, 4, Slot.menu, cfg.colors.text);
 

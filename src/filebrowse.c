@@ -1068,7 +1068,7 @@ char dir_changedir(char *dirname)
 
         imageaid = uii_devinfo[0].id;
         device = imageaid;
-        strncpy(imageaname, imagename, MAXFILENAME);
+        strncpy(imageaname, dirname, MAXFILENAME);
         imageaname[MAXFILENAME - 1] = 0;
 
         if (!uii_devinfo[0].power)
