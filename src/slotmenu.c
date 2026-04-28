@@ -931,13 +931,15 @@ void editmenuoptions()
 void information()
 // Show version information and credits screen
 {
-    show_splash_screen();
-
-    cwin_clear(&cw);
-
     // Set sprite logo
     spr_show(0, true);     // Enable sprite logo
-    spr_move(0, 320, 220); // Set Y position
+    spr_move(0, 320, 228); // Set Y position
+
+    // Show splash scree
+    show_splash_screen();
+
+    // Clear screen and print info and credits
+    cwin_clear(&cw);
 
     headertext("Info and credits", 1);
 
@@ -945,7 +947,7 @@ void information()
 
     cwin_console_printf(&cw, cfg.colors.text, "\nUBoot64: Boot menu for Ultimate devices\n\n");
     cwin_console_printf(&cw, cfg.colors.text, "Version: %s\n", VERSION);
-    cwin_console_printf(&cw, cfg.colors.text, "Written 2023 (v1), 2025 by Xander Mol.\n\n");
+    cwin_console_printf(&cw, cfg.colors.text, "Written 2023 (v1), 2026 by Xander Mol.\n\n");
     cwin_console_printf(&cw, cfg.colors.text, "Inspired by/code used of DraBrowse:\n");
     cwin_console_printf(&cw, cfg.colors.text, "DraBrowse is a simple file browser.\n");
     cwin_console_printf(&cw, cfg.colors.text, "Original 2009 by Sascha Bader.\n");
