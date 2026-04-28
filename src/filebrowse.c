@@ -1664,8 +1664,8 @@ void mainLoopBrowse(void)
             cwin_clear(&cw);
             errorexit("Old Ultimate firmware detected.");
           }
-          addmountflag = 1;
-          imagebid = uii_devinfo[0].id;
+          addmountflag = 2;
+          imagebid = uii_devinfo[1].id;
           strncpy(imagebname, presentdirelement.name, MAXFILENAME);
           imagebname[MAXFILENAME - 1] = 0;
           uii_get_path();

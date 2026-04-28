@@ -73,6 +73,7 @@
 #include "core.h"
 #include "fileio.h"
 #include "slotmenu.h"
+#include "splash.h"
 
 // Bank 1: slot menu UI — boot menu display, slot selection, slot editing (rename/delete/reorder),
 // and boot execution. Cross-bank calls to bank 0 via fc3_call for I/O and config operations.
@@ -930,6 +931,8 @@ void editmenuoptions()
 void information()
 // Show version information and credits screen
 {
+    show_splash_screen();
+
     cwin_clear(&cw);
 
     // Set sprite logo
