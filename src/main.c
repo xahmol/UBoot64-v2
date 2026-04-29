@@ -1,6 +1,6 @@
 // UBoot64 v2:
 // Boot menu for C64 Ultimate enabled devices
-// Written in 2023  (v1), 2025 (v2) by Xander Mol
+// Written in 2023 (v1), 2026 (v2) by Xander Mol
 // https://github.com/xahmol/UBoot64-v2
 // https://www.idreamtin8bits.com/
 //

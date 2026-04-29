@@ -1,3 +1,17 @@
+// UBoot64 v2:
+// Boot menu for C64 Ultimate enabled devices
+// Written in 2023 (v1), 2026 (v2) by Xander Mol
+// https://github.com/xahmol/UBoot64-v2
+// https://www.idreamtin8bits.com/
+//
+// Configuration upgrade utility: migrates v1 slot/config files to v2 format.
+//
+// The code can be used freely as long as you retain
+// a notice describing original source and author.
+//
+// THE PROGRAMS ARE DISTRIBUTED IN THE HOPE THAT THEY WILL BE USEFUL,
+// BUT WITHOUT ANY WARRANTY. USE THEM AT YOUR OWN RISK!
+
 // Includes
 #include <c64/memmap.h>
 #include <c64/charwin.h>
