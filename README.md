@@ -43,7 +43,7 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 Link to latest build:
 
-[Latest build](https://github.com/xahmol/UBoot64-v2/raw/refs/heads/main/uboot64_v2.0.0-20260430-0038)
+[Latest build](https://github.com/xahmol/UBoot64-v2/raw/refs/heads/main/uboot64_v2.0.0-20260430-0038.zip)
 
 Version 2.0.1 - 202604230
 
