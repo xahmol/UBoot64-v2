@@ -30,6 +30,7 @@ https://github.com/markusC64/1541ultimate2/tree/master/doc
 ---
 
 ## 1. Overview
+([Back to contents](#contents))
 
 The Ultimate Command Interface (UCI) is a memory-mapped hardware interface exposed by the Ultimate II+, Ultimate II+ L, and Ultimate 64 cartridges. It provides the C64 CPU with access to the cartridge's file system, network stack, real-time clock, and drive emulation control, all through a small set of I/O registers at `$DF1C–$DF1F`.
 
@@ -47,6 +48,7 @@ All library files are included in the Oscar64 build via `#pragma compile(...)` d
 ---
 
 ## 2. Hardware Registers
+([Back to contents](#contents))
 
 The UCI exposes four registers mapped at `$DF1C–$DF1F`. The same two addresses serve different purposes for reads and writes.
 
@@ -101,6 +103,7 @@ The `DATA_QUEUE_SZ` constant is set conservatively to 512 to limit RAM usage. Th
 ---
 
 ## 3. Global Variables and Buffers
+([Back to contents](#contents))
 
 All global variables are defined in `ultimate_common_lib.c` and declared `extern` in `ultimate_common_lib.h`.
 
@@ -174,6 +177,7 @@ Returns true (non-zero) when the last command completed with status `"00,..."`. 
 ---
 
 ## 4. Constants and Defines
+([Back to contents](#contents))
 
 ### Target IDs
 
@@ -280,6 +284,7 @@ These flags combine to specify how a file is opened:
 ---
 
 ## 5. Protocol Flow
+([Back to contents](#contents))
 
 Every UCI operation follows the same four-step sequence. High-level functions in the library perform all four steps internally — you do not need to call them manually unless building custom commands.
 
@@ -319,6 +324,7 @@ while (uii_isdataavailable() || uii_ismoredataavailable())
 ---
 
 ## 6. Status Codes and Error Handling
+([Back to contents](#contents))
 
 Every command places a null-terminated status string in `uii_status[]` after completion. The format is `"NN,MESSAGE"` where `NN` is a two-digit decimal error code.
 
@@ -369,6 +375,7 @@ while (uii_isdataavailable() || uii_ismoredataavailable())
 ---
 
 ## 7. Core Functions
+([Back to contents](#contents))
 
 Defined in `ultimate_common_lib.h` / `ultimate_common_lib.c`.
 
@@ -577,6 +584,7 @@ void uii_getinterfacecount(void);
 ---
 
 ## 8. DOS Functions — File Operations
+([Back to contents](#contents))
 
 Defined in `ultimate_dos_lib.h` / `ultimate_dos_lib.c`. All file operations act on `TARGET_DOS1` (drive A's file system). To operate on drive B's file system, call `uii_settarget(TARGET_DOS2)` before using these functions.
 
@@ -804,6 +812,7 @@ void uii_copy_file(char *source, char *destination);
 ---
 
 ## 9. DOS Functions — Directory Operations
+([Back to contents](#contents))
 
 ---
 
@@ -939,6 +948,7 @@ void uii_create_dir(char *directory);
 ---
 
 ## 10. Control Functions — Drive Management
+([Back to contents](#contents))
 
 These functions target `TARGET_CONTROL` and control the Ultimate's emulated disk drives.
 
@@ -1194,6 +1204,7 @@ void uii_saveRamDisk(char id, char *filename);
 ---
 
 ## 11. Control Functions — System
+([Back to contents](#contents))
 
 ---
 
@@ -1227,6 +1238,7 @@ void uii_get_hwinfo(char device);
 ---
 
 ## 12. Time Functions
+([Back to contents](#contents))
 
 Defined in `ultimate_time_lib.h` / `ultimate_time_lib.c`. Uses `TARGET_DOS1`.
 
@@ -1282,6 +1294,7 @@ void uii_set_time(char *data);
 ---
 
 ## 13. Network Functions
+([Back to contents](#contents))
 
 Defined in `ultimate_network_lib.h` / `ultimate_network_lib.c`. All network functions use `TARGET_NETWORK` and save/restore the previous `uii_target` around their calls.
 
@@ -1510,6 +1523,7 @@ void uii_reset_uiidata(void);
 ---
 
 ## 14. Typical Usage Patterns
+([Back to contents](#contents))
 
 ### Read a File
 

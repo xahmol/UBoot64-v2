@@ -19,10 +19,12 @@ https://github.com/xahmol/UBoot64-v2
 10. [Startup Flow](#10-startup-flow)
 11. [Key Design Considerations](#11-key-design-considerations)
 12. [Oscar64 Compiler Quirks and Workarounds](#12-oscar64-compiler-quirks-and-workarounds)
+13. [Porting from cc65 (v1) to Oscar64 (v2)](#13-porting-from-cc65-v1-to-oscar64-v2)
 
 ---
 
 ## 1. Project Overview
+([Back to contents](#contents))
 
 UBoot64 v2 is a boot menu cartridge for the Commodore 64 built around the Ultimate II+/U64 cartridge ecosystem. It presents an interactive menu of up to 18 configurable boot slots, each of which can launch a program file (via IEC or UCI), mount disk images on emulated drives, and preload a REU file — all without user intervention at boot time.
 
@@ -37,6 +39,7 @@ UBoot64 v2 is a boot menu cartridge for the Commodore 64 built around the Ultima
 ---
 
 ## 2. Build System
+([Back to contents](#contents))
 
 **Compiler:** Oscar64 — https://github.com/drmortalwombat/oscar64  
 Expected at: `/home/xahmol/oscar64/bin/oscar64`
@@ -91,6 +94,7 @@ make deploy   # Deploy via FTP to Ultimate II+ (requires ULTHOST in Makefile)
 ---
 
 ## 3. Final Cartridge 3 Format
+([Back to contents](#contents))
 
 ### Overview
 
@@ -130,6 +134,7 @@ At power-on or reset the C64 ROM detects the cartridge by checking `$8004–$800
 ---
 
 ## 4. Memory Layout
+([Back to contents](#contents))
 
 ### RAM ($0000–$7FFF and $8000–$BFFF when banking active)
 
@@ -200,6 +205,7 @@ All program global variables are declared in `src/main.c` and reside in the bank
 ---
 
 ## 5. Banking Architecture
+([Back to contents](#contents))
 
 ### Section Directives
 
@@ -258,6 +264,7 @@ Bank 0 code runs from RAM (`$0900+`) and is always accessible regardless of whic
 ---
 
 ## 6. REU Usage
+([Back to contents](#contents))
 
 ### Hardware
 
@@ -309,6 +316,7 @@ Because the UCI data queue is limited to 512 bytes per transfer, large structure
 ---
 
 ## 7. Ultimate Command Interface (UCI)
+([Back to contents](#contents))
 
 The UCI is the hardware interface exposed by the Ultimate II+/U64 cartridge at memory-mapped I/O registers `$DF1C–$DF1F`. All file, network, and control operations go through it.
 
@@ -380,6 +388,7 @@ Success check: `UII_SUCCESS` — true when `uii_status[0]=='0' && uii_status[1]=
 ---
 
 ## 8. Data Structures
+([Back to contents](#contents))
 
 All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char paths, 51-char filenames.
 
@@ -520,6 +529,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 ---
 
 ## 9. Module Map and Function Reference
+([Back to contents](#contents))
 
 ### Bank 0 — Common routines (run from RAM at `$0900+`)
 
@@ -670,6 +680,7 @@ Compiled separately as `uboot_upd12.prg`. A standalone C64 PRG (not a cartridge)
 ---
 
 ## 10. Startup Flow
+([Back to contents](#contents))
 
 ```
 main()  [startcode, bank 0 ROM $8060]
@@ -701,6 +712,7 @@ main()  [startcode, bank 0 ROM $8060]
 ---
 
 ## 11. Key Design Considerations
+([Back to contents](#contents))
 
 ### No Dynamic Allocation
 
@@ -758,6 +770,7 @@ The sprite is defined in `main.c` as `logo_sprite[64]` in the startcode ROM sect
 ---
 
 ## 12. Oscar64 Compiler Quirks and Workarounds
+([Back to contents](#contents))
 
 This section documents every known Oscar64 limitation, miscompilation, or non-obvious requirement encountered during development of UBoot64 v2, along with the applied workaround and the location in the source code where it appears.
 
@@ -1118,6 +1131,7 @@ cwin_console_printf(&cw, color, "%s", linebuffer);
 ---
 
 ## 13. Porting from cc65 (v1) to Oscar64 (v2)
+([Back to contents](#contents))
 
 This section catalogues every major category of source change required to migrate UBoot64 from the cc65 toolchain (v1) to Oscar64 (v2). Each category includes a concrete before/after example drawn from the actual v1 and v2 source.
 
