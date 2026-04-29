@@ -201,6 +201,19 @@ __noinline void mainloop(void)
 
 	cwin_put_string(&cw, "Detecting and reading...", cfg.colors.text);
 
+	// Wait for Ultimate firmware to boot before issuing any UCI command.
+	// At cold autostart the C64 starts faster than the Ultimate firmware boots,
+	// leaving the UCI status register ($DF1C) in an undefined state that causes
+	// uii_sendcommand() to spin forever. uii_detect() only reads one register
+	// and never calls uii_sendcommand(), so it is safe to poll here.
+	// Times out after 10 seconds.
+	cia1.tods = 0;
+	cia1.todt = 0;
+	while (!uii_detect() && cia1.tods < 10)
+	{
+		;
+	}
+
 	// Is Ultimate Command Interface detected? If no, abort
 	if (!uii_detect())
 	{
@@ -212,14 +225,14 @@ __noinline void mainloop(void)
 		fc3_exit();
 	}
 
-	// Wait for USB to be present by looping till dirchange to root successful
-	// Times out on 5 secs
+	// Wait for USB to be present by looping till dirchange to root successful.
+	// Reset TOD clock; timeout after 5 seconds if USB is not found.
 	cia1.tods = 0;
 	cia1.todt = 0;
 	do
 	{
 		uii_change_dir(configpath);
-	} while (!UII_SUCCESS || cia1.tods > 4);
+	} while (!UII_SUCCESS && cia1.tods < 5);
 	if (!UII_SUCCESS)
 	{
 		errorexit("USB storage not found.");
@@ -406,8 +419,10 @@ int main(void)
 		ldx #$FF				
 		txs
 		ldx #$05
-		sta $D016 // Turn on VIC for PAL / NTSC check
+		stx $D016 // Turn on VIC for PAL / NTSC check
 		jsr $FDA3 // Init I/O
+		jsr $FD50 // Init CIA1
+		jsr $FD15 // Init I/O
 		jsr	$FF84 // Prepare IRQ
 
 							// Set Start of Tape Buffer pointer

@@ -1,5 +1,3 @@
-# NB: Known issue - freeze at autostart of cartridge. Investigation pending, sorry for inconvenience
-
 # UBoot64 v2
 
 ![Logo](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Logo.png?raw=true)
@@ -45,7 +43,11 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 Link to latest build:
 
-[Latest build](https://github.com/xahmol/UBoot64-v2/raw/refs/heads/main/uboot64_v2.0.0-20260429-1217.zip)
+[Latest build](https://github.com/xahmol/UBoot64-v2/raw/refs/heads/main/uboot64_v2.0.0-20260430-0038)
+
+Version 2.0.1 - 202604230
+
+- Fix for freeze at startup (error in cartridge init code)
 
 Version 2.0.0 - 20260429:
 
