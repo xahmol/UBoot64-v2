@@ -1,3 +1,5 @@
+# NB: Known issue - freeze at autostart of cartridge. Investigation pending, sorry for inconvenience
+
 # UBoot64 v2
 
 ![Logo](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Logo.png?raw=true)
