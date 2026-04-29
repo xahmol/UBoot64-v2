@@ -173,7 +173,7 @@ If you have an existing v1 configuration (slot and config files), you must run t
 * Repeat until all desired slots are filled.
 * Important notes:
   * For technical reasons, loose .PRG files in UCI mode can not be added to the start menu. Either add them via the SoftIEC in IEC mode, or use the Ultimate native UI for launching these applications. Reason is that launching a PRG from an UCI path is not supported via the Ultimate Command Interface (yet)
-  * If you want to add a program, disk images and a REU image to the same slot, this needs to be done in seperate steps for each file or image to add. Just choose the same slot again each time.
+  * If you want to add a program, disk images and a REU image to the same slot, this needs to be done in separate steps for each file or image to add. Just choose the same slot again each time.
 
 ### F1: Filebrowse menu
 ([Back to contents](#contents))
@@ -181,6 +181,8 @@ If you have an existing v1 configuration (slot and config files), you must run t
 The filebrowser is based on and inspired by the DraBrowse program from <https://github.com/doj/dracopy>
 
 ![File browser showing directory listing](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=true)
+
+#### Key reference
 
 | Key | Function |
 | --- | -------- |
@@ -205,6 +207,77 @@ The filebrowser is based on and inspired by the DraBrowse program from <https://
 | **1** | Toggle ,1 load |
 | **O** | Toggle demo mode |
 | **Q** or **F7** | Quit to main menu |
+
+#### UCI mode and IEC mode
+
+The file browser opens in **UCI mode** by default. Press **F3** to toggle between modes. The current mode is shown in the lower right of the sidebar.
+
+**UCI mode** browses the native filesystem of the Ultimate device (USB storage) directly via the Ultimate Command Interface. It supports long filenames, full directory paths, and can enter disk images (`.D64`, `.G64`, `.D71`, `.G71`, `.DNP`) as if they were directories.
+
+**IEC mode** reads directories from a physical or emulated IEC bus device (disk drives on the serial bus). Press **+** or **-** to cycle through available active device numbers. In IEC mode, filenames follow CBM conventions and directory listings are read via the KERNAL. File type labels (`PRG`, `SEQ`, `DEL`, `REL`, `CBM`, `DIR`) are shown next to each entry.
+
+#### Directory navigation
+
+Use **CURSOR UP** / **CURSOR DOWN** to move the highlight one entry at a time. Use **P** (page down) and **U** (page up) to jump a full screen at a time. **T** jumps to the first entry in the directory and **E** jumps to the last.
+
+To enter a subdirectory or disk image, press **RETURN** or **CURSOR RIGHT** on it. To go back up to the parent directory, press **DEL** or **CURSOR LEFT**. Press **↑** (the up-arrow key, not cursor up) to jump directly to the root of the current file system.
+
+Press **F1** at any time to re-read and refresh the current directory listing.
+
+#### Directory trace (IEC mode)
+
+Because IEC drives do not report their full path, pressing **D** activates **directory trace** mode: UBoot64 records each directory you navigate into, building the full path from root. The TRACE indicator in the sidebar switches to **ON**. Navigate from the root directory with trace active before selecting a program, so the complete path can be stored in the menu slot.
+
+Without trace active in IEC mode, only the filename is stored; the path will be empty and the program can only be found if it is in the root directory of the drive.
+
+![Status toggles panel with directory trace enabled](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
+
+Press **D** again to turn trace off and reset the recorded path depth.
+
+#### Toggles: ,1 Load and Demo mode
+
+The sidebar shows two additional toggles that affect how a program is launched when selected for a slot.
+
+**,1 Load** (toggle with **1**): controls the BASIC LOAD command used at boot time.
+- **OFF**: `LOAD"FILENAME",8` — loads the program to the address in the file header (normal for most games and programs).
+- **ON**: `LOAD"FILENAME",8,1` — loads to the absolute address stored in the file. Needed for some utilities and programs that require loading at a fixed memory address.
+
+**Demo mode** (toggle with **O**): when ON, all Ultimate emulated drives except the one on IEC ID 8 are powered off before the program starts. Many demos and some games require only one drive to be active. Enable this toggle when adding demos to ensure reliable playback on systems with multiple emulated drives.
+
+![File browser status toggles panel in UCI mode](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20UCI.png?raw=true)
+
+Both toggle states are stored in the menu slot when you confirm the selection.
+
+#### Selecting items for menu slots
+
+After navigating to the desired file or image, use the appropriate key for the type of item:
+
+**Selecting a program to run (RETURN or M):**
+- In IEC mode, pressing **RETURN** on a `.PRG` file without trace active runs it immediately (direct launch, no slot storage).
+- In IEC mode with trace active, pressing **RETURN** on a `.PRG` stores it in a slot — the recorded path and filename are saved.
+- In UCI mode, pressing **RETURN** on a `.PRG` file does nothing unless first a disk image was entered. If a disk image was entered before (sinde mount), the program stores it in a selected slot and also automatically stores that disk image as the drive A image.
+- Pressing **M** instead of **RETURN** stores the program to run from the disk image already mounted on drive A (IEC inside-mount mode). Use this when the program must be started from within the mounted disk.
+
+**Entering and using a disk image (RETURN on .Dxx file in UCI mode):**
+Pressing **RETURN** on a disk image file in UCI mode mounts it on drive A and switches to IEC mode, showing "Inside mount" in the sidebar. You can then browse the disk contents and press **RETURN** on a program to store both the program and the disk image in a slot.
+
+**Adding an additional drive B image (B):**
+In UCI mode, pressing **B** on a disk image (`.Dxx`) stores it as the drive B image for the next slot you choose. This is useful when a program needs two drives simultaneously.
+
+**Adding a drive A image without entering it (A):**
+Pressing **A** on a disk image in UCI mode stores it as the drive A image for the next slot, without mounting or entering the image. Use this when you want to add an image to a slot separately from the program selection step.
+
+**Selecting a REU image (RETURN on .REU file):**
+Navigate to a `.REU` file and press **RETURN**. You are then prompted to choose the REU size with **+** / **-** before confirming. The REU image is preloaded into REU memory before the program in the slot starts.
+
+After any selection, you are taken to the slot picker screen to choose which of the 18 menu slots (0–9, A–H) the item should be stored in.
+
+#### Limitations in UCI mode
+
+Loose `.PRG` files on the native UCI file system cannot be added to a menu slot for direct launch. The Ultimate Command Interface does not (yet) support launching a program directly from a USB path. Options:
+- Use IEC mode via SoftIEC to access the file through a CBM device number.
+- Enter a disk image in UCI mode first, then select the program from within the mounted image.
+- Use the Ultimate's own UI for running programs directly from USB.
 
 ### F2: Information
 ([Back to contents](#contents))
