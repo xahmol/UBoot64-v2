@@ -47,7 +47,7 @@ Version 2.0.0 - 20260428:
 - Directory listings stored in REU memory, enabling:
   - much larger directory support
   - long filename support: maximum filename size now 50
-  - long pathname support: maximum pathsize now 255. NB: The maximum is for the complete path, not for every directoryname in the path seperately.
+  - long pathname support: maximum pathsize now 255. NB: The maximum is for the complete path, not for every directoryname in the path separately.
 - Configurable colour scheme (F5 → F6 in configuration menu)
 - Verbose or silent startup option (F5 → F2 in configuration menu)
 - Splash screen in Information menu
@@ -124,26 +124,26 @@ If you have an existing v1 configuration (slot and config files), you must run t
 * On startup a splash screen is shown briefly. Press any key to proceed to the main menu.
 * The empty start menu looks like this:
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20menu%20first%20run.png?raw=true)
+![Empty boot menu on first run](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20menu%20first%20run.png?raw=true)
 
 ### Add start options via the Filebrowser
 
 * Start options can be added to menu slots **0–9** and **A–Z** (18 slots total) via the Filebrowser.
 * Press **F1** to open the filebrowser:
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=true)
+![File browser in UCI mode](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=true)
 
 * The browser starts in **UCI mode** — browsing via the Ultimate Command Interface on the native filesystem of your Ultimate device.
 * Press **F3** to switch to **IEC mode** for drives connected to the IEC bus. Use **+** / **-** to select the device number.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser%20IEC.png?raw=true)
+![File browser in IEC mode](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser%20IEC.png?raw=true)
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20UCI.png?raw=true)
+![File browser status toggles panel in UCI mode](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20UCI.png?raw=true)
 
 * Press **F1** to refresh the directory if needed.
 * In IEC mode, press **D** to start a **directory trace** from the root, needed to record the full path for a menu slot. The TRACE toggle in the lower right switches to ON.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
+![Status toggles panel with directory trace enabled](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
 
 * **,1 Load** (toggle with **1**): loads with `LOAD"NAME",8` (off) or `LOAD"NAME",8,1` (on).
 * **Demo mode** (toggle with **O**): powers down all drives except ID 8 on start.
@@ -151,33 +151,36 @@ If you have an existing v1 configuration (slot and config files), you must run t
 * Navigate with **cursor keys** (UP/DOWN in dir, ENTER/RIGHT to enter dir or image, DEL/LEFT to go up).
 * From UCI mode, entering a disk image (`.Dxx` extension) mounts it on drive A and switches to IEC mode — "Inside mount" appears in the menu.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20FB%20Inside%20Mount.png?raw=true)
+![File browser showing inside a mounted disk image](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20FB%20Inside%20Mount.png?raw=true)
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggle%20inside%20mount.png?raw=true)
+![Inside mount indicator in the file browser sidebar](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggle%20inside%20mount.png?raw=true)
 
 * Press **ENTER** on a program file to select it for a menu slot. In UCI mode the associated drive A disk image is automatically included.
 * Press **A** or **B** on a disk image (`.Dxx`) to select it as the additional image to mount on drive A resp. B when starting from that slot.
 * Press **M** on a program file to select it to be run from the disk image already mounted on drive A.
 * To add a REU file: navigate to it and press **ENTER**, then select the target slot, choose REU size with **+** / **-**, and confirm with **ENTER**.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
+![Status toggles panel with directory trace enabled](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
 
 **Note:** The REU file must be in the same filepath as the drive A disk image if one is present.
 
 * After selecting what to place in a slot, you are shown this screen to pick the slot position:
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Add%20REU.png?raw=true)
+![Pick slot screen to assign the selected item to a menu slot](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Add%20REU.png?raw=true)
 
 * If the slot is already filled, confirmation is requested. Choose **Y** to proceed or **N** to cancel.
 * Press **0–9** or **A–Z** to choose the slot, enter a name and press **ENTER**.
 * Repeat until all desired slots are filled.
+* Important notes:
+  * For technical reasons, loose .PRG files in UCI mode can not be added to the start menu. Either add them via the SoftIEC in IEC mode, or use the Ultimate native UI for launching these applications. Reason is that launching a PRG from an UCI path is not supported via the Ultimate Command Interface (yet)
+  * If you want to add a program, disk images and a REU image to the same slot, this needs to be done in seperate steps for each file or image to add. Just choose the same slot again each time.
 
 ### F1: Filebrowse menu
 ([Back to contents](#contents))
 
 The filebrowser is based on and inspired by the DraBrowse program from <https://github.com/doj/dracopy>
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=tru)
+![File browser showing directory listing](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=true)
 
 | Key | Function |
 | --- | -------- |
@@ -210,30 +213,30 @@ Shows first the splash screen, and after pressing any key, the information and c
 
 ![Splash](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Splash.png?raw=true)
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Info.png?raw=true)
+![Information and credits screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Info.png?raw=true)
 
 ### F3: Edit / re-order / delete
 ([Back to contents](#contents))
 
 Rename, re-order, edit commands for, or delete menu slots.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Edit%20menu.png?raw=true)
+![Edit, re-order and delete slots menu](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Edit%20menu.png?raw=true)
 
 * **F1** — Rename a slot. Choose slot (**0–9** / **A–Z**), enter new name, press **ENTER**.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20rename.png?raw=true)
+![Rename slot screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20rename.png?raw=true)
 
 * **F2** — Add or edit a user-defined BASIC command to execute before the program starts.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20command.png?raw=true)
+![Edit user-defined BASIC command screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20command.png?raw=true)
 
 * **F3** — Re-order slots. Choose slot to move (**0–9** / **A–Z**), highlighted in white. Press **UP** / **DOWN** to move. Confirm with **ENTER**, cancel with **F7**.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20reorder.png?raw=true)
+![Re-order slots screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20reorder.png?raw=true)
 
 * **F5** — Delete a slot. Choose slot (**0–9** / **A–Z**), confirm with **Y** or cancel with **N**.
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Delete.png?raw=true)
+![Delete slot confirmation screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Delete.png?raw=true)
 
 * **F7** — Return to main menu. Changes are saved at this point.
 
@@ -244,7 +247,7 @@ Configure NTP time synchronisation, startup verbosity, and the UI colour scheme.
 
 After pressing **F5**:
 
-![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20NTP%20menu.png?raw=true)
+![Configuration menu showing NTP time sync and other settings](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20NTP%20menu.png?raw=true)
 
 The screen shows current settings and allows editing:
 
@@ -258,7 +261,7 @@ The screen shows current settings and allows editing:
 
 * **F6** — Edit the UI colour scheme. Use **CURSOR UP** / **DOWN** to select a colour element, **CURSOR LEFT** / **RIGHT** to change its colour value (0–15). **DEL** reverts to the saved colours. **F7** returns to the configuration menu. Changes are saved when you exit the configuration menu.
 
-![Splash](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20colour.png?raw=true)
+![UI colour scheme editor](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20colour.png?raw=true)
 
 * **F7** — Return to main menu. Changes are saved.
 
