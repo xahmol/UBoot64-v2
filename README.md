@@ -41,7 +41,7 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 ## Version history and download
 ([Back to contents](#contents))
 
-Version 2.0.0 - 20260428:
+Version 2.0.0 - 20260429:
 
 - Complete rebuild using the [Oscar64](https://github.com/drmortalwombat/oscar64) cross-compiler (replaces cc65)
 - Directory listings stored in REU memory, enabling:
