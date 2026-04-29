@@ -1,6 +1,6 @@
 # UBoot64 v2
 
-![Logo](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Logo.png?raw=true)
+![Logo](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Logo.png?raw=true)
 
 Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
@@ -32,9 +32,11 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 [Credits](#credits)
 
-![Startup](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Startup.png?raw=true)
+![Splash](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Splash.png?raw=true)
 
-![Main menu](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Menu.png?raw=true)
+![Startup](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Startup.png?raw=true)
+
+![Main menu](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Menu.png?raw=true)
 
 ## Version history and download
 ([Back to contents](#contents))
@@ -42,10 +44,13 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 Version 2.0.0 - 20260428:
 
 - Complete rebuild using the [Oscar64](https://github.com/drmortalwombat/oscar64) cross-compiler (replaces cc65)
-- Directory listings stored in REU memory, enabling much larger directory support
+- Directory listings stored in REU memory, enabling:
+  - much larger directory support
+  - long filename support: maximum filename size now 50
+  - long pathname support: maximum pathsize now 255. NB: The maximum is for the complete path, not for every directoryname in the path seperately.
 - Configurable colour scheme (F5 → F6 in configuration menu)
 - Verbose or silent startup option (F5 → F2 in configuration menu)
-- Splash screen on startup
+- Splash screen in Information menu
 - Configuration upgrade tool (`uboot_upd12.prg`) included for users upgrading from v1
 - Various stability and bug fixes
 
@@ -58,9 +63,11 @@ Version 0.91 - 20230922:
 ### Prerequisites
 ([Back to contents](#contents))
 
-* UltimateII+ (U2+) cartridge installed on a real C64, or an Ultimate 64
-* Firmware at version 3.4 or higher (to have access to the UCI DRVINFO command — [firmware page](https://ultimate64.com/Firmware))
-* **RAM Expansion Unit (REU), minimum 128 KB** — required for directory listing storage and slot data
+* UltimateII+ (U2+) cartridge installed on a real C64, or an Ultimate 64 / Commodore 64 Ultimate
+* For Gideon's Logic products: Firmware at version 3.4 or higher (to have access to the UCI DRVINFO command — [firmware page](https://ultimate64.com/Firmware))
+* For Commodore Ultimate products: Supported starting from initial firmware
+* RAM Expansion Unit (REU), minimum 128 KB, needs to be enabled
+* Ultimate Command Interface needs to be enabled
 
 ### Installation
 ([Back to contents](#contents))
@@ -71,17 +78,27 @@ Version 0.91 - 20230922:
 
 * Transfer the `.crt` file to the `/Flash/Carts` directory on your Ultimate device. Either transfer via FTP, or place it on the USB storage, browse to it in the UI filebrowser, press **C= + C** to copy, navigate to `/Flash/Carts` and paste with **C= + V**.
 
-![Ultimate UI](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBooy64%20-%20Ultimate%20UI.png?raw=true)
+![Ultimate UI](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBooy64%20-%20Ultimate%20UI.png?raw=true)
 
-![Ultimate Flash dir](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Flashdir.png?raw=true)
+![Ultimate Flash dir](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Flashdir.png?raw=true)
 
-![Ultimate Carts dir](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20carts%20dir.png?raw=true)
+![Ultimate Carts dir](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20carts%20dir.png?raw=true)
 
-* Select the `.crt` file as the cartridge to start automatically: in the Ultimate UI press **F2**, navigate to **C64 and Cartridge Settings**, press **RETURN** twice to edit the **Cartridge** option, and select **uboot64.crt** from the drop-down. Press **STOP** to leave the configuration menu and **RETURN** to confirm saving to flash.
+* Select the `.crt` file as the cartridge to start automatically: in the Ultimate UI press **F2**, navigate to **Cartridge and ROM Settings**, press **RETURN** twice to edit the **Cartridge** option, and select **uboot64.crt** from the drop-down.
 
-![Ultimate UI cart settings](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20UI%20cart%20settings.png?raw=true)
+![Ultimate UI cart settings](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20UI%20cart%20settings.png?raw=true)
 
-![Ultimate UI select cart](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20UI%20set%20cart.png?raw=true)
+![Ultimate UI select cart](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20UI%20set%20cart.png?raw=true)
+
+* In the same **Cartridge and ROM Settings** menu, ensure that RAM Expansion Memory (REU) is enabled. Size does not matter as even the smallest possible size of 128KB will be sufficient.
+
+![Ultimate UI enable REU](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20UI%20set%20REU.png?raw=true)
+
+* In the same **Cartridge and ROM Settings** menu, ensure that the Ultimate Command Interface is enabled.
+
+![Ultimate UI enable UCI](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20UI%20enable%20UCI.png?raw=true)
+
+* Press **STOP** to leave the configuration menu and **RETURN** to confirm saving to flash.
 
 * Power cycle your device. UBoot64 should now start automatically.
 
@@ -107,21 +124,26 @@ If you have an existing v1 configuration (slot and config files), you must run t
 * On startup a splash screen is shown briefly. Press any key to proceed to the main menu.
 * The empty start menu looks like this:
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20menu%20first%20run.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20menu%20first%20run.png?raw=true)
 
 ### Add start options via the Filebrowser
 
 * Start options can be added to menu slots **0–9** and **A–Z** (18 slots total) via the Filebrowser.
 * Press **F1** to open the filebrowser:
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=true)
 
 * The browser starts in **UCI mode** — browsing via the Ultimate Command Interface on the native filesystem of your Ultimate device.
 * Press **F3** to switch to **IEC mode** for drives connected to the IEC bus. Use **+** / **-** to select the device number.
+
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser%20IEC.png?raw=true)
+
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20UCI.png?raw=true)
+
 * Press **F1** to refresh the directory if needed.
 * In IEC mode, press **D** to start a **directory trace** from the root, needed to record the full path for a menu slot. The TRACE toggle in the lower right switches to ON.
 
-  ![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Toggles%20UCI.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
 
 * **,1 Load** (toggle with **1**): loads with `LOAD"NAME",8` (off) or `LOAD"NAME",8,1` (on).
 * **Demo mode** (toggle with **O**): powers down all drives except ID 8 on start.
@@ -129,20 +151,22 @@ If you have an existing v1 configuration (slot and config files), you must run t
 * Navigate with **cursor keys** (UP/DOWN in dir, ENTER/RIGHT to enter dir or image, DEL/LEFT to go up).
 * From UCI mode, entering a disk image (`.Dxx` extension) mounts it on drive A and switches to IEC mode — "Inside mount" appears in the menu.
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20FB%20Inside%20Mount.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20FB%20Inside%20Mount.png?raw=true)
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Toggle%20inside%20mount.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggle%20inside%20mount.png?raw=true)
 
 * Press **ENTER** on a program file to select it for a menu slot. In UCI mode the associated drive A disk image is automatically included.
 * Press **A** or **B** on a disk image (`.Dxx`) to select it as the additional image to mount on drive A resp. B when starting from that slot.
 * Press **M** on a program file to select it to be run from the disk image already mounted on drive A.
 * To add a REU file: navigate to it and press **ENTER**, then select the target slot, choose REU size with **+** / **-**, and confirm with **ENTER**.
 
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
+
 **Note:** The REU file must be in the same filepath as the drive A disk image if one is present.
 
 * After selecting what to place in a slot, you are shown this screen to pick the slot position:
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Pick%20slot.png.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Add%20REU.png?raw=true)
 
 * If the slot is already filled, confirmation is requested. Choose **Y** to proceed or **N** to cancel.
 * Press **0–9** or **A–Z** to choose the slot, enter a name and press **ENTER**.
@@ -153,7 +177,7 @@ If you have an existing v1 configuration (slot and config files), you must run t
 
 The filebrowser is based on and inspired by the DraBrowse program from <https://github.com/doj/dracopy>
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=tru)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=tru)
 
 | Key | Function |
 | --- | -------- |
@@ -182,32 +206,34 @@ The filebrowser is based on and inspired by the DraBrowse program from <https://
 ### F2: Information
 ([Back to contents](#contents))
 
-Shows the information and credits screen. Press any key to return to the main menu.
+Shows first the splash screen, and after pressing any key, the information and credits screen. Press any key to return to the main menu.
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Info.png?raw=true)
+![Splash](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Splash.png?raw=true)
+
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Info.png?raw=true)
 
 ### F3: Edit / re-order / delete
 ([Back to contents](#contents))
 
 Rename, re-order, edit commands for, or delete menu slots.
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Edit%20menu.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Edit%20menu.png?raw=true)
 
 * **F1** — Rename a slot. Choose slot (**0–9** / **A–Z**), enter new name, press **ENTER**.
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20rename.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20rename.png?raw=true)
 
 * **F2** — Add or edit a user-defined BASIC command to execute before the program starts.
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20command.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20command.png?raw=true)
 
 * **F3** — Re-order slots. Choose slot to move (**0–9** / **A–Z**), highlighted in white. Press **UP** / **DOWN** to move. Confirm with **ENTER**, cancel with **F7**.
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20reorder.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20reorder.png?raw=true)
 
 * **F5** — Delete a slot. Choose slot (**0–9** / **A–Z**), confirm with **Y** or cancel with **N**.
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20Delete.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Delete.png?raw=true)
 
 * **F7** — Return to main menu. Changes are saved at this point.
 
@@ -218,7 +244,7 @@ Configure NTP time synchronisation, startup verbosity, and the UI colour scheme.
 
 After pressing **F5**:
 
-![](https://github.com/xahmol/UBoot64/blob/main/Screenshots/UBoot64%20-%20NTP%20menu.png?raw=true)
+![](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20NTP%20menu.png?raw=true)
 
 The screen shows current settings and allows editing:
 
@@ -231,6 +257,8 @@ The screen shows current settings and allows editing:
 * **F5** — Edit the NTP server hostname. Default: `pool.ntp.org`.
 
 * **F6** — Edit the UI colour scheme. Use **CURSOR UP** / **DOWN** to select a colour element, **CURSOR LEFT** / **RIGHT** to change its colour value (0–15). **DEL** reverts to the saved colours. **F7** returns to the configuration menu. Changes are saved when you exit the configuration menu.
+
+![Splash](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20colour.png?raw=true)
 
 * **F7** — Return to main menu. Changes are saved.
 
