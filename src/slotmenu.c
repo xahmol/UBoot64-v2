@@ -43,6 +43,9 @@
 // Created by Gideon Zweijtzer
 // https://ultimate64.com/
 //
+// Bart van Leeuwen: For suggesting the default boot slot with
+// configurable auto-boot timeout feature.
+//
 // The code can be used freely as long as you retain
 // a notice describing original source and author.
 //
@@ -138,9 +141,123 @@ void presentmenuslots()
         }
         else
         {
-            cwin_putat_string(&cw, 5, x + 3, Slot.menu, cfg.colors.text);
+            sprintf(linebuffer, "%s%s", Slot.menu, (Slot.isdefault == 1) ? " [D]" : "");
+            cwin_putat_string(&cw, 5, x + 3, linebuffer, cfg.colors.text);
         }
     }
+}
+
+char find_default_slot()
+// Routine to find the menu slot marked as default auto-boot target
+// Output: slot number 0-17 if found, else 0xFF
+{
+    char x;
+
+    for (x = 0; x < SLOTS; ++x)
+    {
+        get_slot_from_reu(x);
+        if (Slot.isdefault == 1 && strlen(Slot.menu) != 0)
+        {
+            return x;
+        }
+    }
+    return 0xFF;
+}
+
+char bcdtoseconds(char bcd)
+// Routine to convert a CIA TOD seconds register (BCD) to a plain binary value
+// Input: bcd = raw value of cia1.tods
+// Output: binary seconds 0-59
+{
+    return ((bcd >> 4) * 10) + (bcd & 0x0F);
+}
+
+char validkey(char key)
+// Routine to check if a keypress is a valid boot menu choice
+// Input: key = ASCII value of key pressed
+// Output: 1 if valid choice, else 0
+{
+    if (key == CH_F1 || key == CH_F2 || key == CH_F3 || key == CH_F5 || key == CH_F7)
+    {
+        return 1;
+    }
+    if ((key > 47 && key < 58) || (key > 64 && key < 91)) // If keys 0 - 9 or a - z
+    {
+        get_slot_from_reu(keytomenuslot(key));
+        if (strlen(Slot.menu) != 0) // Check if menuslot is empty
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+char autobootcountdown()
+// Routine to show a standalone auto-boot countdown screen, if a default slot
+// and timeout are configured. Any keypress cancels and is discarded (it does
+// not act as a menu selection) so the user always lands in the normal menu
+// to make their real choice.
+// Sets global menuselect and returns 1 if the countdown elapsed with no
+// keypress (auto-boot triggered), else returns 0 (menu should be shown).
+{
+    char defaultslot;
+    char seconds;
+    char elapsed;
+    char remaining;
+    char lastshown = 255; // Force first draw
+
+    if (cfg.timeoutidx == 0)
+    {
+        return 0;
+    }
+
+    defaultslot = find_default_slot();
+    if (defaultslot == 0xFF)
+    {
+        return 0;
+    }
+
+    seconds = timeoutseconds[cfg.timeoutidx];
+    get_slot_from_reu(defaultslot);
+
+    cwin_clear(&cw);
+    headertext("Welcome to your C64.", 1);
+
+    cwin_cursor_move(&cw, 0, 3);
+    cwin_console_printf(&cw, cfg.colors.text, "Default boot slot:\n%s\n\n", Slot.menu);
+    cwin_putat_string(&cw, 0, 8, "Auto-boot in    sec.", cfg.colors.text);
+    cwin_putat_string(&cw, 0, 9, "Press any key to open the menu instead.", cfg.colors.text);
+
+    cia1.todt = 0;
+    cia1.tods = 0;
+
+    do
+    {
+        elapsed = bcdtoseconds(cia1.tods);
+        remaining = (elapsed >= seconds) ? 0 : seconds - elapsed;
+
+        if (remaining != lastshown)
+        {
+            sprintf(linebuffer, "%2u", remaining);
+            cwin_putat_string(&cw, 13, 8, linebuffer, cfg.colors.text);
+            lastshown = remaining;
+        }
+
+        if (cwin_checkch() != 0)
+        {
+            return 0;
+        }
+    } while (elapsed < seconds);
+
+    // Boot directly rather than synthesizing a fake keypress via menuslotkey():
+    // menuslotkey() returns lowercase ASCII for slots 10-17 ('a'-'h'), but
+    // main.c's dispatch loop and keytomenuslot() only recognize uppercase
+    // ('A'-'H', what a real keypress actually sends) for letter-keyed slots.
+    // A synthesized lowercase value matches neither a valid slot-boot key nor
+    // any F-key case, so main.c's dispatch loop would fall through and
+    // re-enter mainmenu() forever for any default slot at position 10+.
+    runbootfrommenu(defaultslot);
+    return 1;
 }
 
 void mainmenu()
@@ -148,8 +265,12 @@ void mainmenu()
 // Sets global menuselect to the key value chosen
 {
     char x;
-    char select;
     char key;
+
+    if (autobootcountdown())
+    {
+        return;
+    }
 
     cwin_clear(&cw);
     headertext("Welcome to your C64.", 1);
@@ -162,7 +283,8 @@ void mainmenu()
         if (strlen(Slot.menu) != 0)
         {
             menuslotnumnerprint(x);
-            cwin_putat_string(&cw, 5, x + 3, Slot.menu, cfg.colors.text);
+            sprintf(linebuffer, "%s%s", Slot.menu, (Slot.isdefault == 1) ? " [D]" : "");
+            cwin_putat_string(&cw, 5, x + 3, linebuffer, cfg.colors.text);
         }
     }
 
@@ -184,27 +306,11 @@ void mainmenu()
 
     cwin_putat_string(&cw, 0, 24, "Make your choice.", cfg.colors.text);
 
-    select = 0;
-
     do
     {
         key = cwin_getch();
-        if (key == CH_F1 || key == CH_F2 || key == CH_F3 || key == CH_F5 || key == CH_F7)
-        {
-            select = 1;
-        }
-        else
-        {
-            if ((key > 47 && key < 58) || (key > 64 && key < 91)) // If keys 0 - 9 or a - z
-            {
-                get_slot_from_reu(keytomenuslot(key));
-                if (strlen(Slot.menu) != 0) // Check if menslot is empty
-                {
-                    select = 1;
-                }
-            }
-        }
-    } while (select == 0);
+    } while (!validkey(key));
+
     menuselect = key;
 }
 
@@ -215,6 +321,7 @@ void pickmenuslot()
     char key, plusmin;
     char yesno;
     char selected = 0;
+    char proceed = 1;
 
     cwin_clear(&cw);
     headertext("Choose menuslot.",1);
@@ -258,6 +365,12 @@ void pickmenuslot()
         cwin_cursor_move(&cw, 0, 23);
         if (reuflag || addmountflag)
         {
+            // REU preload and a drive B mount are additive on top of an existing
+            // program-launch slot (e.g. "launch this game with a data disk in
+            // drive B") and never touch Slot.file/path/runboot/device. A drive A
+            // mount replaces the disk the program launch expects to boot from,
+            // so it warns and only clears those fields if the slot already had
+            // a program configured and the user confirms.
             if (reuflag)
             {
                 cwin_console_printf(&cw, cfg.colors.text, "Select REU size (+/-/ENTER):");
@@ -299,6 +412,25 @@ void pickmenuslot()
             {
                 if (addmountflag == 1)
                 {
+                    if (strlen(Slot.file) != 0)
+                    {
+                        cwin_console_printf(&cw, cfg.colors.text, "Slot boots a program from drive A.\n");
+                        cwin_console_printf(&cw, cfg.colors.text, "Replace with this mount? Y/N ");
+                        yesno = getkey(128);
+                        cwin_console_printf(&cw, cfg.colors.text, "%c", yesno);
+                        if (yesno == 78)
+                        {
+                            proceed = 0;
+                        }
+                        else
+                        {
+                            strcpy(Slot.file, "");
+                            strcpy(Slot.path, "");
+                            Slot.runboot = 0;
+                            Slot.device = 0;
+                        }
+                    }
+
                     Slot.image_a_id = imageaid;
                     strncpy(Slot.image_a_path, imageapath, MAXPATHLEN - 1);
                     Slot.image_a_path[MAXPATHLEN - 1] = 0;
@@ -348,11 +480,14 @@ void pickmenuslot()
             Slot.runboot = pathrunboot;
         }
 
-        cwin_cursor_move(&cw, 0, 24);
+        if (proceed)
+        {
+            cwin_cursor_move(&cw, 0, 24);
 
-        save_slot_to_reu(menuslot);
-        cwin_console_printf(&cw, cfg.colors.text, "Saving. Please wait.          ");
-        write_slotsfile(0);
+            save_slot_to_reu(menuslot);
+            cwin_console_printf(&cw, cfg.colors.text, "Saving. Please wait.          ");
+            write_slotsfile(0);
+        }
     }
 }
 
@@ -485,8 +620,12 @@ void runbootfrommenu(char select)
     }
     else
     {
-        // Run from IEC filesystem
-        cmd(Slot.device, Slot.path);
+        // Run from IEC filesystem. Mount/command-only slots have no program
+        // file, so there is no path to change into on Slot.device either.
+        if (strlen(Slot.file) != 0)
+        {
+            cmd(Slot.device, Slot.path);
+        }
         execute(Slot.file, Slot.device, Slot.runboot, Slot.cmd);
     }
 }
@@ -544,6 +683,78 @@ char deletemenuslot()
     {
         memset(&Slot, 0, sizeof(Slot));
         save_slot_to_reu(menuslot);
+        changesmade = 1;
+    }
+
+    return changesmade;
+}
+
+char toggledefaultslot()
+// Routine to set or clear the menu slot that auto-boots after the configured timeout
+// Only one slot may be default at a time; picking the current default clears it.
+// Returns 1 if something has been changed, else 0
+{
+    char menuslot = 0;
+    char changesmade = 0;
+    char key;
+    char selected = 0;
+    char x;
+    char wasdefault;
+
+    cwin_clear(&cw);
+    headertext("Set default slot", 1);
+
+    presentmenuslots();
+
+    cwin_cursor_move(&cw, 0, 21);
+    cwin_console_printf(&cw, cfg.colors.text, "Pick a slot for default [D].\n");
+    cwin_console_printf(&cw, cfg.colors.text, "Pick [D] again to clear: ");
+
+    do
+    {
+        key = cwin_getch();
+        if ((key > 47 && key < 58) || (key > 64 && key < 91)) // If keys 0 - 9 or a - z
+        {
+            menuslot = keytomenuslot(key);
+            selected = 1;
+        }
+    } while (selected == 0);
+
+    get_slot_from_reu(menuslot);
+
+    cwin_console_printf(&cw, cfg.colors.text, "%c\n", key);
+
+    if (strlen(Slot.menu) == 0)
+    {
+        cwin_console_printf(&cw, cfg.colors.text, "Slot is empty. Press key.");
+        getkey(2);
+        selected = 0;
+    }
+
+    if (selected == 1)
+    {
+        wasdefault = Slot.isdefault;
+
+        // Clear the default flag on any other slot first, so only one slot is ever default
+        for (x = 0; x < SLOTS; ++x)
+        {
+            if (x == menuslot)
+            {
+                continue;
+            }
+            get_slot_from_reu(x);
+            if (Slot.isdefault == 1)
+            {
+                Slot.isdefault = 0;
+                save_slot_to_reu(x);
+            }
+        }
+
+        get_slot_from_reu(menuslot);
+        Slot.isdefault = (wasdefault == 1) ? 0 : 1;
+        save_slot_to_reu(menuslot);
+
+        cwin_console_printf(&cw, cfg.colors.text, "\nMarked as default: %s\n", (Slot.isdefault) ? "Yes" : "No");
         changesmade = 1;
     }
 
@@ -630,7 +841,8 @@ void printnewmenuslot(char pos, char select, char *name)
     }
     else
     {
-        cwin_putat_string(&cw, 5, pos + 3, Slot.menu, color_name);
+        sprintf(linebuffer, "%s%s", Slot.menu, (Slot.isdefault == 1) ? " [D]" : "");
+        cwin_putat_string(&cw, 5, pos + 3, linebuffer, color_name);
     }
 }
 
@@ -792,12 +1004,15 @@ char reordermenuslot()
 
 char edituserdefinedcommand()
 // Routine to edit user defined command in menuslot
-// Returns 1 if something has been renamed, else 0
+// Choosing an empty slot creates a bare "command-only" slot: prompts for a
+// name first, exactly like pickmenuslot() does for a program/mount slot.
+// Returns 1 if something has been changed, else 0
 {
     char menuslot = 0;
     char changesmade = 0;
     char key;
     char selected = 0;
+    char newslotname = 0;
 
     cwin_clear(&cw);
     headertext("Edit command", 1);
@@ -823,9 +1038,7 @@ char edituserdefinedcommand()
 
     if (strlen(Slot.menu) == 0)
     {
-        cwin_console_printf(&cw, cfg.colors.text, "Slot is already empty. Press key.");
-        getkey(2);
-        selected = 0;
+        newslotname = 1;
     }
     if (selected == 1)
     {
@@ -836,18 +1049,25 @@ char edituserdefinedcommand()
 
         sprintf(linebuffer, "  %c ", menuslotkey(menuslot));
         cwin_putat_string_reverse(&cw, 0, 4, linebuffer, cfg.colors.key);
+
+        if (newslotname)
+        {
+            cwin_putat_string(&cw, 0, 6, "Choose name for slot:", cfg.colors.text);
+            textInput(0, 7, 40, Slot.menu, MAXMENUNAME, 0);
+        }
+
         cwin_putat_string(&cw, 5, 4, Slot.menu, cfg.colors.text);
 
-        cwin_putat_string(&cw, 0, 6, "Enter command (empty=none):", cfg.colors.text);
-        textInput(0, 7, 80, Slot.cmd, MAXCOMMAND, 0);
+        cwin_putat_string(&cw, 0, 9, "Enter command (empty=none):", cfg.colors.text);
+        textInput(0, 10, 80, Slot.cmd, MAXCOMMAND, 0);
 
         if (strlen(Slot.cmd) == 0)
         {
-            Slot.command = 0;
+            Slot.command &= ~COMMAND_CMD;
         }
         else
         {
-            Slot.command = 1;
+            Slot.command |= COMMAND_CMD;
         }
 
         save_slot_to_reu(menuslot);
@@ -886,12 +1106,15 @@ void editmenuoptions()
         cwin_putat_string_reverse(&cw, 80, 21, " F7 ", cfg.colors.key);
         cwin_putat_string(&cw, 85, 21, "Quit", cfg.colors.text);
 
+        cwin_putat_string_reverse(&cw, 100, 21, " F6 ", cfg.colors.key);
+        cwin_putat_string(&cw, 105, 21, "Default slot", cfg.colors.text);
+
         select = 0;
 
         do
         {
             key = cwin_getch();
-            if (key == CH_F1 || key == CH_F2 || key == CH_F3 || key == CH_F5 || key == CH_F7)
+            if (key == CH_F1 || key == CH_F2 || key == CH_F3 || key == CH_F5 || key == CH_F6 || key == CH_F7)
             {
                 select = 1;
             }
@@ -913,6 +1136,10 @@ void editmenuoptions()
 
         case CH_F3:
             changesmade = reordermenuslot();
+            break;
+
+        case CH_F6:
+            changesmade = toggledefaultslot();
             break;
 
         default:

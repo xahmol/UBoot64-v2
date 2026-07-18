@@ -38,6 +38,9 @@
 // Created by Gideon Zweijtzer
 // https://ultimate64.com/
 //
+// Bart van Leeuwen: For suggesting the default boot slot with
+// configurable auto-boot timeout feature.
+//
 // The code can be used freely as long as you retain
 // a notice describing original source and author.
 //
@@ -500,8 +503,13 @@ void execute(char *prg, char device, char boot, char *command)
     numberenter++;
   }
 
-  // Output load and run commands
-  if (boot & EXEC_COMMA1)
+  // Output load and run commands, unless this is a mount/command-only slot
+  // with no program to launch: land in BASIC READY. after the command instead.
+  if (strlen(prg) == 0)
+  {
+    execute_commands[pos] = 0;
+  }
+  else if (boot & EXEC_COMMA1)
   {
     // Load with ,1
     sprintf(execute_commands + pos, "load\"%s\",%i,1%c%c%c%c%crun%c%c", prg, device, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0);

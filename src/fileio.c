@@ -38,6 +38,9 @@
 // Created by Gideon Zweijtzer
 // https://ultimate64.com/
 //
+// Bart van Leeuwen: For suggesting the default boot slot with
+// configurable auto-boot timeout feature.
+//
 // The code can be used freely as long as you retain
 // a notice describing original source and author.
 //
@@ -181,7 +184,8 @@ void read_slotsfile(unsigned char verbose)
     // Create slot with default values
     memset(&Slot, 0, sizeof(Slot));
     Slot.cfgvs = CFGVERSION;
-    strncpy(Slot.padding, "uboot64 x mol", 13); // Padding to make structure size a multiple of 16
+    Slot.isdefault = 0;
+    strncpy(Slot.padding, "uboot64 x mol", 12); // Padding to make structure size a multiple of 16
 
     for (x = 0; x < SLOTS; ++x)
     {
@@ -300,13 +304,22 @@ void readconfigfile()
     return;
   }
 
-  uii_read_file(sizeof(cfg));
-  CheckStatus("reading config");
-  uii_readdata();
-  uii_accept();
+  {
+    unsigned bytesread;
 
-  // Read variables from read data
-  memcpy(&cfg, uii_data, sizeof(cfg));
+    uii_read_file(sizeof(cfg));
+    CheckStatus("reading config");
+    bytesread = uii_readdata();
+    uii_accept();
+
+    // Read variables from read data. Older config files may be shorter than
+    // the current struct (additive fields appended since); zero the struct
+    // first and copy only the bytes actually read, so newly added tail
+    // fields default to 0 instead of picking up stale bytes left over in
+    // uii_data from a previous UCI call.
+    memset(&cfg, 0, sizeof(cfg));
+    memcpy(&cfg, uii_data, min((unsigned)sizeof(cfg), bytesread));
+  }
 
   // Exit if config file version is too old
   if (cfg.version < CFGVERSION)

@@ -26,6 +26,8 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 - [F3: Edit / re-order / delete](#f3-edit--re-order--delete)
 
+- [Default boot slot and auto-boot timeout](#default-boot-slot-and-auto-boot-timeout)
+
 - [F5: Configuration](#f5-configuration)
 
 - [F7: Quit to BASIC](#f7-quit-to-basic)
@@ -44,6 +46,16 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/raw/refs/heads/main/uboot64_v2.0.0-20260430-0038.zip)
+
+Version 2.1.0 - 20260719:
+
+- Default boot slot with configurable auto-boot timeout. Set a slot as default in the Edit/Re-order/Delete menu (F6), set the timeout in the Configuration menu (F4, Off/1/3/5/10 sec). If configured, the boot menu shows a countdown screen before the normal menu; any keypress cancels it, letting the timeout expire boots the default slot automatically.
+- Menu slots can now hold just a disk mount and/or a BASIC command, with no program to launch — useful for "auto-mount a disk on power-on" style slots. Create one via the Filebrowser's **A**/**B** mount actions, or via **F2** (Edit command) on an empty slot in the edit menu.
+- A slot with an existing program launch can now have a drive B image or REU preload added without losing the program (previously this silently cleared it). Adding a drive A image to such a slot now warns first, since it replaces the disk the program expects to boot from.
+- Fixed: auto-boot could hang in an endless loop when the default slot was at a letter position (A–H).
+- Fixed: startup could fail to detect an installed REU (worked around a code generation issue in the current Oscar64 compiler).
+- Fixed: the filebrowser's side status panel could show garbled/misplaced text under certain UCI mode and mount-state combinations (same underlying compiler issue).
+- Various other stability and bug fixes.
 
 Version 2.0.1 - 202604230
 
@@ -183,6 +195,16 @@ If you have an existing v1 configuration (slot and config files), you must run t
   * For technical reasons, loose .PRG files in UCI mode can not be added to the start menu. Either add them via the SoftIEC in IEC mode, or use the Ultimate native UI for launching these applications. Reason is that launching a PRG from an UCI path is not supported via the Ultimate Command Interface (yet)
   * If you want to add a program, disk images and a REU image to the same slot, this needs to be done in separate steps for each file or image to add. Just choose the same slot again each time.
 
+#### Mount/command-only slots
+
+A menu slot does not need a program to launch. Pressing **A** or **B** on a disk image without ever selecting a program to run creates a slot that only mounts that disk and then lands at the BASIC `READY.` prompt on boot — the classic "auto-mount a disk on power-on" setup, especially combined with a [default boot slot and timeout](#default-boot-slot-and-auto-boot-timeout).
+
+You can also create a slot that runs only a BASIC command, with no disk mount and no program: in the edit menu (**F3**) press **F2** (Edit command) and pick an **empty** slot — you'll be prompted for a name, then the command.
+
+These combine freely: adding a drive B image or a REU preload to a slot that already launches a program keeps the program intact (useful for programs that expect a second disk or preloaded data). Adding a drive A image to a slot that already launches a program **replaces** the disk the program expects to boot from, so you'll be asked to confirm first — if you just want an extra mount alongside an existing program, add it as drive B instead, or use a fresh slot for a drive-A-only mount.
+
+![Drive A mount conflict warning](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Drive%20A%20warning.png?raw=true)
+
 ### F1: Filebrowse menu
 ([Back to contents](#contents))
 
@@ -319,7 +341,25 @@ Rename, re-order, edit commands for, or delete menu slots.
 
 ![Delete slot confirmation screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Delete.png?raw=true)
 
+* **F6** — Set or clear the default boot slot. Choose a slot; slots currently marked default are shown with a `[D]` tag in the list. Choosing the slot that already has `[D]` clears it; choosing another slot moves the default there (only one slot can be default at a time). See [Default boot slot and auto-boot timeout](#default-boot-slot-and-auto-boot-timeout).
+
 * **F7** — Return to main menu. Changes are saved at this point.
+
+### Default boot slot and auto-boot timeout
+([Back to contents](#contents))
+
+You can mark one menu slot as the default boot target and have it launch automatically after a countdown, without needing to press a key — useful for auto-mounting a disk (or launching a program) on power-on.
+
+![Auto-boot countdown screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Autoboot%20countdown.png?raw=true)
+
+* Set the default slot: main menu → **F3** → **F6**, then pick a slot. Slots currently marked default show a `[D]` tag wherever slots are listed.
+
+![Set default boot slot screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Default%20slot.png?raw=true)
+
+* Set the timeout: main menu → **F5** → **F4** to cycle Off / 1 / 3 / 5 / 10 seconds. Default is **Off**, so this has no effect until both a default slot and a timeout are configured.
+* When both are set, the boot menu shows a dedicated countdown screen (rather than the full menu) with the default slot's name and remaining seconds. Pressing **any key** cancels the countdown and opens the normal menu — the keypress itself is not treated as a selection. If the countdown reaches zero, the default slot boots automatically, exactly as if you had pressed its key.
+* The default slot follows the slot's content through renames and re-ordering. Deleting the slot (or picking it again via **F6**) clears the default marker.
+* A default slot does not need to launch a program — see [mount/command-only slots](#add-start-options-via-the-filebrowser) below for the classic "auto-mount a D64 on power-on" use case.
 
 ### F5: Configuration
 ([Back to contents](#contents))
@@ -337,6 +377,8 @@ The screen shows current settings and allows editing:
 * **F2** — Toggle verbose or silent startup. Verbose shows detailed feedback during startup; silent shows only a progress indicator. Default: verbose.
 
 * **F3** — Edit the time offset to UTC in seconds. Automated daylight saving adjustment is not provided; adjust manually when needed. Examples: CET = 3600, CEST = 7200. See <https://www.timeanddate.com/time/zones/> for all offsets (multiply hours by 3600). Default: 0 (UTC).
+
+* **F4** — Cycle the auto-boot timeout: Off, 1, 3, 5, or 10 seconds. Default: Off. See [Default boot slot and auto-boot timeout](#default-boot-slot-and-auto-boot-timeout).
 
 * **F5** — Edit the NTP server hostname. Default: `pool.ntp.org`.
 
@@ -393,6 +435,9 @@ Additionally uses code from:
 Requires and made possible by the Ultimate II+ cartridge,
 Created by Gideon Zweijtzer
 https://ultimate64.com/
+
+Bart van Leeuwen: For suggesting the default boot slot with
+configurable auto-boot timeout feature.
 
 Licensed under the GNU General Public License v3.0
 

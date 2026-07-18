@@ -415,7 +415,8 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 | `image_b_path` | char[256] | 256 | USB path to drive B disk image |
 | `image_b_file` | char[51] | 51 | Drive B disk image filename |
 | `image_b_id` | char | 1 | IEC device ID for drive B image |
-| `padding` | char[13] | 13 | Reserved; pads struct size to multiple of 16 |
+| `isdefault` | char | 1 | 1 = this slot auto-boots after the configured timeout; compared strictly `== 1` since legacy slot files hold filler byte `'u'` (117) here |
+| `padding` | char[12] | 12 | Reserved; pads struct size to multiple of 16 |
 
 **Command flags (`command` field bitmask):**
 
@@ -434,6 +435,11 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 | `EXEC_COMMA1` | 0x02 | Load with `,1` (absolute load) |
 | `EXEC_DEMO` | 0x10 | Demo mode (power down non-essential drives) |
 
+**Mount/command-only slots:** `Slot.file` may be empty. `execute()` (`src/core.c`)
+skips the `load`/`run` keystroke injection when `prg` is empty, running only the
+optional `Slot.cmd` (if any) and landing in BASIC `READY.` — used for slots that
+only mount a disk and/or run a command, with no program launch.
+
 ### `ConfigStruct` — global preferences (`include/defines.h`)
 
 | Field | Type | Purpose |
@@ -444,6 +450,37 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 | `secondsfromutc` | long | UTC offset in seconds (e.g. 3600 = UTC+1) |
 | `verbose` | char | Verbose startup: 0=silent (spinner), 1=verbose |
 | `colors` | ColorPalette | Embedded UI colour palette |
+| `timeoutidx` | char | Index into `timeoutlist[]`/`timeoutseconds[]` (`src/main.c`); 0 = auto-boot timeout off |
+
+**Auto-boot timeout:** when `cfg.timeoutidx != 0` and one slot has
+`isdefault == 1`, `mainmenu()` (`src/slotmenu.c`) calls `autobootcountdown()`
+*before* drawing the normal menu. `autobootcountdown()` shows a standalone
+countdown screen (default slot name + remaining seconds) and polls with
+`cwin_checkch()` (non-blocking key check) against the CIA1 TOD seconds
+register (`cia1.tods`, BCD, converted via `bcdtoseconds()`). **Any** keypress
+cancels the countdown and is discarded — it is never treated as a selection,
+so the user always lands in the normal menu to make their real choice; only
+the countdown reaching zero with no keypress boots anything. On timeout,
+`autobootcountdown()` calls `runbootfrommenu(defaultslot)` directly and
+returns 1, which makes `mainmenu()` return immediately without drawing the
+menu (the call never returns in practice, since `runbootfrommenu()` always
+ends in `execute()`'s unconditional `fc3_exit()`). This bypasses
+`menuselect`/`main.c`'s key-based dispatch entirely — synthesizing a fake
+keypress via `menuslotkey(defaultslot)` was tried first, but `menuslotkey()`
+returns lowercase ASCII for slots 10-17 (`'a'`-`'h'`) while
+`main.c`'s dispatch loop and `keytomenuslot()` only recognize uppercase
+(what a real keypress actually sends), so a default slot at position 10+
+went unrecognized by every dispatch branch and the menu re-entered the
+countdown forever — confirmed on hardware, fixed by calling
+`runbootfrommenu()` directly instead of round-tripping through a key.
+
+`cfg.timeoutidx` is set via **F4** in `edittimeconfig()` (`src/time.c`); the
+default slot is set/cleared via **F6** (`toggledefaultslot()`) in
+`editmenuoptions()` (`src/slotmenu.c`). Config files written before this
+field existed are shorter than `sizeof(cfg)`; `readconfigfile()`
+(`src/fileio.c`) zeroes `cfg` before copying only the bytes actually read
+(`uii_readdata()`'s return count), so old files load with `timeoutidx == 0`
+(off) with no version bump or upgrade tool required.
 
 ### `ColorPalette` — UI colour scheme (nested in `ConfigStruct`)
 
@@ -539,6 +576,8 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 |----------|-------------|
 | `int main(void)` | Cartridge entry point (startcode section). Initialises C64 hardware, copies bank 0 to RAM, calls `mainloop()` |
 | `void mainloop(void)` | Main application loop. Initialises VIC/screen/UCI, loads config/slots, dispatches to banked modules via `fc3_call` |
+| `char reu_probe_barrier(char v)` | `__noinline` identity function; forces the compiler to materialize a value at a real call boundary instead of dead-code-eliminating it — see Oscar64 codegen bug note below |
+| `int uboot64_reu_count_pages(void)` | Project-local reimplementation of Oscar64's `<c64/reu.h>` `reu_count_pages()`, routing the probe byte through `reu_probe_barrier()`; used in place of the library function, which is miscompiled at `-O2` (see below) |
 
 #### `src/core.c` — Utilities: screen, string ops, device detection, execution
 
@@ -592,18 +631,23 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `char keytomenuslot(char keypress)` | Convert keypress character to slot number |
 | `void menuslotnumnerprint(char slotnumber)` | Print slot key label in reverse video at menu position |
 | `void presentmenuslots()` | Render all 18 slot entries on screen |
-| `void mainmenu()` | Draw boot menu; block until valid key pressed; set `menuselect` |
-| `void pickmenuslot()` | Prompt user to choose a slot for saving a filebrowser selection |
+| `void mainmenu()` | Call `autobootcountdown()` first; if it doesn't auto-boot, draw the boot menu and block until a valid key is pressed; set `menuselect` |
+| `char autobootcountdown()` | If a default slot and timeout are configured, show a standalone countdown screen; any keypress cancels (returns 0, menu is shown); timeout with no keypress calls `runbootfrommenu()` directly and returns 1 |
+| `char find_default_slot()` | Scan all 18 slots for `isdefault == 1`; return slot number or `0xFF` if none |
+| `char bcdtoseconds(char bcd)` | Convert a CIA TOD seconds register (BCD) to a plain binary value |
+| `char validkey(char key)` | Check whether a keypress is a valid boot menu choice (F-key or non-empty slot); used by `mainmenu()`'s blocking wait |
+| `void pickmenuslot()` | Prompt user to choose a slot for saving a filebrowser selection. A drive B mount or REU preload added to a slot that already launches a program is additive (program fields untouched); a drive A mount on such a slot warns first and only clears the program fields if confirmed, since it replaces the disk the program expects to boot from |
 | `void ErrorCheckMmounting()` | Check UCI status after mount operations; call `errorexit()` on failure |
 | `void mountimage(char device, char *path, char *image)` | Change UCI directory and mount named disk image on IEC device |
 | `void ToggleDrivePower(char ab, char on)` | Power Ultimate emulated drive A or B on or off |
-| `void runbootfrommenu(char select)` | Execute the boot sequence for slot `select`: mount images, load REU, execute program |
+| `void runbootfrommenu(char select)` | Execute the boot sequence for slot `select`: mount images, load REU, execute program (or command only, if `Slot.file` is empty) |
 | `char deletemenuslot()` | Interactive: choose and delete a slot; returns 1 if deleted |
 | `char renamemenuslot()` | Interactive: choose and rename a slot; returns 1 if changed |
+| `char toggledefaultslot()` | Interactive: choose a slot to set/clear as the auto-boot default; clears any other slot's flag first so only one slot is ever default; returns 1 if changed |
 | `void printnewmenuslot(char pos, char select, char *name)` | Render a single slot entry (selected or normal style) during reorder |
 | `char reordermenuslot()` | Interactive: reorder slots with cursor keys; circular wrap; returns 1 if changed |
-| `char edituserdefinedcommand()` | Interactive: edit the BASIC command field of a slot; returns 1 if changed |
-| `void editmenuoptions()` | Top-level edit menu dispatcher (F1 rename, F2 command, F3 reorder, F5 delete) |
+| `char edituserdefinedcommand()` | Interactive: edit the BASIC command field of a slot; prompts for a name first if the slot is empty (creates a command-only slot); returns 1 if changed |
+| `void editmenuoptions()` | Top-level edit menu dispatcher (F1 rename, F2 command, F3 reorder, F5 delete, F6 default slot) |
 | `void information()` | Show credits/info screen with sprite logo |
 
 #### `src/time.c` — NTP time sync, colour scheme editor, configuration UI
@@ -617,7 +661,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `char getcolor(char option)` | Return the current colour value for colour scheme element `option` (1–11) |
 | `void pushcolor(char option, char color)` | Set colour scheme element `option` to `color` in `cfg.colors` |
 | `char editcolors()` | Interactive colour scheme editor; returns 1 if changes made |
-| `void edittimeconfig()` | Top-level configuration menu (F1 NTP toggle, F2 verbose, F3 offset, F5 host, F6 colours) |
+| `void edittimeconfig()` | Top-level configuration menu (F1 NTP toggle, F2 verbose, F3 offset, F4 auto-boot timeout, F5 host, F6 colours) |
 
 #### `src/splash.c` — Startup splash screen
 
@@ -1114,7 +1158,83 @@ cwin_console_printf(&cw, color, "%s", linebuffer);
 
 ---
 
-### 12.10 Summary Table
+### 12.11 REU Probe Dead-Code Elimination (Oscar64 `-O2`, commit `3bbffe9`+)
+
+**Quirk:** Oscar64's own `<c64/reu.h>` library function `reu_count_pages()` is
+miscompiled at `-O2` by the installed toolchain (confirmed still present as
+of commit `0808a62`, 2026-07-18, v1.32.272 — see `~/.claude/oscar64.md` for
+the full diagnosis and reproduction). The function's body —
+`volatile char c, d; ...; reu_load(0, &d, 1); if (d == 0) { ... }` — has its
+entire `if (d == 0)` / `if (d == 0x47)` comparison chain and detection loop
+dead-code-eliminated; confirmed via `.asm` inspection: the generated code
+goes straight from the second `reu_load()`'s register writes to storing a
+stale accumulator value as the return, skipping every branch. Unlike 12.3
+above, declaring the locals `volatile` (which `reu_count_pages()` already
+does) is not sufficient here, and a `#pragma optimize(push)/(0)/(pop)`
+scoped around the *call site* does not fix it either — the elimination
+happens regardless.
+
+**Workaround:** route the probe byte through a real, `__noinline`
+function-call boundary before each comparison — a genuine call the compiler
+cannot see through restores correct codegen:
+
+```c
+__noinline char reu_probe_barrier(char v) { return v; }
+// then compare reu_probe_barrier(d) instead of d directly
+```
+
+**Location:** `src/main.c` — `reu_probe_barrier()` and
+`uboot64_reu_count_pages()` (project-local reimplementation of the library
+function; `mainloop()` calls this instead of `reu_count_pages()`).
+
+---
+
+### 12.12 Conditional Row-Position Miscompilation (Oscar64 `-O2`)
+
+**Quirk:** a second, structurally similar `-O2` codegen bug, in
+`filebrowse.c`'s `browse_menu()`. The function accumulates a screen row
+number (`menuy`) via `++menuy` across several `cwin_putat_string()` calls
+gated by runtime conditionals (`if (fb_uci_mode)`, `if (inside_mount)`).
+Instead of keeping `menuy` as a real, re-read/re-stored variable, the
+compiler precomputes multiple candidate row values into register-allocated
+temporaries (visible as `T5`-`T8` etc. in the `.asm`) — one per possible
+combination of the conditionals — and something in how those candidates get
+selected downstream is wrong. Observed on hardware as e.g. a "UCI mode"
+label overwriting "Cur Navigate" several lines earlier than intended, with
+several lines' worth of `++menuy` increments seemingly vanishing.
+
+**Workaround:** unlike 12.11, a whole-function `#pragma optimize(0)` *does*
+fix this one (the miscompilation lives inside the function body itself here,
+not across an `inline` library boundary) — confirmed via `.asm` (codegen
+changes completely: `menuy` becomes an ordinary `STA`/`LDA` RAM variable) and
+on hardware:
+
+```c
+#pragma optimize(push)
+#pragma optimize(0)
+void browse_menu(void)
+{ ... }
+#pragma optimize(pop)
+```
+
+**Location:** `src/filebrowse.c`, `browse_menu()`.
+
+**Pattern to watch for in general (12.11 + 12.12):** both bugs involve a
+value that is *conditionally* determined at runtime and *used later* in the
+same function — a volatile hardware readback in one case, an accumulated
+row counter across `if`-gated increments in the other. If code that
+"obviously" depends on a runtime condition behaves as if the condition were
+resolved at compile time (branches vanish, or one candidate value is used
+unconditionally), suspect this class of `-O2` bug before assuming the C
+source is wrong. Diagnose via `.asm`; fix via `#pragma optimize(0)` scoped
+to the smallest region that changes the codegen (function definition first;
+call-site-only scoping did not work for 12.11), or an `__noinline`
+call-boundary barrier if the affected value is a `volatile` local rather
+than a whole function's control flow.
+
+---
+
+### 12.13 Summary Table
 
 | # | Category | File(s) | Workaround |
 |---|----------|---------|-----------|
@@ -1127,6 +1247,8 @@ cwin_console_printf(&cw, color, "%s", linebuffer);
 | 12.7 | Bank 0 ROM space budget | `petscii_ascii.c` | Placed in bank 2 alongside its only caller |
 | 12.8 | `unsigned long` struct members in conditionals | `filebrowse.c` | Load to local variable before any `if`/loop check |
 | 12.9 | `printf`/`sprintf` precision specifier not supported | All files | Pre-truncate with `strncpy` + explicit null, then use `%s` |
+| 12.11 | REU probe dead-code elimination at `-O2` | `main.c` | `__noinline` call-boundary barrier (`reu_probe_barrier()`) |
+| 12.12 | Conditional row-position miscompilation at `-O2` | `filebrowse.c` | Whole-function `#pragma optimize(0)` around `browse_menu()` |
 
 ---
 

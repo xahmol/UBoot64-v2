@@ -948,6 +948,8 @@ void dir_draw(unsigned char readdir)
   }
 }
 
+#pragma optimize(push)
+#pragma optimize(0)
 void browse_menu(void)
 // Draw the key-reference side panel; also shows current UCI/IEC, trace, comma1, and demo state
 {
@@ -1022,6 +1024,7 @@ void browse_menu(void)
     cwin_putat_string(&cw, 26, ++menuy, "Demo    OFF", cfg.colors.text);
   }
 }
+#pragma optimize(pop)
 
 char dir_changedir(char *dirname)
 // Navigate into dirname (or "" for root); handles UCI and IEC, disk image mounting, REU selection

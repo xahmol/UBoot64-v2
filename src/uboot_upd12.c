@@ -312,7 +312,8 @@ void convert_slot_data()
         strncpy(Slot.image_b_path, OldSlot.image_b_path, MAXPATHLEN - 1);
         strncpy(Slot.image_b_file, OldSlot.image_b_file, MAXFILENAME - 1);
         Slot.image_b_id = OldSlot.image_b_id;
-        strncpy(Slot.padding, "uboot64 x mol", 13); // Padding to make structure size a multiple of 16
+        Slot.isdefault = 0;
+        strncpy(Slot.padding, "uboot64 x mol", 12); // Padding to make structure size a multiple of 16
 
         // Write new slot data to normal REU memory
         reu_store(destaddr, (char *)&Slot, sizeof(Slot));
@@ -327,6 +328,7 @@ int main(void)
 	cfg.timeon = 1;
 	cfg.secondsfromutc = 7200;
 	cfg.verbose = 1;
+	cfg.timeoutidx = 0;
 	cfg.colors.background = VCOL_BLACK;
 	cfg.colors.border = VCOL_BLACK;
 	cfg.colors.header1 = VCOL_GREEN;

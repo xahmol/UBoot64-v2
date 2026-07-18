@@ -33,6 +33,9 @@
 // Created by Gideon Zweijtzer
 // https://ultimate64.com/
 //
+// Bart van Leeuwen: For suggesting the default boot slot with
+// configurable auto-boot timeout feature.
+//
 // The code can be used freely as long as you retain
 // a notice describing original source and author.
 //
@@ -139,6 +142,8 @@ char imagebpath[MAXPATHLEN] = "";
 char imagebid = 0;
 char reusize = 2;
 char reusizelist[8][8] = {"128 KB", "256 KB", "512 KB", "1 MB", "2 MB", "4 MB", "8 MB", "16 MB"};
+char timeoutlist[5][6] = {"Off  ", "1 sec", "3 sec", "5 sec", "10sec"};
+char timeoutseconds[5] = {0, 1, 3, 5, 10};
 char configpath[8] = "/usb*/";
 char configfilename[11] = "dmbcfg.cfg";
 char slotfilename[11] = "dmbslt.cfg";
@@ -153,6 +158,55 @@ char verbosecounter;
 
 // Macro for indirect cross bank call
 #define FCALL(f) fcall(__bankof(f), f)
+
+// Workaround for an Oscar64 optimizer regression (toolchain commit 3bbffe9,
+// "Improve __memmap storage modifier adherence for REU usage", 2026-06-20,
+// and its follow-ups): the library's inline reu_count_pages() has its
+// volatile-read comparisons of the REU probe byte dead-code-eliminated,
+// so it always returns 0 even when a REU is present. Passing the probe byte
+// through this __noinline barrier forces the compiler to materialize the
+// value at a real call boundary instead of assuming it away.
+// See ~/.claude/oscar64.md for the full diagnosis.
+__noinline char reu_probe_barrier(char v)
+{
+	return v;
+}
+
+int uboot64_reu_count_pages(void)
+{
+	volatile char c, d;
+
+	c = 0;
+	reu_store(0, &c, 1);
+	reu_load(0, &d, 1);
+
+	if (reu_probe_barrier(d) == 0)
+	{
+		c = 0x47;
+		reu_store(0, &c, 1);
+		reu_load(0, &d, 1);
+
+		if (reu_probe_barrier(d) == 0x47)
+		{
+			for (int i = 1; i < 256; i++)
+			{
+				long l = (long)i << 16;
+				c = 0x47;
+				reu_store(l, &c, 1);
+				c = 0x00;
+				reu_store(0, &c, 1);
+
+				reu_load(l, &d, 1);
+				if (reu_probe_barrier(d) != 0x47)
+					return i;
+			}
+
+			return 256;
+		}
+	}
+
+	return 0;
+}
 
 // Placement of sprite in cassette buffer
 #define SpriteData ((char *)0x0340)
@@ -170,6 +224,7 @@ __noinline void mainloop(void)
 	cfg.timeon = 1;
 	cfg.secondsfromutc = 7200;
 	cfg.verbose = 1;
+	cfg.timeoutidx = 0;
 	cfg.colors.background = VCOL_BLACK;
 	cfg.colors.border = VCOL_BLACK;
 	cfg.colors.header1 = VCOL_GREEN;
@@ -276,7 +331,7 @@ __noinline void mainloop(void)
 	}
 
 	// Check presence and size of REU
-	reudetected = reu_count_pages();
+	reudetected = uboot64_reu_count_pages();
 	if (reudetected)
 	{
 		if (cfg.verbose)

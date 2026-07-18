@@ -132,7 +132,8 @@ struct SlotStruct
     char image_b_path[MAXPATHLEN];
     char image_b_file[MAXFILENAME];
     char image_b_id;
-    char padding[13]; // Padding to make structure size a multiple of 16, also room for future use
+    char isdefault; // 1 = this slot auto-boots after the configured timeout; strictly == 1, never != 0 (legacy slot files hold 'u' filler here)
+    char padding[12]; // Padding to make structure size a multiple of 16, also room for future use
 };
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;
@@ -158,6 +159,7 @@ struct ConfigStruct
     long secondsfromutc;
     char verbose;
     struct ColorPalette colors;
+    char timeoutidx; // Index into timeoutlist[]/timeoutseconds[]; 0 = auto-boot timeout off
 };
 extern struct ConfigStruct cfg;
 extern char imagename[MAXFILENAME];
@@ -170,6 +172,8 @@ extern char imagebpath[MAXPATHLEN];
 extern char imagebid;
 extern char reusize;
 extern char reusizelist[8][8];
+extern char timeoutlist[5][6];
+extern char timeoutseconds[5];
 extern char configfilename[11];
 extern char slotfilename[11];
 extern char configversion;
