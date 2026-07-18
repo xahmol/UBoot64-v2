@@ -53,3 +53,12 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Local deployment config
+.env
+
+# Build outputs
+build/
+
+# Release ZIPs in project root
+uboot64_v*.zip

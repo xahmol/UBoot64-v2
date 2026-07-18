@@ -8,6 +8,8 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 [Version history and download](#version-history-and-download)
 
+[Building from source](#building-from-source)
+
 [Instructions](#instructions)
 
 - [Prerequisites](#prerequisites)
@@ -45,13 +47,13 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 Link to latest build:
 
-[Latest build](https://github.com/xahmol/UBoot64-v2/raw/refs/heads/main/uboot64_v2.0.0-20260430-0038.zip)
+[Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
 
 Version 2.1.0 - 20260719:
 
 - Default boot slot with configurable auto-boot timeout. Set a slot as default in the Edit/Re-order/Delete menu (F6), set the timeout in the Configuration menu (F4, Off/1/3/5/10 sec). If configured, the boot menu shows a countdown screen before the normal menu; any keypress cancels it, letting the timeout expire boots the default slot automatically.
 - Menu slots can now hold just a disk mount and/or a BASIC command, with no program to launch — useful for "auto-mount a disk on power-on" style slots. Create one via the Filebrowser's **A**/**B** mount actions, or via **F2** (Edit command) on an empty slot in the edit menu.
-- A slot with an existing program launch can now have a drive B image or REU preload added without losing the program (previously this silently cleared it). Adding a drive A image to such a slot now warns first, since it replaces the disk the program expects to boot from.
+- Adding a drive A image to a slot that already launches a program now warns first, since it replaces the disk the program expects to boot from.
 - Fixed: auto-boot could hang in an endless loop when the default slot was at a letter position (A–H).
 - Fixed: startup could fail to detect an installed REU (worked around a code generation issue in the current Oscar64 compiler).
 - Fixed: the filebrowser's side status panel could show garbled/misplaced text under certain UCI mode and mount-state combinations (same underlying compiler issue).
@@ -77,6 +79,44 @@ Version 2.0.0 - 20260429:
 Version 0.91 - 20230922:
 
 - First public alpha (v1, cc65 build)
+
+## Building from source
+([Back to contents](#contents))
+
+### Build tooling
+
+| Tool | Purpose | Install |
+| --- | --- | --- |
+| [Oscar64](https://github.com/drmortalwombat/oscar64) | C cross-compiler targeting the 6502 | Build from source; see the Oscar64 repo for instructions |
+| `zip` | Bundles the release ZIP | `sudo apt install zip` |
+| `wput` | FTP upload for `make deploy` | `sudo apt install wput` |
+| `curl` | Reachability check before deploy | `sudo apt install curl` |
+| `pandoc` | Regenerates `README.pdf` from `README.md` (optional — `make all` warns and skips if absent) | `sudo apt install pandoc texlive-xetex` |
+
+### Deployment configuration
+
+`make deploy` uploads the built cartridge and upgrade tool straight to your Ultimate device over FTP. The device IP is kept out of git in a local `.env` file:
+
+```
+# .env  (gitignored, never committed)
+ULTIP1 = 192.168.1.xx
+```
+
+Optionally override the USB slot (defaults to `usb0`):
+
+```
+ULTUSB = usb1
+```
+
+### Make targets
+
+| Target | Effect |
+| --- | --- |
+| `make all` | Builds `uboot64.crt`, `uboot_upd12.prg`, regenerates `README.pdf`, and bundles the release ZIP — all into `build/` |
+| `make clean` | Removes everything in `build/` |
+| `make docs` | Regenerates `README.pdf` only |
+| `make check-deploy` | Pings the configured Ultimate device without deploying |
+| `make deploy` | Rebuilds if needed, then uploads `uboot64.crt` and `uboot_upd12.prg` via FTP (requires `.env`) |
 
 ## Instructions
 
