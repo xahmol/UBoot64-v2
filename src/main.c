@@ -144,7 +144,8 @@ char reusize = 2;
 char reusizelist[8][8] = {"128 KB", "256 KB", "512 KB", "1 MB", "2 MB", "4 MB", "8 MB", "16 MB"};
 char timeoutlist[5][6] = {"Off  ", "1 sec", "3 sec", "5 sec", "10sec"};
 char timeoutseconds[5] = {0, 1, 3, 5, 10};
-char configpath[8] = "/usb*/";
+char configpath[8] = "";
+char storagepaths[4][8] = {"/sd/", "/usb0/", "/usb1/", "/usb2/"};
 char configfilename[11] = "dmbcfg.cfg";
 char slotfilename[11] = "dmbslt.cfg";
 char configversion = CFGVERSION;
@@ -280,17 +281,22 @@ __noinline void mainloop(void)
 		fc3_exit();
 	}
 
-	// Wait for USB to be present by looping till dirchange to root successful.
-	// Reset TOD clock; timeout after 5 seconds if USB is not found.
-	cia1.tods = 0;
-	cia1.todt = 0;
-	do
+	// Find where the config/slot files live: SD, USB0, USB1 or USB2, in that
+	// priority order. Retries the whole scan for up to 5 seconds, since
+	// USB/SD enumeration may still be in progress at cold boot.
 	{
-		uii_change_dir(configpath);
-	} while (!UII_SUCCESS && cia1.tods < 5);
-	if (!UII_SUCCESS)
-	{
-		errorexit("USB storage not found.");
+		char storageresult;
+
+		cia1.tods = 0;
+		cia1.todt = 0;
+		do
+		{
+			storageresult = resolve_storage_path();
+		} while (storageresult == 0 && cia1.tods < 5);
+		if (storageresult == 0)
+		{
+			errorexit("No USB or SD storage found.");
+		}
 	}
 
 	// Read config file.
@@ -309,6 +315,18 @@ __noinline void mainloop(void)
 	{
 		cwin_cursor_move(&cw, 0, 4);
 		cwin_put_string(&cw, "Ultimate Command Interface detected.", cfg.colors.text);
+		cwin_cursor_newline(&cw);
+	}
+	else
+	{
+		spinning(25, 3, verbosecounter++);
+	}
+
+	// Feedback on which storage device holds the config/slot files
+	if (cfg.verbose)
+	{
+		cwin_put_string(&cw, "Storage found: ", cfg.colors.text);
+		cwin_put_string(&cw, configpath, cfg.colors.text);
 		cwin_cursor_newline(&cw);
 	}
 	else

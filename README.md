@@ -49,6 +49,11 @@ Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
 
+Version 2.1.1 - 20260719:
+
+- Configuration and slot files can now live on an SD card as well as USB storage. On startup, UBoot64 looks in this order: SD, USB0, USB1, USB2, and uses the first location where files already exist; a fresh install creates them on the first of those that's actually present, in the same order. Previously only a single USB drive was checked, and an SD-only setup would fail to start.
+- The v1-to-v2 upgrade tool (`uboot_upd12.prg`) uses the same search order, so an upgrade always lands on the same device the cartridge will look for it on.
+
 Version 2.1.0 - 20260719:
 
 - Default boot slot with configurable auto-boot timeout. Set a slot as default in the Edit/Re-order/Delete menu (F6), set the timeout in the Configuration menu (F4, Off/1/3/5/10 sec). If configured, the boot menu shows a countdown screen before the normal menu; any keypress cancels it, letting the timeout expire boots the default slot automatically.
@@ -128,6 +133,7 @@ ULTUSB = usb1
 * For Commodore Ultimate products: Supported starting from initial firmware
 * RAM Expansion Unit (REU), minimum 128 KB, needs to be enabled
 * Ultimate Command Interface needs to be enabled
+* USB storage (up to 3 drives) or an SD card, for the configuration files
 
 ### Installation
 ([Back to contents](#contents))
@@ -180,7 +186,7 @@ If you have an existing v1 configuration (slot and config files), you must run t
 ([Back to contents](#contents))
 
 * At first run, no configuration file is present yet, so UBoot64 creates configuration files with an empty start menu and default settings.
-* The configuration files are saved in the root directory of the first USB drive found (path `/usb*/`). The files are `DMBCFG.CFG` (configuration data) and `DMBSLT.CFG` (menu slot data).
+* UBoot64 looks for existing configuration files in this order: SD card, then USB0, USB1, USB2. The first one where they're found is used; if none have them, they're created on the first of those that's actually present (same order). The files are `DMBCFG.CFG` (configuration data) and `DMBSLT.CFG` (menu slot data), always at the root of that device.
 * On startup a splash screen is shown briefly. Press any key to proceed to the main menu.
 * The empty start menu looks like this:
 

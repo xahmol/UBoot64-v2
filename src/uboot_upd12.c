@@ -60,7 +60,8 @@ struct OldSlotStruct
     char image_b_id;
 };
 struct OldSlotStruct OldSlot;
-char configpath[8] = "/usb*/";
+char configpath[8] = "";
+char storagepaths[4][8] = {"/sd/", "/usb0/", "/usb1/", "/usb2/"};
 char configfilename[11] = "dmbcfg.cfg";
 char slotfilename[11] = "dmbslt.cfg";
 char configversion = CFGVERSION;
@@ -142,6 +143,47 @@ void CheckStatus(const char *message)
         uii_abort();
         error("");
     }
+}
+
+char resolve_storage_path(void)
+// Scan storagepaths[] in priority order (SD, USB0, USB1, USB2).
+// Sets configpath to the first candidate where the config file already
+// exists, or -- if none has it -- the first candidate that is simply
+// present/mountable, so callers can create fresh files there.
+// Output: 2 = existing config found, 1 = no config found but a device is
+//         present (configpath set to it), 0 = no device present at all.
+{
+    char x;
+    char firstpresent = 0xFF;
+
+    for (x = 0; x < 4; x++)
+    {
+        uii_change_dir(storagepaths[x]);
+        if (!UII_SUCCESS)
+        {
+            continue;
+        }
+        if (firstpresent == 0xFF)
+        {
+            firstpresent = x;
+        }
+        uii_open_file(0x01, configfilename);
+        if (strcmp((const char *)uii_status, "00,ok") == 0)
+        {
+            uii_close_file();
+            strncpy(configpath, storagepaths[x], 7);
+            configpath[7] = 0;
+            return 2;
+        }
+    }
+
+    if (firstpresent != 0xFF)
+    {
+        strncpy(configpath, storagepaths[firstpresent], 7);
+        configpath[7] = 0;
+        return 1;
+    }
+    return 0;
 }
 
 void write_slotsfile()
@@ -381,17 +423,24 @@ int main(void)
         error("No REU detected.");
     }
 
-    // Wait for USB to be present by looping till dirchange to root successful
-    // Times out on 5 secs
-    cia1.tods = 0;
-    cia1.todt = 0;
-    do
+    // Find where the config/slot files live: SD, USB0, USB1 or USB2, in that
+    // priority order -- must match the same resolution the main cartridge
+    // uses, or this tool could upgrade a file on a device the cartridge
+    // never looks at. Retries the whole scan for up to 5 seconds.
     {
-        uii_change_dir(configpath);
-    } while (!UII_SUCCESS || cia1.tods > 4);
-    if (!UII_SUCCESS)
-    {
-        error("USB storage not found.");
+        char storageresult;
+
+        cia1.tods = 0;
+        cia1.todt = 0;
+        do
+        {
+            storageresult = resolve_storage_path();
+        } while (storageresult == 0 && cia1.tods < 5);
+        if (storageresult == 0)
+        {
+            error("No USB or SD storage found.");
+        }
+        cwin_console_printf(&cw, VCOL_YELLOW, "\nStorage found: %s\n", configpath);
     }
 
     // Read old config file.

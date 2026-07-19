@@ -9,6 +9,7 @@ void write_slotsfile(char verbose);
 void read_slotsfile(unsigned char verbose);
 void writeconfigfile();
 void readconfigfile();
+char resolve_storage_path(void);
 
 #pragma compile("fileio.c")
 

@@ -32,7 +32,7 @@ UBoot64 v2 is a boot menu cartridge for the Commodore 64 built around the Ultima
 - Commodore 64 (PAL or NTSC)
 - Ultimate II+ or Ultimate 64 cartridge, firmware 3.4 or higher
 - RAM Expansion Unit (REU), minimum 128 KB
-- USB storage attached to the Ultimate device
+- USB storage (up to 3 drives) or an SD card attached to the Ultimate device
 
 **v2 vs v1:** v2 is a complete rewrite using the Oscar64 C/C++ cross-compiler for 6502, replacing the cc65 toolchain used in v1. The new compiler enables a single-pass compilation model, significantly better optimization, and native support for the FC3 multi-bank cartridge format without external linker scripts.
 
@@ -307,9 +307,35 @@ unsigned long maxreuaddress = (reudetected * 65536) - 1;
 
 ### Slot File Persistence
 
-Slot and config data are persisted to USB as binary files via UCI:
-- **Config file:** `/usb*/dmbcfg.cfg` — serialized `ConfigStruct`
-- **Slots file:** `/usb*/dmbslt.cfg` — serialized 18 × `SlotStruct`
+Slot and config data are persisted as binary files via UCI, at the root of
+whichever storage device `resolve_storage_path()` (`src/fileio.c`) resolves
+to:
+- **Config file:** `<device>/dmbcfg.cfg` — serialized `ConfigStruct`
+- **Slots file:** `<device>/dmbslt.cfg` — serialized 18 × `SlotStruct`
+
+**Device resolution:** `resolve_storage_path()` checks four fixed candidates
+in `storagepaths[4][8]` (`src/main.c`), in priority order **SD, USB0, USB1,
+USB2** (`/sd/`, `/usb0/`, `/usb1/`, `/usb2/` — device directory names as
+exposed at the UCI root, confirmed against `UltimateDemo2026`'s
+`uii_scan_media()`). For each candidate it `uii_change_dir()`s in and, if
+that succeeds, tries to open the config file: the first candidate where the
+file actually exists wins (`configpath` is set to it, return value `2`). If
+no candidate has an existing config, the first candidate that was simply
+*present* (mountable) is used instead, so a fresh install creates files
+there (return value `1`). Return value `0` means no device was found at all.
+`mainloop()` (`src/main.c`) retries the whole scan for up to 5 seconds
+before giving up (USB/SD enumeration may still be in progress at cold boot),
+matching the retry pattern already used for UCI/REU detection earlier in
+the same function.
+
+`read_slotsfile()`, `write_slotsfile()`, and `readconfigfile()` themselves
+are unchanged — they always `uii_change_dir(configpath)` before their own
+I/O, so once `configpath` is resolved at startup they transparently operate
+on whichever device was found. `src/uboot_upd12.c` (the standalone v1→v2
+upgrade tool) carries its own duplicate copy of `storagepaths[]`/
+`resolve_storage_path()`, since it's compiled independently — it must
+resolve to the same device the main cartridge will use, or an upgrade could
+land on a device the cartridge never looks at.
 
 Because the UCI data queue is limited to 512 bytes per transfer, large structures are written in `SAVE_BUF_SIZE` (500 byte) chunks in `write_slotsfile()`, draining via `uii_write_file()` in a loop.
 
@@ -601,11 +627,12 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `void execute(char *prg, char device, char boot, char *command)` | Build BASIC LOAD+RUN command sequence in keyboard buffer and exit to BASIC |
 | `signed textInput(char xpos, char y, char width, char *str, char size, char val)` | Interactive in-place text input field |
 
-#### `src/fileio.c` — Config/slot persistence: REU ↔ USB via UCI
+#### `src/fileio.c` — Config/slot persistence: REU ↔ USB/SD via UCI
 
 | Function | Description |
 |----------|-------------|
 | `void CheckStatus(const char *message)` | Check UCI status; call `errorexit()` on failure |
+| `char resolve_storage_path(void)` | Scan `storagepaths[]` (SD, USB0, USB1, USB2) for an existing config, or the first present device as a creation fallback; sets `configpath` |
 | `void get_slot_from_reu(char number)` | DMA load slot `n` from REU into `Slot` global |
 | `void save_slot_to_reu(char number)` | DMA store `Slot` global to slot `n` in REU |
 | `void write_slotsfile(char verbose)` | Write all 18 slots from REU to `dmbslt.cfg` via UCI in 500-byte chunks |

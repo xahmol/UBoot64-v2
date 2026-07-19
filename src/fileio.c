@@ -86,6 +86,47 @@ void CheckStatus(const char *message)
   }
 }
 
+char resolve_storage_path(void)
+// Scan storagepaths[] in priority order (SD, USB0, USB1, USB2).
+// Sets configpath to the first candidate where the config file already
+// exists, or -- if none has it -- the first candidate that is simply
+// present/mountable, so callers can create fresh files there.
+// Output: 2 = existing config found, 1 = no config found but a device is
+//         present (configpath set to it), 0 = no device present at all.
+{
+  char x;
+  char firstpresent = 0xFF;
+
+  for (x = 0; x < 4; x++)
+  {
+    uii_change_dir(storagepaths[x]);
+    if (!UII_SUCCESS)
+    {
+      continue;
+    }
+    if (firstpresent == 0xFF)
+    {
+      firstpresent = x;
+    }
+    uii_open_file(0x01, configfilename);
+    if (strcmp((const char *)uii_status, "00,ok") == 0)
+    {
+      uii_close_file();
+      strncpy(configpath, storagepaths[x], 7);
+      configpath[7] = 0;
+      return 2;
+    }
+  }
+
+  if (firstpresent != 0xFF)
+  {
+    strncpy(configpath, storagepaths[firstpresent], 7);
+    configpath[7] = 0;
+    return 1;
+  }
+  return 0;
+}
+
 void get_slot_from_reu(char number)
 // Function to get slot with specified number from REU
 // Input: number - slot number to get

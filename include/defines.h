@@ -183,6 +183,7 @@ extern char fb_uci_mode;
 extern char inside_mount;
 extern char iec_devices[23];
 extern char configpath[];
+extern char storagepaths[4][8];
 extern char inside_mount;
 extern char verbosecounter;
 
