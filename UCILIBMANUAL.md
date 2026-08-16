@@ -336,14 +336,16 @@ Every command places a null-terminated status string in `uii_status[]` after com
 | `"00,ok"` | Success (alternate casing) |
 | `"01,DIRECTORY EMPTY"` | Directory opened but no entries |
 | `"02,REQUEST TRUNCATED"` | Transfer shorter than requested (EOF) |
+| `"82,FILE NOT FOUND"` | `uii_mount_disk` — named file not found in the current directory (confirmed on hardware; not in the official command doc, which only lists `"89"`/`"90"` for this command) |
 | `"83,NO SUCH DIRECTORY"` | `uii_change_dir` — directory not found |
 | `"84,NO FILE TO CLOSE"` | `uii_close_file` — no open file |
 | `"85,NO FILE OPEN"` | Read/write called without open file |
 | `"86,CAN'T READ DIRECTORY"` | `uii_open_dir` — directory unreadable |
 | `"88,NO INFORMATION AVAILABLE"` | `uii_file_info` — no file open |
 | `"88,FILE NOT FOUND"` | `uii_file_stat` — named file not found |
-| `"89,NOT A DISK IMAGE"` | `uii_mount_disk` — file is not a disk image |
+| `"89,NOT A DISK IMAGE"` | `uii_mount_disk` — file is not a disk image. Also confirmed returned by `uii_open_file()` (generic read-open, attrib `0x01`) when called on a disk image file — the firmware rejects a plain read-open of disk images outright; they can only be accessed via `uii_mount_disk()`, not opened generically |
 | `"90,DRIVE NOT PRESENT"` | `uii_mount_disk`/`uii_unmount_disk` — drive ID not found |
+| `"92,..."` | `uii_file_stat` — confirmed returned on hardware when stat'ing a disk image file; exact meaning undocumented (not in the official command reference this manual is based on). Avoid using `uii_file_stat()`/`uii_open_file()` as a generic existence probe for disk image files — use `uii_mount_disk()`/`uii_change_dir()` directly instead, since those are the only commands confirmed to handle disk images predictably |
 | `"98,FUNCTION PROHIBITED"` | `uii_set_time` — setting disabled in Ultimate config |
 | `"ACCESS DENIED"` | Write to read-only file |
 

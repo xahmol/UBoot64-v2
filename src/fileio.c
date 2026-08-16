@@ -127,6 +127,90 @@ char resolve_storage_path(void)
   return 0;
 }
 
+void load_reu_with_reroute(char *path, char *reu_image, char reusize)
+// Preload a REU image, retrying across USB ports if the stored path has
+// moved. The retry loop drives the real uii_open_file() call itself (not
+// a separate directory-only probe): two prior attempts at a dedicated
+// existence check (uii_open_file() misused as a probe, then
+// uii_file_stat()) both broke real disk-image mounts elsewhere on this
+// firmware in undocumented ways, so this uses the actual operation
+// directly instead. Unlike disk images (see mountimage()), a plain .REU
+// file has no "wrong type" failure mode, so any open failure here is
+// treated uniformly as "keep hunting" -- no status-code distinction
+// needed. A "/usbX/"-shaped prefix (checked structurally: "/usb" + one
+// char + "/" -- covers literal "/usb0|1|2/" ports AND the Ultimate
+// firmware's own "/usb*/" wildcard alias for "whichever single USB stick
+// is present") is retried against the numbered USB ports by swapping the
+// prefix in place (no scratch buffer needed, the prefixes share the same
+// length); a wildcard prefix never matches a specific port number, so
+// none gets excluded and all three are tried. On total failure, prompts
+// to insert the stick and retry, or F7 to abort to BASIC.
+{
+  char origport;
+  char x;
+  char found = 0;
+
+  for (;;)
+  {
+    uii_change_dir(path);
+    if (UII_SUCCESS)
+    {
+      uii_open_file(1, reu_image);
+      if (UII_SUCCESS)
+      {
+        found = 1;
+      }
+    }
+
+    if (!found && memcmp(path, storagepaths[1], 4) == 0 && path[5] == '/') // "/usbX/" shape
+    {
+      origport = 0xFF;
+      for (x = 1; x < 4; x++) // storagepaths[1..3] = usb0..2; [0]=sd excluded
+      {
+        if (memcmp(path, storagepaths[x], 6) == 0)
+        {
+          origport = x;
+          break;
+        }
+      }
+
+      for (x = 1; x < 4 && !found; x++)
+      {
+        if (x == origport)
+        {
+          continue;
+        }
+        memcpy(path, storagepaths[x], 6); // same-length prefix swap, suffix untouched
+        uii_change_dir(path);
+        if (UII_SUCCESS)
+        {
+          uii_open_file(1, reu_image);
+          if (UII_SUCCESS)
+          {
+            cwin_console_printf(&cw, cfg.colors.text, "\nRerouted to %s\n", path);
+            delay(2);
+            found = 1;
+          }
+        }
+      }
+    }
+
+    if (found)
+    {
+      break;
+    }
+
+    cwin_console_printf(&cw, cfg.colors.text, "\nInsert USB stick. Key=retry, F7=BASIC\n");
+    if (cwin_getch() == CH_F7)
+    {
+      errorexit("USB stick not found.");
+    }
+  }
+
+  uii_load_reu(reusize);
+  uii_close_file();
+}
+
 void get_slot_from_reu(char number)
 // Function to get slot with specified number from REU
 // Input: number - slot number to get

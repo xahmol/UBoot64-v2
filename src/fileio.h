@@ -10,6 +10,7 @@ void read_slotsfile(unsigned char verbose);
 void writeconfigfile();
 void readconfigfile();
 char resolve_storage_path(void);
+void load_reu_with_reroute(char *path, char *reu_image, char reusize);
 
 #pragma compile("fileio.c")
 

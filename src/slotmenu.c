@@ -504,13 +504,94 @@ void ErrorCheckMmounting()
 }
 
 void mountimage(char device, char *path, char *image)
-// Mount an image on an Ultimate emulated drive
-// Device = IEC ID, path and image are path and filename to image to mount
+// Mount an image on an Ultimate emulated drive, retrying across USB ports
+// if the stored path has moved. Device = IEC ID, path and image are path
+// and filename to image to mount.
+// The retry loop drives the real uii_mount_disk() call itself (not a
+// separate directory-only probe): two prior attempts at a dedicated
+// existence check (uii_open_file() misused as a probe, then
+// uii_file_stat()) both broke real disk-image mounts on this firmware in
+// undocumented ways specific to disk images, so this uses the actual
+// mount operation directly instead -- it's side-effect-free on failure
+// (nothing mounts unless the right file was found) and its own status is
+// specific and reliable: "82,FILE NOT FOUND" means keep hunting other
+// ports; anything else ("89,NOT A DISK IMAGE", "90,DRIVE NOT PRESENT",
+// etc.) is a real, non-port problem that trying other ports can't fix, so
+// it's surfaced immediately via ErrorCheckMmounting() instead of looping
+// through ports or showing a misleading "insert stick" prompt.
+// A "/usbX/"-shaped prefix (checked structurally: "/usb" + one char +
+// "/" -- covers literal "/usb0|1|2/" ports AND the Ultimate firmware's
+// own "/usb*/" wildcard alias for "whichever single USB stick is
+// present") is retried against the numbered USB ports by swapping the
+// prefix in place (no scratch buffer needed, the prefixes share the same
+// length); a wildcard prefix never matches a specific port number, so
+// none gets excluded and all three are tried.
 {
+    char origport;
+    char x;
+    char found = 0;
 
-    uii_change_dir(path);
-    uii_mount_disk(device, image);
-    ErrorCheckMmounting();
+    for (;;)
+    {
+        uii_change_dir(path);
+        if (UII_SUCCESS)
+        {
+            uii_mount_disk(device, image);
+            if (UII_SUCCESS)
+            {
+                found = 1;
+            }
+            else if (strncmp((const char *)uii_status, "82,", 3) != 0)
+            {
+                ErrorCheckMmounting();
+                return;
+            }
+        }
+
+        if (!found && memcmp(path, storagepaths[1], 4) == 0 && path[5] == '/') // "/usbX/" shape
+        {
+            origport = 0xFF;
+            for (x = 1; x < 4; x++) // storagepaths[1..3] = usb0..2; [0]=sd excluded
+            {
+                if (memcmp(path, storagepaths[x], 6) == 0)
+                {
+                    origport = x;
+                    break;
+                }
+            }
+
+            for (x = 1; x < 4 && !found; x++)
+            {
+                if (x == origport)
+                {
+                    continue;
+                }
+                memcpy(path, storagepaths[x], 6); // same-length prefix swap, suffix untouched
+                uii_change_dir(path);
+                if (UII_SUCCESS)
+                {
+                    uii_mount_disk(device, image);
+                    if (UII_SUCCESS)
+                    {
+                        cwin_console_printf(&cw, cfg.colors.text, "\nRerouted to %s\n", path);
+                        delay(2);
+                        found = 1;
+                    }
+                }
+            }
+        }
+
+        if (found)
+        {
+            return;
+        }
+
+        cwin_console_printf(&cw, cfg.colors.text, "\nInsert USB stick. Key=retry, F7=BASIC\n");
+        if (cwin_getch() == CH_F7)
+        {
+            errorexit("USB stick not found.");
+        }
+    }
 }
 
 void ToggleDrivePower(char ab, char on)
@@ -605,10 +686,7 @@ void runbootfrommenu(char select)
     if (Slot.command & COMMAND_REU) // REU image preload enabled in this slot
     {
         cwin_console_printf(&cw, cfg.colors.text, "REU file %s", Slot.reu_image);
-        uii_change_dir(Slot.image_a_path);
-        uii_open_file(1, Slot.reu_image);
-        uii_load_reu(Slot.reusize);
-        uii_close_file();
+        load_reu_with_reroute(Slot.image_a_path, Slot.reu_image, Slot.reusize);
         ErrorCheckMmounting();
     }
 

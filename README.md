@@ -30,6 +30,8 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 - [Default boot slot and auto-boot timeout](#default-boot-slot-and-auto-boot-timeout)
 
+- [USB port auto-reroute](#usb-port-auto-reroute)
+
 - [F5: Configuration](#f5-configuration)
 
 - [F7: Quit to BASIC](#f7-quit-to-basic)
@@ -48,6 +50,11 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
+
+Version 2.2.0 - 20260816:
+
+- USB port auto-reroute: if a slot's disk image or REU file was saved against one USB port (USB0/1/2) and the stick has since been moved to another, UBoot64 now detects this at boot time, automatically retries on the other USB ports, and reroutes to it for that boot if found — no need to re-edit the slot. Checks the actual file, not just the folder, so it correctly skips a USB stick that happens to share a folder name but not the file itself. See [USB port auto-reroute](#usb-port-auto-reroute).
+- If the stick isn't found on any USB port, boot now stops with a clear "insert USB stick" message and lets you retry after reinserting it, instead of a generic mount error — press F7 to give up and return to BASIC instead.
 
 Version 2.1.1 - 20260719:
 
@@ -406,6 +413,17 @@ You can mark one menu slot as the default boot target and have it launch automat
 * When both are set, the boot menu shows a dedicated countdown screen (rather than the full menu) with the default slot's name and remaining seconds. Pressing **any key** cancels the countdown and opens the normal menu — the keypress itself is not treated as a selection. If the countdown reaches zero, the default slot boots automatically, exactly as if you had pressed its key.
 * The default slot follows the slot's content through renames and re-ordering. Deleting the slot (or picking it again via **F6**) clears the default marker.
 * A default slot does not need to launch a program — see [mount/command-only slots](#add-start-options-via-the-filebrowser) below for the classic "auto-mount a D64 on power-on" use case.
+
+### USB port auto-reroute
+([Back to contents](#contents))
+
+A menu slot's disk image (drive A / B) and REU file are stored with the USB port they were on at the time (e.g. `/usb0/...`). If you later plug that stick into a different USB port, the slot would previously fail to boot.
+
+UBoot64 now detects this automatically at boot time: if the stored path and file aren't found there, it retries on the other USB ports (USB0/1/2). If found, it shows a brief "Rerouted to ..." message and continues booting from there — this only affects the current boot and is not saved back to the slot, so the slot still uses its originally configured port next time (letting you use multiple sticks across different slots as before). This checks the actual file, not just the folder — if two sticks happen to share a folder name (e.g. both have a `games` folder) but only one has the specific file the slot needs, UBoot64 correctly finds and boots from the right one instead of stopping on the wrong stick.
+
+If the file isn't found on any USB port, boot stops with a message asking you to insert the stick — press any key to retry once it's plugged back in, or **F7** to give up and return to BASIC (useful if you meant to boot something else entirely).
+
+This only applies to disk image and REU paths (which use USB port addressing via the Ultimate Command Interface). It does not apply to programs launched directly from an IEC device without a disk mount, or to the SD card slot, since neither uses a swappable USB port.
 
 ### F5: Configuration
 ([Back to contents](#contents))

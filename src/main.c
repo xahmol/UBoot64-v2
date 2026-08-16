@@ -354,7 +354,7 @@ __noinline void mainloop(void)
 	{
 		if (cfg.verbose)
 		{
-			cwin_console_printf(&cw, cfg.colors.text, "\nREU detected, size: %d KB\n", reudetected * 64);
+			cwin_console_printf(&cw, cfg.colors.text, "REU detected, size: %d KB\n", reudetected * 64);
 		}
 		else
 		{

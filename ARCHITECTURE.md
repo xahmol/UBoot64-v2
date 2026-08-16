@@ -466,6 +466,50 @@ skips the `load`/`run` keystroke injection when `prg` is empty, running only the
 optional `Slot.cmd` (if any) and landing in BASIC `READY.` — used for slots that
 only mount a disk and/or run a command, with no program launch.
 
+**USB port auto-reroute:** `image_a_path`/`image_b_path` embed a literal
+`/usb0/`, `/usb1/`, `/usb2/`, `/usb*/`, or `/sd/` prefix, set once at
+slot-edit time — `/usb*/` is the Ultimate firmware's own wildcard alias
+for "whichever single USB stick is present" (returned verbatim by
+`uii_get_path()` when only one stick is connected at edit time; a real
+numbered port only appears when multiple sticks are connected
+simultaneously, disambiguating which one is meant). If the stick has since
+moved to a different USB port, `mountimage()` and `load_reu_with_reroute()`
+(`src/slotmenu.c`, `src/fileio.c`) detect the stale path and retry the
+same sub-path on the numbered USB ports by swapping the (fixed-length)
+6-byte prefix in place — recognized structurally as `"/usb" + one char +
+"/"`, so this covers both literal `/usb0|1|2/` ports and the `/usb*/`
+wildcard (which never matches a specific port number, so none gets
+excluded and all three are tried). This mutates only the in-memory `Slot`
+copy loaded by `get_slot_from_reu()`; nothing in the boot path calls
+`save_slot_to_reu()`, so the change is scoped to that one boot and the
+persisted slot still points at its originally configured port. `/sd/`
+paths are excluded from the search (there is only one SD slot, no
+alternate port to try) but still fail through to the same "insert stick"
+message on `errorexit()`. `Slot.path`/`Slot.device` (the non-mount boot
+path, addressed by IEC device number via `cmd()`) is out of scope — it
+never contains a USB-port-prefixed path (see `pathconcat()`, `src/core.c`).
+
+The retry loop drives the *real* operation directly
+(`uii_mount_disk()`/`uii_open_file()`) rather than a separate existence
+probe — two dedicated-probe attempts (`uii_open_file()` misused as a
+read-open check, then `uii_file_stat()`) were tried and both broke real
+disk-image mounts on hardware: the firmware special-cases disk images
+across multiple generic file-query commands in ways that don't align with
+simple existence checks (`uii_open_file()` → documented
+`"89,NOT A DISK IMAGE"`; `uii_file_stat()` → undocumented `"92"`, see
+`UCILIBMANUAL.md`). Since the real operation is side-effect-free on
+failure (nothing mounts/opens unless the right file was actually found),
+using it as its own probe is both simpler and reliable. For
+`mountimage()`, `uii_mount_disk()`'s own status distinguishes a port
+problem from a real one: `"82,FILE NOT FOUND"` (undocumented, confirmed on
+hardware) means keep hunting other ports; anything else (`"89,NOT A DISK
+IMAGE"`, `"90,DRIVE NOT PRESENT"`) is a genuine, non-port problem that
+trying other ports can't fix, so it's surfaced immediately via
+`ErrorCheckMmounting()` instead of looping through ports with a misleading
+"insert stick" prompt. `load_reu_with_reroute()` needs no such distinction
+— `.REU` files aren't disk-image-type-checked, so any `uii_open_file()`
+failure there is treated uniformly as "keep hunting."
+
 ### `ConfigStruct` — global preferences (`include/defines.h`)
 
 | Field | Type | Purpose |
@@ -633,6 +677,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 |----------|-------------|
 | `void CheckStatus(const char *message)` | Check UCI status; call `errorexit()` on failure |
 | `char resolve_storage_path(void)` | Scan `storagepaths[]` (SD, USB0, USB1, USB2) for an existing config, or the first present device as a creation fallback; sets `configpath` |
+| `void load_reu_with_reroute(char *path, char *reu_image, char reusize)` | Preload a REU image, retrying the real `uii_open_file()` call across USB ports (including the `/usb*/` wildcard prefix) if the stored path has moved; on success calls `uii_load_reu()`/`uii_close_file()`. Any open failure is treated as "keep hunting" (no disk-image-type concern for `.REU` files). Prompts to insert the stick and retry, or F7 to abort to BASIC, if unreachable everywhere |
 | `void get_slot_from_reu(char number)` | DMA load slot `n` from REU into `Slot` global |
 | `void save_slot_to_reu(char number)` | DMA store `Slot` global to slot `n` in REU |
 | `void write_slotsfile(char verbose)` | Write all 18 slots from REU to `dmbslt.cfg` via UCI in 500-byte chunks |
@@ -665,9 +710,9 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `char validkey(char key)` | Check whether a keypress is a valid boot menu choice (F-key or non-empty slot); used by `mainmenu()`'s blocking wait |
 | `void pickmenuslot()` | Prompt user to choose a slot for saving a filebrowser selection. A drive B mount or REU preload added to a slot that already launches a program is additive (program fields untouched); a drive A mount on such a slot warns first and only clears the program fields if confirmed, since it replaces the disk the program expects to boot from |
 | `void ErrorCheckMmounting()` | Check UCI status after mount operations; call `errorexit()` on failure |
-| `void mountimage(char device, char *path, char *image)` | Change UCI directory and mount named disk image on IEC device |
+| `void mountimage(char device, char *path, char *image)` | Mount named disk image on IEC device, retrying the real `uii_mount_disk()` call across USB ports (including the `/usb*/` wildcard prefix) if the stored path has moved. `"82,FILE NOT FOUND"` means keep hunting other ports; any other mount failure surfaces immediately via `ErrorCheckMmounting()` |
 | `void ToggleDrivePower(char ab, char on)` | Power Ultimate emulated drive A or B on or off |
-| `void runbootfrommenu(char select)` | Execute the boot sequence for slot `select`: mount images, load REU, execute program (or command only, if `Slot.file` is empty) |
+| `void runbootfrommenu(char select)` | Execute the boot sequence for slot `select`: mount images (via `mountimage()`, rerouting a moved USB stick if needed), load REU (via `load_reu_with_reroute()`, also rerouted), execute program (or command only, if `Slot.file` is empty) |
 | `char deletemenuslot()` | Interactive: choose and delete a slot; returns 1 if deleted |
 | `char renamemenuslot()` | Interactive: choose and rename a slot; returns 1 if changed |
 | `char toggledefaultslot()` | Interactive: choose a slot to set/clear as the auto-boot default; clears any other slot's flag first so only one slot is ever default; returns 1 if changed |
