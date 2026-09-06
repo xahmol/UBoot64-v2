@@ -369,6 +369,7 @@ The UCI is the hardware interface exposed by the Ultimate II+/U64 cartridge at m
 | `0x02` | `TARGET_DOS2` | Drive B file/directory operations |
 | `0x03` | `TARGET_NETWORK` | TCP/UDP sockets |
 | `0x04` | `TARGET_CONTROL` | Drive power, disk mount/unmount, device info |
+| `0x05` | `TARGET_SOFTIEC` | SoftIEC partition management (firmware 3.15+) |
 
 ### Protocol Flow
 
@@ -409,7 +410,9 @@ Success check: `UII_SUCCESS` — true when `uii_status[0]=='0' && uii_status[1]=
 | `uii_disable_drive_a/b()` | CONTROL | Power off emulated drive A/B |
 | `uii_get_time()` | TIME | Read RTC time into `uii_data` |
 | `uii_set_time(str)` | TIME | Set RTC time from formatted string |
-| `uii_tcpconnect(host, port)` | NETWORK | Open TCP socket for NTP |
+| `uii_udpconnect(host, port)` | NETWORK | Open UDP socket for NTP (NTP is UDP-based, not TCP) |
+| `uii_enable()` / `uii_wait_for_uci(timeout)` | — | Firmware 3.15+: write the UCI unlock sequence ($AB→$D038, $CD→$D036) so UCI auto-enables without the user turning it on in the Ultimate menu first, then poll `uii_detect()` |
+| `uii_add_partition(index, name, path)` / `uii_del_partition(index)` | SOFTIEC | Add/remove a SoftIEC partition (firmware 3.15+); see §9's `filebrowse.c` section for how the browser uses these |
 
 ---
 
@@ -424,7 +427,7 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 
 | Field | Type | Size | Purpose |
 |-------|------|------|---------|
-| `cfgvs` | char | 1 | Config version stamp — must equal `CFGVERSION` (0x02) |
+| `cfgvs` | char | 1 | Config version stamp — must equal `CFGVERSION` (0x03) |
 | `path` | char[256] | 256 | USB directory path for the boot file |
 | `menu` | char[31] | 31 | Display name in the boot menu |
 | `file` | char[51] | 51 | Boot filename |
@@ -442,7 +445,20 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 | `image_b_file` | char[51] | 51 | Drive B disk image filename |
 | `image_b_id` | char | 1 | IEC device ID for drive B image |
 | `isdefault` | char | 1 | 1 = this slot auto-boots after the configured timeout; compared strictly `== 1` since legacy slot files hold filler byte `'u'` (117) here |
-| `padding` | char[12] | 12 | Reserved; pads struct size to multiple of 16 |
+| `partition` | char | 1 | SoftIEC partition number to select (via `iec_select_partition()`) before boot, firmware 3.15+; 0 = don't send a partition-select command — the pre-3.15 behavior, which is also what every slot saved before this field existed reads back as |
+| `padding` | char[11] | 11 | Reserved; pads struct size to multiple of 16 |
+
+**Why `partition` needed a version bump, not just a byte carved out of `padding`:**
+repurposing one byte of the (formerly 12-byte) padding for `partition` looked
+size-neutral, but `fileio.c`'s default-slot-creation code stamps a literal
+watermark string (`"uboot64 x mol"`) across the *entire* padding array, not
+zeros — every existing v2 slot had `'u'` (117) in what is now `partition`,
+not 0. Fixed by bumping `CFGVERSION` 2→3 and shipping `uboot_upd23.prg`
+(`src/uboot_upd23.c`), which sanitizes `partition=0` and bumps `cfgvs` for
+every slot. Lesson: never assume a struct's "reserved/padding" bytes are
+actually zero in existing saved data — check what the current code writes
+there before repurposing any of it, even when a field is explicitly
+documented as unused.
 
 **Command flags (`command` field bitmask):**
 
@@ -514,13 +530,14 @@ failure there is treated uniformly as "keep hunting."
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `version` | char | Config file version — must equal `CFGVERSION` (0x02) |
+| `version` | char | Config file version — must equal `CFGVERSION` (0x03) |
 | `timeon` | char | NTP sync enabled: 0=off, 1=on |
 | `host` | char[81] | NTP server hostname |
 | `secondsfromutc` | long | UTC offset in seconds (e.g. 3600 = UTC+1) |
 | `verbose` | char | Verbose startup: 0=silent (spinner), 1=verbose |
 | `colors` | ColorPalette | Embedded UI colour palette |
 | `timeoutidx` | char | Index into `timeoutlist[]`/`timeoutseconds[]` (`src/main.c`); 0 = auto-boot timeout off |
+| `iec_root_partition` | char | Firmware 3.15+: 0=off (default), 1=auto-create/select `RESERVED_ROOT_PARTITION` (254, root path `/`) whenever entering IEC mode on a SoftIEC device, so browsing sees the whole filesystem without the user having to configure a partition themselves first. Never overwrites a partition the user already configured at that index (see `src/filebrowse.c`'s `CH_F3` conflict check). Toggled via **F8** in `edittimeconfig()`; appended at the end of `ConfigStruct`, so old config files (shorter than `sizeof(cfg)`) load with this `== 0`, same zero-fill mechanism as `timeoutidx` above — no version bump needed for this field specifically |
 
 **Auto-boot timeout:** when `cfg.timeoutidx != 0` and one slot has
 `isdefault == 1`, `mainmenu()` (`src/slotmenu.c`) calls `autobootcountdown()`
@@ -666,6 +683,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `char CheckActiveIECdevices()` | Scan IEC bus, populate `iec_devices[]` with active device flags |
 | `char dosCommand(char lfn, char drive, char sec_addr, const char *cmd)` | Send DOS command string to an IEC device |
 | `char cmd(char device, const char *cmd)` | Send directory change command to IEC device |
+| `char iec_select_partition(char device, char partnum)` | Send classic DOS `CP<n>` to select a SoftIEC partition (firmware 3.15+); not a UCI command — see `src/core.c` |
 | `const char *getDeviceType(char device)` | Detect and return device type string for IEC device |
 | `void DoDemoMode()` | Power down all Ultimate emulated drives not on ID 8 |
 | `void execute(char *prg, char device, char boot, char *command)` | Build BASIC LOAD+RUN command sequence in keyboard buffer and exit to BASIC |
@@ -733,7 +751,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `char getcolor(char option)` | Return the current colour value for colour scheme element `option` (1–11) |
 | `void pushcolor(char option, char color)` | Set colour scheme element `option` to `color` in `cfg.colors` |
 | `char editcolors()` | Interactive colour scheme editor; returns 1 if changes made |
-| `void edittimeconfig()` | Top-level configuration menu (F1 NTP toggle, F2 verbose, F3 offset, F4 auto-boot timeout, F5 host, F6 colours) |
+| `void edittimeconfig()` | Top-level configuration menu (F1 NTP toggle, F2 verbose, F3 offset, F4 auto-boot timeout, F5 host, F6 colours, F8 SoftIEC root partition toggle) |
 
 #### `src/splash.c` — Startup splash screen
 
@@ -750,12 +768,14 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | Function | Description |
 |----------|-------------|
 | `void dir_close(char lfn)` | Close an IEC directory channel |
-| `char dir_open(char lfn, char device)` | Open IEC directory for reading; skip BASIC load address bytes |
+| `char dir_open(char lfn, unsigned char device, const char *name)` | Open IEC directory `name` for reading (usually `"$"`, or `"$=P"` for a partition listing); skip BASIC load address bytes |
 | `void dir_get_element(unsigned long addr)` | DMA load `DirElement` from REU address into `presentdirelement` |
 | `void dir_save_element(unsigned long addr)` | DMA store `presentdirelement` to REU address |
 | `char dir_readentry_iec(DirElement *)` | Read next IEC directory entry from KERNAL channel; parse CBM type from line |
 | `char dir_readentry_uci(DirElement *)` | Read next UCI directory entry from UCI stream; detect type from extension |
 | `char dir_read(char sort)` | Read all directory entries into REU linked list; optional insertion sort |
+| `char iec_read_partitions(char device, struct PartitionEntry *out, char maxcount)` | Firmware 3.15+: read the SoftIEC partition listing via classic `"$=P"`; see the SoftIEC partition browsing note below for the two firmware-behavior gotchas this had to work around |
+| `char dir_read_partition_list(char device)` | Populate the REU-backed directory list with a synthetic "virtual directory" of SoftIEC partitions (one entry per partition, `meta.size` carries the partition number) so the existing browse/select/draw machinery works on it unmodified — see below |
 | `const char *fileTypeToStr(char ft)` | Convert CBM file type code to 3-character display string |
 | `void CheckMounttype(char *dirname)` | Set `mountflag` based on file extension (.d64/.g64/.d71/.g71/.reu etc.) |
 | `void dir_print_id_and_path()` | Render directory header: device ID, disk name/path, trace path |
@@ -864,6 +884,18 @@ The file browser supports two distinct modes selected by `fb_uci_mode`:
 - **IEC mode** (`fb_uci_mode = 0`): reads from a standard CBM IEC drive. Requires directory trace (`D` key) to reconstruct path. Device numbers used.
 
 Mode is toggled with **F3** and switches back automatically when exiting a mounted disk image.
+
+### SoftIEC Partition Browsing (firmware 3.15+)
+
+Firmware 3.15 added CMD-HD-style partitions to the Ultimate's SoftIEC drive. **F4**, in IEC mode on any device, shows a virtual "partition list" — a synthetic directory built by `dir_read_partition_list()` from `iec_read_partitions()`'s data, using the exact same REU-backed `DirElement` list, `dir_draw()`, and cursor-navigation code as a real directory listing. Each virtual entry's `name` is the partition's root path and `meta.size` carries the partition number, so selecting one (`CH_ENTER`) needs no re-parsing: `iec_select_partition()` (classic DOS `CP<n>`) is called with `presentdirelement.meta.size` directly, then a real `dir_read()` shows that partition's contents.
+
+Not gated to a specific devicetype — `F4` and the partition-list logic key off `!fb_uci_mode` alone. `devicetype[device]==U64` was tried first but matched more Ultimate-branded device types than just the SoftIEC drive (spurious hint visibility) and its detection could still be pending at the moment `browse_menu()` ran (hint flakiness); a device with no partition support simply returns none from `iec_read_partitions()` and the error path shows "Could not read partition list."
+
+**Returning to the list:** `partition_depth` (file-scope `char` in `filebrowse.c`, lands in `bdata2` — not the exhausted shared bank-0 pool) tracks how many real subfolders deep the browser is inside the current partition, incremented/decremented alongside every `dir_changedir()` call, independent of the separate dirtrace `depth` counter (which only tracks when `trace==1`, for slot-path recording). `CH_DEL` at `partition_depth==0` shows the partition list again instead of sending a DOS "go up" command — this is *local* bookkeeping, not a query to the firmware, since experimentation suggested "go up from partition root" may not reliably return an error status to detect against.
+
+**Two real bugs found only via live-hardware testing, both fixed 2026-09-06** (see `project_uci315_compat.md` in this session's memory for the full narrative):
+1. `petscii.h`'s project-wide global charmap (see §12.5 below) silently corrupted the `"$=P"` open filename and an early hidden-name-filter attempt's string literals. The filter was later dropped entirely (firmware hard-truncates every classic-listing name to 16 characters via `IecPartition::CreateIecName()`, confirmed on hardware — reliable name-based filtering isn't achievable over classic IEC).
+2. Partition-number parsing was double-dividing: firmware's `read_dir_entry()` (`iec_channel.cc`) sets `info.size = part_idx*254` internally, but then runs the *same* byte→block conversion used for every normal directory entry (`size = (info.size+253)/254`) before the wire's 16-bit size field is ever written — which divides that `*254` straight back out. The wire value is already the plain partition number; `iec_read_partitions()` originally divided by 254 a second time.
 
 ### REU as a Pointer-Based Heap
 
@@ -1230,6 +1262,63 @@ cwin_console_printf(&cw, color, "%s", linebuffer);
 
 ---
 
+### 12.10 `petscii.h`'s Global Charmap Corrupts String Literals Used for Wire Protocol Data
+
+**Quirk:** every `src/*.c` file includes `<petscii.h>`, which installs
+`#pragma charmap(97, 65, 26)` + `#pragma charmap(65, 97, 26)` — swapping
+uppercase/lowercase in every subsequently-compiled **string literal**
+(`"..."`), project-wide, for the rest of the compile. This is correct and
+necessary for on-screen text: the custom charset this project loads expects
+it, and every menu label already relies on it. It is **not** correct for a
+string literal that is (a) sent as an IEC/UCI command/filename where
+firmware does exact-case matching, or (b) compared via `strcmp`/similar
+against data read at runtime from the wire (never charmap-affected, since
+it isn't a compile-time literal). **Character literals (`'x'`) are
+unaffected** — only double-quoted strings.
+
+Confirmed empirically by extracting strings from the built `.crt`:
+`" F1 Dir refr."` (source) compiles to `" f1 dIR REFR."` in the binary —
+every letter case-inverted. A source literal `"$=P"`, written assuming
+source case equals wire case, actually compiled to `$=p` on the wire — the
+opposite of what firmware's case-sensitive `cbmdos_parser.cc` parser
+requires for the SoftIEC partition-listing stream (see the "SoftIEC
+Partition Browsing" note in §11). The *original* (pre-session) lowercase
+`"$=p"` had, non-obviously, already been compiling to the *correct*
+uppercase wire bytes all along — "fixing" it to uppercase source was a
+regression, caught only by extracting and comparing raw strings from two
+successive builds, not by reasoning about the source alone.
+
+**Workaround:** wrap the specific literal in an identity-charmap override,
+then write the literal exactly as it should appear on the wire — don't try
+to mentally invert the case to compensate, it's easy to get backwards (this
+project did, once):
+
+```c
+#pragma charmap(97, 97, 26)  // a-z -> a-z (identity)
+#pragma charmap(65, 65, 26)  // A-Z -> A-Z (identity)
+static const char partition_open_name[] = "$=P";
+#pragma charmap(97, 65, 26)  // restore petscii.h
+#pragma charmap(65, 97, 26)
+```
+
+For an exact-match comparison where the real-world casing convention isn't
+verified/consistent (e.g. firmware's own display casing for long
+filenames), prefer a case-insensitive compare over guessing a specific case
+even under the identity override.
+
+**Verification method:** don't trust source review alone for this class of
+bug — extract literal bytes from the *built* binary and compare against
+intent: `strings -a -n2 build/uboot64.crt | grep '<expected literal>'`.
+
+**Location:** `src/filebrowse.c`, `iec_read_partitions()`'s
+`partition_open_name` (the only wire-facing literal needing this override
+in this codebase, since almost everything else uses runtime-built command
+strings via `sprintf`, whose literal *format* portions — e.g. `"cp%u"` —
+happen to only need case-insensitively-dispatched command verbs and so are
+unaffected in practice, not because they're immune to the same mechanism).
+
+---
+
 ### 12.11 REU Probe Dead-Code Elimination (Oscar64 `-O2`, commit `3bbffe9`+)
 
 **Quirk:** Oscar64's own `<c64/reu.h>` library function `reu_count_pages()` is
@@ -1319,6 +1408,7 @@ than a whole function's control flow.
 | 12.7 | Bank 0 ROM space budget | `petscii_ascii.c` | Placed in bank 2 alongside its only caller |
 | 12.8 | `unsigned long` struct members in conditionals | `filebrowse.c` | Load to local variable before any `if`/loop check |
 | 12.9 | `printf`/`sprintf` precision specifier not supported | All files | Pre-truncate with `strncpy` + explicit null, then use `%s` |
+| 12.10 | `petscii.h`'s global charmap corrupts wire-facing string literals | `filebrowse.c` | Identity-charmap override around the specific literal |
 | 12.11 | REU probe dead-code elimination at `-O2` | `main.c` | `__noinline` call-boundary barrier (`reu_probe_barrier()`) |
 | 12.12 | Conditional row-position miscompilation at `-O2` | `filebrowse.c` | Whole-function `#pragma optimize(0)` around `browse_menu()` |
 

@@ -127,6 +127,12 @@ char resolve_storage_path(void)
   return 0;
 }
 
+// load_reu_with_reroute() is only ever called from slotmenu.c (bank 1), so
+// it is compiled into bank 1's own code/data section instead of the shared
+// bank-0 pool -- see project memory project_uci315_compat.md's Step 0.
+#pragma code(bcode1)
+#pragma data(bdata1)
+
 void load_reu_with_reroute(char *path, char *reu_image, char reusize)
 // Preload a REU image, retrying across USB ports if the stored path has
 // moved. The retry loop drives the real uii_open_file() call itself (not
@@ -210,6 +216,9 @@ void load_reu_with_reroute(char *path, char *reu_image, char reusize)
   uii_load_reu(reusize);
   uii_close_file();
 }
+
+#pragma code(code)
+#pragma data(data)
 
 void get_slot_from_reu(char number)
 // Function to get slot with specified number from REU
@@ -310,7 +319,8 @@ void read_slotsfile(unsigned char verbose)
     memset(&Slot, 0, sizeof(Slot));
     Slot.cfgvs = CFGVERSION;
     Slot.isdefault = 0;
-    strncpy(Slot.padding, "uboot64 x mol", 12); // Padding to make structure size a multiple of 16
+    Slot.partition = 0; // Explicit: firmware 3.15+ SoftIEC partition, none by default
+    strncpy(Slot.padding, "uboot64 x mol", 11); // Padding to make structure size a multiple of 16
 
     for (x = 0; x < SLOTS; ++x)
     {
@@ -386,8 +396,9 @@ void read_slotsfile(unsigned char verbose)
 
   if (Slot.cfgvs < CFGVERSION)
   {
-    cwin_console_printf(&cw, cfg.colors.text, "\nOld configuration file format.");
-    cwin_console_printf(&cw, cfg.colors.text, "\nRun upgrade tool first.");
+    cwin_console_printf(&cw, cfg.colors.text, "\nOld slot file format.");
+    cwin_console_printf(&cw, cfg.colors.text, "\nRun uboot_upd12.prg (v1) or");
+    cwin_console_printf(&cw, cfg.colors.text, "\nuboot_upd23.prg (v2) first.");
     errorexit("");
   }
 }
@@ -450,7 +461,8 @@ void readconfigfile()
   if (cfg.version < CFGVERSION)
   {
     cwin_console_printf(&cw, cfg.colors.text, "\nOld configuration file format.");
-    cwin_console_printf(&cw, cfg.colors.text, "\nRun upgrade tool first.");
+    cwin_console_printf(&cw, cfg.colors.text, "\nRun uboot_upd12.prg (v1) or");
+    cwin_console_printf(&cw, cfg.colors.text, "\nuboot_upd23.prg (v2) first.");
     errorexit("");
   }
 

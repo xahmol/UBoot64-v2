@@ -553,13 +553,14 @@ void edittimeconfig()
     char key;
     char offsetinput[10];
     char *ptrend;
+    char yesno;
 
     do
     {
         cwin_clear(&cw);
         headertext("Configuration tool.", 1);
 
-        cwin_cursor_move(&cw, 0, 3);
+        cwin_cursor_move(&cw, 0, 2);
         cwin_console_printf(&cw, cfg.colors.text, "\nCurrent configuration settings:\n\n");
         cwin_console_printf(&cw, cfg.colors.text, "NTP time update settings:\n");
         cwin_console_printf(&cw, cfg.colors.text, "- Update on boot toggle: %s\n", (cfg.timeon == 0) ? "Off" : "On");
@@ -571,27 +572,31 @@ void edittimeconfig()
           cwin_console_printf(&cw, cfg.colors.text, "- NTP server hostname:\n%s\n", hostbuf);
         }
         cwin_console_printf(&cw, cfg.colors.text, "\nVerbose or silent startup: %s\n", (cfg.verbose == 0) ? "Silent" : "Verbose");
-        cwin_console_printf(&cw, cfg.colors.text, "\nAuto-boot timeout: %s\n", timeoutlist[cfg.timeoutidx]);
+        cwin_console_printf(&cw, cfg.colors.text, "Auto-boot timeout: %s\n", timeoutlist[cfg.timeoutidx]);
+        cwin_console_printf(&cw, cfg.colors.text, "SoftIEC root partition (fw 3.15+): %s\n", (cfg.iec_root_partition == 0) ? "Off" : "On");
 
-        cwin_putat_string(&cw, 0, 16, "Make your choice:", cfg.colors.text);
+        cwin_putat_string(&cw, 0, 15, "Make your choice:", cfg.colors.text);
 
-        cwin_putat_string_reverse(&cw, 0, 17, " F1 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 17, "Toggle time synch on/off", cfg.colors.text);
+        cwin_putat_string_reverse(&cw, 0, 16, " F1 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 16, "Toggle time synch on/off", cfg.colors.text);
 
-        cwin_putat_string_reverse(&cw, 0, 18, " F2 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 18, "Verbose startup on/off", cfg.colors.text);
+        cwin_putat_string_reverse(&cw, 0, 17, " F2 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 17, "Verbose startup on/off", cfg.colors.text);
 
-        cwin_putat_string_reverse(&cw, 0, 19, " F3 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 19, "Edit time offset to UTC", cfg.colors.text);
+        cwin_putat_string_reverse(&cw, 0, 18, " F3 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 18, "Edit time offset to UTC", cfg.colors.text);
 
-        cwin_putat_string_reverse(&cw, 0, 20, " F4 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 20, "Cycle auto-boot timeout", cfg.colors.text);
+        cwin_putat_string_reverse(&cw, 0, 19, " F4 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 19, "Cycle auto-boot timeout", cfg.colors.text);
 
-        cwin_putat_string_reverse(&cw, 0, 21, " F5 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 21, "Edit NTP server host", cfg.colors.text);
+        cwin_putat_string_reverse(&cw, 0, 20, " F5 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 20, "Edit NTP server host", cfg.colors.text);
 
-        cwin_putat_string_reverse(&cw, 0, 22, " F6 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 22, "Edit colour scheme", cfg.colors.text);
+        cwin_putat_string_reverse(&cw, 0, 21, " F6 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 21, "Edit colour scheme", cfg.colors.text);
+
+        cwin_putat_string_reverse(&cw, 0, 22, " F8 ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 22, "Toggle SoftIEC root part.", cfg.colors.text);
 
         cwin_putat_string_reverse(&cw, 0, 23, " F7 ", cfg.colors.key);
         cwin_putat_string(&cw, 5, 23, "Back to main menu", cfg.colors.text);
@@ -599,7 +604,7 @@ void edittimeconfig()
         do
         {
             key = cwin_getch();
-        } while (key != CH_F1 && key != CH_F2 && key != CH_F3 && key != CH_F4 && key != CH_F5 && key != CH_F6 && key != CH_F7);
+        } while (key != CH_F1 && key != CH_F2 && key != CH_F3 && key != CH_F4 && key != CH_F5 && key != CH_F6 && key != CH_F7 && key != CH_F8);
 
         switch (key)
         {
@@ -638,6 +643,26 @@ void edittimeconfig()
 
         case CH_F6:
             changesmade = editcolors();
+            break;
+
+        case CH_F8:
+            if (cfg.iec_root_partition)
+            {
+                // Currently on, about to turn off -- offer to remove the
+                // partition it auto-created, rather than leaving it orphaned
+                // on the device. Confirmation is the safeguard here (no
+                // device/IEC context exists on this screen to double-check
+                // the partition still looks like ours before deleting it).
+                cwin_putat_string(&cw, 0, 23, "Also delete partition from device? Y/N", cfg.colors.text);
+                yesno = getkey(128);
+                if (yesno == 'Y')
+                {
+                    uii_del_partition(RESERVED_ROOT_PARTITION);
+                }
+                cwin_fill_rect_raw(&cw, 0, 23, 40, 1, SC_SPACE, cfg.colors.text);
+            }
+            cfg.iec_root_partition = (cfg.iec_root_partition == 0) ? 1 : 0;
+            changesmade = 1;
             break;
 
         default:

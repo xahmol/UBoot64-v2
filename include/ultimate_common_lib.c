@@ -16,6 +16,7 @@ Patches and pull requests are welcome
 
 #include <string.h>
 #include <petscii.h>
+#include <c64/cia.h>
 #include "ultimate_common_lib.h"
 
 // Switching code generation to bank 0 common routine section
@@ -73,6 +74,158 @@ char uii_detect(void)
 		// Return 0 for detected = false
 		return 0;
 	}
+}
+
+void uii_enable(void)
+// Send the firmware 3.15+ UCI unlock sequence, per Gideon Zweijtzer.
+// Harmless on older firmware: nothing in this codebase else uses $D030-$D03F,
+// and if the firmware/bitstream doesn't implement the unlock, the writes are
+// simply ignored and uii_detect() keeps failing exactly as it does today.
+{
+	uci_unlock1 = 0xab;
+	uci_unlock2 = 0xcd;
+}
+
+char uii_wait_for_uci(char timeout_seconds)
+// Wait for Ultimate firmware to boot before issuing any UCI command.
+// At cold autostart the C64 starts faster than the Ultimate firmware boots,
+// leaving the UCI status register ($DF1C) in an undefined state that causes
+// uii_sendcommand() to spin forever. uii_detect() only reads one register
+// and never calls uii_sendcommand(), so it is safe to poll here.
+// Also sends the firmware 3.15+ unlock sequence up front, so UCI comes up
+// even if it was never enabled in the Ultimate's own menu.
+// Output:
+//	1 = detected
+//	0 = not detected, timed out
+{
+	uii_enable();
+
+	cia1.tods = 0;
+	cia1.todt = 0;
+	while (!uii_detect() && cia1.tods < timeout_seconds)
+	{
+		;
+	}
+
+	return uii_detect();
+}
+
+void uii_add_partition(char index, const char *name, const char *path)
+// Add (or, if index is already in use, overwrite) a SoftIEC partition.
+// Firmware 3.15+ only. Wire format: $05 $20 <index> "NAME:/path" -- see
+// software/io/command_interface/softiec_target.cc's cmd_add_partition()
+// in github.com/GideonZ/1541ultimate.
+// Input: index - partition number (1-255)
+//        name - partition display name
+//        path - root path the partition points to
+{
+	unsigned x = 0;
+	unsigned namelen = strlen(name);
+	unsigned pathlen = strlen(path);
+	char *fullcmd = (char *)malloc(namelen + pathlen + 4);
+	if (!fullcmd) return;
+	fullcmd[0] = 0x00;
+	fullcmd[1] = SOFTIEC_CMD_ADD_PARTITION;
+	fullcmd[2] = index;
+
+	for (x = 0; x < namelen; x++)
+		fullcmd[x + 3] = name[x];
+	fullcmd[namelen + 3] = ':';
+	for (x = 0; x < pathlen; x++)
+		fullcmd[x + namelen + 4] = path[x];
+
+	uii_settarget(TARGET_SOFTIEC);
+	uii_sendcommand(fullcmd, namelen + pathlen + 4);
+
+	free(fullcmd);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_del_partition(char index)
+// Remove a SoftIEC partition. Firmware 3.15+ only. Wire format:
+// $05 $21 <index> -- see softiec_target.cc's cmd_del_partition().
+// Input: index - partition number to remove
+{
+	char cmd[] = {0x00, SOFTIEC_CMD_DEL_PARTITION, 0x00};
+	cmd[2] = index;
+
+	uii_settarget(TARGET_SOFTIEC);
+	uii_sendcommand(cmd, 3);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_getpalette(void)
+// Read the current 16-color VIC palette into uii_data[0..47] (16x RGB
+// triplets). Firmware test-merge branch only (not yet in a tagged release).
+// Wire format: $04 $51 -- see control_target.cc's CTRL_CMD_GET_PALETTE.
+{
+	char cmd[] = {0x00, CTRL_CMD_GET_PALETTE};
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, 2);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_setpalette(const char *rgb48)
+// Replace the entire 16-color VIC palette. Firmware test-merge branch only.
+// Wire format: $04 $52 <48 bytes RGB> -- see control_target.cc's
+// CTRL_CMD_SET_PALETTE / palette_command.h's decode_palette_set().
+// Input: rgb48 - 16x RGB triplets, 48 bytes
+{
+	char cmd[UCI_PALETTE_BYTES + 2];
+	cmd[0] = 0x00;
+	cmd[1] = CTRL_CMD_SET_PALETTE;
+	memcpy(cmd + 2, rgb48, UCI_PALETTE_BYTES);
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, UCI_PALETTE_BYTES + 2);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_setpalettecolor(char index, char r, char g, char b)
+// Set a single palette color. Firmware test-merge branch only.
+// Wire format: $04 $53 <index> <r> <g> <b> -- see control_target.cc's
+// CTRL_CMD_SET_PALETTE_COLOR / palette_command.h's decode_palette_color_set().
+// Input: index - palette index (0-15), r/g/b - new color
+{
+	char cmd[] = {0x00, CTRL_CMD_SET_PALETTE_COLOR, 0x00, 0x00, 0x00, 0x00};
+	cmd[2] = index;
+	cmd[3] = r;
+	cmd[4] = g;
+	cmd[5] = b;
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, 6);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+void uii_resetpalette(void)
+// Restore the default VIC palette. Firmware test-merge branch only.
+// Wire format: $04 $54 -- see control_target.cc's CTRL_CMD_RESET_PALETTE.
+{
+	char cmd[] = {0x00, CTRL_CMD_RESET_PALETTE};
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, 2);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
 }
 
 void uii_settarget(char id)

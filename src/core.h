@@ -16,6 +16,7 @@ char iec_present(char id);
 char CheckIfUltimateOnID(char id);
 char CheckActiveIECdevices();
 char cmd(const char device, const char *cmd);
+char iec_select_partition(char device, char partnum);
 const char *getDeviceType(const char device);
 void execute(char *prg, char device, char boot, char *command);
 signed textInput(char xpos, char ypos, char width, char *str, char size, char validation);

@@ -18,6 +18,8 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 - [Upgrading from v1](#upgrading-from-v1)
 
+- [Upgrading from v2](#upgrading-from-v2)
+
 - [First run](#first-run)
 
 - [Add start options via the Filebrowser](#add-start-options-via-the-filebrowser)
@@ -50,6 +52,12 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
+
+Version 3.0.0 - 20260906:
+
+- Compatibility with Ultimate firmware 3.15+: UCI now auto-enables itself from the cartridge (no need to turn it on in the Ultimate menu beforehand), and the classic-IEC "go up one directory" command adapts to the rewritten SoftIEC DOS parser automatically, with no change in behaviour on older firmware.
+- SoftIEC partition support (firmware 3.15+ adds CMD-HD-style partitions to SoftIEC, and this works the same way on any IEC device that supports partitions, e.g. CMD-HD or SD2IEC): press **F4** while browsing in IEC mode to show a list of the device's partitions; select one to browse into it. Pressing **DEL** at a partition's own root returns to this list rather than trying to leave the device entirely. An opt-in "SoftIEC root partition" toggle (config menu, **F8**) auto-creates a partition exposing the whole filesystem at root, without ever touching a partition you've configured yourself — turning it back off offers to remove that partition from the device too. Menu slots can now record and restore a specific partition at boot.
+- Slot/config file format changed to add partition support — see [Upgrading from v2](#upgrading-from-v2). Major version bumped to 3.0.0 to reflect this.
 
 Version 2.2.0 - 20260816:
 
@@ -189,6 +197,18 @@ If you have an existing v1 configuration (slot and config files), you must run t
 
 **If you do not run the upgrade tool**, UBoot64 v2 will detect the old format and exit with an error asking you to run the upgrade tool first.
 
+### Upgrading from v2
+([Back to contents](#contents))
+
+If you have an existing v2 configuration (slot and config files), you must run the upgrade tool before using v3 for the first time. The slot file format changed between v2 and v3 (added SoftIEC partition support for Ultimate firmware 3.15+).
+
+* Transfer `uboot_upd23.prg` to your USB storage.
+* Run `uboot_upd23.prg` from the Ultimate UI or a BASIC prompt before starting UBoot64 v3.
+* The tool reads your existing v2 configuration files and rewrites them in the v3 format.
+* After the upgrade tool completes successfully, start UBoot64 v3 normally.
+
+**If you do not run the upgrade tool**, UBoot64 v3 will detect the old format and exit with an error asking you to run the upgrade tool first.
+
 ### First run
 ([Back to contents](#contents))
 
@@ -271,6 +291,7 @@ The filebrowser is based on and inspired by the DraBrowse program from <https://
 | --- | -------- |
 | **F1** | Read / refresh directory |
 | **F3** | Toggle between UCI and IEC modes |
+| **F4** | Show the partition list (IEC mode only, on a device that supports partitions) |
 | **+** | Increase device number (IEC mode only) |
 | **-** | Decrease device number (IEC mode only) |
 | **RETURN** | Enter directory / run selected program (IEC mode) / select for slot |
@@ -316,6 +337,14 @@ Without trace active in IEC mode, only the filename is stored; the path will be 
 ![Status toggles panel with directory trace enabled](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
 
 Press **D** again to turn trace off and reset the recorded path depth.
+
+#### Partition browsing (IEC mode)
+
+Some IEC devices — the Ultimate's own SoftIEC on firmware 3.15+, and other partition-capable devices such as CMD-HD or SD2IEC — support multiple partitions on a single device number. Press **F4** to show a list of the device's partitions instead of the normal directory. Select one with **RETURN** to browse into it.
+
+While inside a partition, pressing **DEL** at that partition's own root shows the partition list again, rather than trying to leave the device entirely — press **DEL** again from a subfolder to go up one level first, as normal.
+
+If the current device doesn't support partitions, **F4** shows a "Could not read partition list" message instead.
 
 #### Toggles: ,1 Load and Demo mode
 
@@ -449,6 +478,8 @@ The screen shows current settings and allows editing:
 * **F6** — Edit the UI colour scheme. Use **CURSOR UP** / **DOWN** to select a colour element, **CURSOR LEFT** / **RIGHT** to change its colour value (0–15). **DEL** reverts to the saved colours. **F7** returns to the configuration menu. Changes are saved when you exit the configuration menu.
 
 ![UI colour scheme editor](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20colour.png?raw=true)
+
+* **F8** — Toggle the "SoftIEC root partition" option (firmware 3.15+). When turned **on**, UBoot64 auto-creates and selects a partition exposing the whole filesystem at root (`/`) whenever you enter IEC mode on the Ultimate's SoftIEC drive — useful if you haven't set up a partition yourself via the Ultimate's own menu. It never touches a partition you've already configured at that same slot. When turned **off**, you're asked whether to also remove that partition from the device now (**Y**/**N**) — declining just stops UBoot64 from managing it, leaving it in place. Default: off.
 
 * **F7** — Return to main menu. Changes are saved.
 

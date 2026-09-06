@@ -72,7 +72,13 @@
 #define EXEC_DEMO 0x10
 
 // Config version and defaults
-#define CFGVERSION 0x02
+// Bumped 2->3 for the SlotStruct.partition field (see below): v2 slot files
+// have "uboot64 x mol" watermark bytes in what is now the partition field
+// (old default-slot-creation code stamped that string across the whole
+// padding[] array), so cfgvs<3 must be sanitized by a migration tool
+// (uboot_upd23) rather than trusted as-is -- see project memory
+// project_uci315_compat.md.
+#define CFGVERSION 0x03
 
 #define OK 0
 #define ERROR -1
@@ -80,6 +86,12 @@
 
 // Define highest device ID allowed
 #define MAXDEVID 30
+
+// Firmware 3.15+ SoftIEC partition number reserved for the optional
+// auto-created "whole filesystem at root" partition (cfg.iec_root_partition).
+// Chosen far outside the 1-3 range the Ultimate's own partition-add GUI
+// suggests, so it never collides with a partition the user created themselves.
+#define RESERVED_ROOT_PARTITION 254
 
 // Define slot number and REU start location
 #define SLOTS 18
@@ -112,6 +124,7 @@ extern char mountflag;
 extern char reuflag;
 extern char addmountflag;
 extern char runmountflag;
+extern char currentpartition;
 extern int reudetected;
 struct SlotStruct
 {
@@ -133,7 +146,10 @@ struct SlotStruct
     char image_b_file[MAXFILENAME];
     char image_b_id;
     char isdefault; // 1 = this slot auto-boots after the configured timeout; strictly == 1, never != 0 (legacy slot files hold 'u' filler here)
-    char padding[12]; // Padding to make structure size a multiple of 16, also room for future use
+    char partition; // Firmware 3.15+ SoftIEC partition to select (via CP) before booting; 0 = none
+                     // (pre-3.15 behavior). Consumes one byte of the padding below; old slot files
+                     // read this back as 0 since that byte was always zero-filled padding before.
+    char padding[11]; // Padding to make structure size a multiple of 16, also room for future use
 };
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;
@@ -160,6 +176,10 @@ struct ConfigStruct
     char verbose;
     struct ColorPalette colors;
     char timeoutidx; // Index into timeoutlist[]/timeoutseconds[]; 0 = auto-boot timeout off
+    char iec_root_partition; // Firmware 3.15+: auto-create/select a SoftIEC partition at filesystem
+                              // root (see RESERVED_ROOT_PARTITION). 0 = off (default). Appended field:
+                              // safe for old config files, which read this back as 0 via readconfigfile()'s
+                              // memset+min-copy load.
 };
 extern struct ConfigStruct cfg;
 extern char imagename[MAXFILENAME];

@@ -126,6 +126,7 @@ char reuflag = 0;
 char addmountflag = 0;
 char runmountflag = 0;
 char mountflag = 0;
+char currentpartition = 0; // Firmware 3.15+ SoftIEC partition selected via 'P' in the browser; 0 = never switched
 int reudetected;
 
 struct SlotStruct Slot;
@@ -257,23 +258,17 @@ __noinline void mainloop(void)
 
 	cwin_put_string(&cw, "Detecting and reading...", cfg.colors.text);
 
-	// Wait for Ultimate firmware to boot before issuing any UCI command.
-	// At cold autostart the C64 starts faster than the Ultimate firmware boots,
-	// leaving the UCI status register ($DF1C) in an undefined state that causes
-	// uii_sendcommand() to spin forever. uii_detect() only reads one register
-	// and never calls uii_sendcommand(), so it is safe to poll here.
-	// Times out after 10 seconds.
-	cia1.tods = 0;
-	cia1.todt = 0;
-	while (!uii_detect() && cia1.tods < 10)
-	{
-		;
-	}
-
-	// Is Ultimate Command Interface detected? If no, abort
-	if (!uii_detect())
+	// Wait for Ultimate firmware to boot before issuing any UCI command,
+	// sending the firmware 3.15+ unlock sequence up front so UCI comes up
+	// even if it isn't enabled in the Ultimate's own menu. Times out after
+	// 10 seconds. See uii_wait_for_uci() for the cold-boot-race rationale.
+	if (!uii_wait_for_uci(10))
 	{
 		cwin_put_string(&cw, "No Ultimate Command Interface enabled.", cfg.colors.text);
+		cwin_cursor_newline(&cw);
+		cwin_put_string(&cw, "Enable it in the Ultimate menu, or", cfg.colors.text);
+		cwin_cursor_newline(&cw);
+		cwin_put_string(&cw, "update to firmware 3.15 or later.", cfg.colors.text);
 		cwin_cursor_newline(&cw);
 		cwin_put_string(&cw, "Press key to exit.", cfg.colors.text);
 		cwin_cursor_newline(&cw);

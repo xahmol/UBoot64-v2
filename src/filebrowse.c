@@ -111,6 +111,15 @@ static const char progressRev[4] = {0, 0, 1, 1};
 
 // Structs and variables
 
+// Firmware 3.15+ SoftIEC partition list entry (see iec_read_partitions())
+#define MAXPARTITIONS_LIST 16
+#define PARTITION_PATH_DISPLAY_LEN 40
+struct PartitionEntry
+{
+  char number;
+  char path[PARTITION_PATH_DISPLAY_LEN];
+};
+
 // Structure for directory meta data
 struct DirMeta
 {
@@ -153,6 +162,10 @@ unsigned long previous; // Previous element
 unsigned long next;     // Next element
 char sorted;            // Sorted flag
 
+// SoftIEC partition-list browsing state (firmware 3.15+, U64 devices only)
+char showing_partitions; // 1 while the virtual partition-list view is displayed
+char partition_depth;    // how many real subfolders deep into the current partition
+
 // Buffers for full paths
 char pathbuffer[256];
 
@@ -168,16 +181,17 @@ void dir_close(char lfn)
   krnio_close(lfn);
 }
 
-char dir_open(char lfn, unsigned char device)
-// Open a directory for reading
+char dir_open(char lfn, unsigned char device, const char *name)
+// Open a directory (or, with name "$=P", a partition listing) for reading
 // Input: lfn = logical file number
 //        device = device number
+//        name = directory name to open, usually "$"
 {
   char status = 0;
   char error = 0;
 
   // Set name for directory
-  krnio_setnam("$");
+  krnio_setnam(name);
 
   status = krnio_open(lfn, device, 0);
   error = krnio_status();
@@ -313,9 +327,12 @@ char dir_readentry_iec(struct DirElement *l_dirent)
     // do nothing
   }
 
-  // copy filename, until " or max size
+  // copy filename, until " or max size (MAXFILENAME-1, leaving room for the
+  // null terminator -- was hardcoded to the classic 16-char 1541 disk-name
+  // limit, which silently truncated longer real SD-card folder/file names
+  // and broke exact-name matching such as the hidden_names[] filter below)
   b = 0;
-  for (++i; i < MAXFILENAME && linebuffer[i] != '"' && b < 16; ++i)
+  for (++i; i < MAXFILENAME && linebuffer[i] != '"' && b < MAXFILENAME - 1; ++i)
   {
     l_dirent->name[b++] = linebuffer[i];
   }
@@ -403,6 +420,191 @@ char dir_readentry_iec(struct DirElement *l_dirent)
   l_dirent->meta.access = (linebuffer[i - 4] == 0x3C) ? CBM_A_RO : CBM_A_RW;
 
   return 0;
+}
+
+char iec_read_partitions(char device, struct PartitionEntry *out, char maxcount)
+// Read the list of SoftIEC partitions via the classic "$=P" directory
+// listing (firmware 3.15+; see cbmdos_parser.cc's parse_open() and
+// iec_channel.cc's read_dir_entry() in github.com/GideonZ/1541ultimate).
+// Uppercase P is required: parse_open() does an exact case-sensitive
+// buf[2]=='P' check, lowercase 'p' falls through to a normal, empty
+// directory listing instead of the partition stream. petscii.h's global
+// charmap (included project-wide) inverts letter case in string literals,
+// so this needs an identity-charmap override -- see oscar64manual.md's
+// "petscii.h charmap is global" section.
+// Each entry's quoted "filename" is the partition's root path. The 16-bit
+// "size" field is the partition number as-is (NOT times 254): firmware's
+// read_dir_entry() (e_partlist branch) sets info.size = part_idx*254, but
+// then the SAME block-count conversion applied to every dir entry --
+// size=(info.size+253)/254 -- runs on partition entries too and divides
+// that *254 straight back out before it ever reaches the wire.
+// Input: device - device number
+//        out - array to fill with found partitions
+//        maxcount - capacity of out
+// Output: number of partitions found, 0 on failure
+{
+  char count = 0;
+  char b, i;
+  char first = 1;
+  unsigned size;
+
+#pragma charmap(97, 97, 26)  // a-z -> a-z (identity)
+#pragma charmap(65, 65, 26)  // A-Z -> A-Z (identity)
+  static const char partition_open_name[] = "$=P";
+#pragma charmap(97, 65, 26)  // restore petscii.h
+#pragma charmap(65, 97, 26)
+
+  if (dir_open(2, device, partition_open_name))
+  {
+    return 0;
+  }
+
+  while (count < maxcount)
+  {
+    // Read first link byte -- zero means end of listing
+    b = krnio_chrin();
+    if (!b)
+    {
+      break;
+    }
+    krnio_chrin(); // skip second link byte
+
+    size = krnio_chrin();
+    size |= (krnio_chrin()) << 8;
+
+    // read line into linebuffer, same convention as dir_readentry_iec()
+    memset(linebuffer, 0, sizeof(linebuffer));
+    i = 0;
+    while (1)
+    {
+      b = krnio_chrin();
+      if (b == 0)
+      {
+        break;
+      }
+      if (i < sizeof(linebuffer))
+      {
+        linebuffer[i++] = b;
+      }
+    }
+
+    // Like any classic "$" listing, setup_partition_read() always emits a
+    // fake disk-header line first (not a real partition) -- skip it
+    // unconditionally, it's a fixed firmware structural detail, not
+    // something to detect heuristically.
+    if (first)
+    {
+      first = 0;
+      continue;
+    }
+
+    // The listing also always ends with a "BLOCKS FREE." line once
+    // read_dir_entry() runs out of partitions -- same sentinel
+    // dir_readentry_iec() already checks for real directory listings.
+    if (linebuffer[0] == 'b')
+    {
+      break;
+    }
+
+    // skip until first quote, then copy until closing quote or buffer limit
+    for (i = 0; i < sizeof(linebuffer) && linebuffer[i] != '"'; ++i)
+    {
+      ;
+    }
+    b = 0;
+    for (++i; i < sizeof(linebuffer) && linebuffer[i] != '"' && b < PARTITION_PATH_DISPLAY_LEN - 1; ++i)
+    {
+      out[count].path[b++] = linebuffer[i];
+    }
+    out[count].path[b] = 0;
+    out[count].number = size;
+    count++;
+  }
+
+  dir_close(2);
+  return count;
+}
+
+char dir_read_partition_list(char device)
+// Populate the REU-backed directory list with a synthetic "virtual
+// directory" of the SoftIEC partitions on this device, one per entry, so
+// the existing browse/select/draw machinery (dir_draw(), CH_ENTER, cursor
+// navigation) works on it unmodified. Each entry's name is the partition's
+// root path; its meta.size carries the partition number through selection
+// (char is unsigned by default in Oscar64, so 254 fits -- see
+// oscar64manual.md's type table).
+// Input: device - device number
+// Output: 1 if the list was populated (even if empty), 0 if the partition
+//         listing itself could not be read
+{
+  struct PartitionEntry parts[MAXPARTITIONS_LIST];
+  char found;
+  char idx;
+  char namelen;
+
+  presentdir.address = SLOT_REU_START + (SLOTS * sizeof(Slot));
+  present = presentdir.address;
+  presentdir.firstelement = 0;
+  presentdir.firstprint = 0;
+  presentdir.lastprint = 0;
+  presentdir.position = 0;
+  presentdir.present = 0;
+  strcpy(presentdir.path, "Partitions");
+
+  found = iec_read_partitions(device, parts, MAXPARTITIONS_LIST);
+  if (!found)
+  {
+    return 0;
+  }
+
+  previous = 0;
+  for (idx = 0; idx < found; idx++)
+  {
+    namelen = strlen(parts[idx].path);
+    if (namelen >= MAXFILENAME)
+    {
+      namelen = MAXFILENAME - 1;
+    }
+    memcpy(presentdirelement.name, parts[idx].path, namelen);
+    presentdirelement.name[namelen] = 0;
+    presentdirelement.meta.type = CBM_T_DIR;
+    presentdirelement.meta.size = parts[idx].number;
+    presentdirelement.meta.select = 0;
+    presentdirelement.meta.length = namelen + 1;
+
+    if (!previous)
+    {
+      presentdir.firstelement = present;
+      presentdir.firstprint = present;
+      presentdirelement.meta.prev = 0;
+      previous = present;
+      presentdirelement.meta.next = 0;
+    }
+    else
+    {
+      presentdirelement.meta.prev = previous;
+      reu_store(previous, (volatile char *)&present, sizeof(present));
+      previous = present;
+      presentdirelement.meta.next = 0;
+    }
+
+    reu_store(presentdir.address, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
+    presentdir.address += sizeof(presentdirelement.meta);
+    reu_store(presentdir.address, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
+    presentdir.address += presentdirelement.meta.length;
+    present = presentdir.address;
+  }
+
+  if (presentdir.firstelement)
+  {
+    present = presentdir.firstelement;
+    dir_get_element(present);
+  }
+  else
+  {
+    present = 0;
+  }
+  return 1;
 }
 
 char dir_readentry_uci(struct DirElement *l_dirent)
@@ -532,7 +734,7 @@ char dir_read(char sort)
   if (!fb_uci_mode)
   {
     strcpy(presentdir.path, "");
-    if (dir_open(2, device))
+    if (dir_open(2, device, "$"))
     {
       return 0;
     }
@@ -869,8 +1071,10 @@ void dir_print_entry(char printpos)
     // Get file type to string
     strcpy(linebuffer2, (char *)fileTypeToStr(presentdirelement.meta.type));
 
-    // if blocks are >= 10000 shorten the file type to 2 characters
-    if (presentdirelement.meta.size >= 10000 && strlen(presentdirelement.name) == 16)
+    // if blocks are >= 10000 shorten the file type to 2 characters (name no
+    // longer gets clamped to exactly 16 at read time, so use >= instead of
+    // == to still catch names that fill or exceed the display column)
+    if (presentdirelement.meta.size >= 10000 && strlen(presentdirelement.name) >= 16)
     {
       linebuffer2[0] = linebuffer2[1];
       linebuffer2[1] = linebuffer2[2];
@@ -961,6 +1165,7 @@ void browse_menu(void)
   cwin_putat_string(&cw, 26, ++menuy, " F3 UCI or IEC", cfg.colors.text);
   if (!fb_uci_mode)
   {
+    cwin_putat_string(&cw, 26, ++menuy, " F4 Partitions", cfg.colors.text);
     cwin_putat_string(&cw, 26, ++menuy, "+/- Device", cfg.colors.text);
   }
   cwin_putat_string(&cw, 26, ++menuy, "RET Run/Select", cfg.colors.text);
@@ -1032,6 +1237,13 @@ char dir_changedir(char *dirname)
 {
   char ret;
   char l = strlen(dirname);
+  // "Go up one directory" is expressed as one of three sentinels depending
+  // on the caller: ".." (U64's old own convention), "\xff" (generic
+  // CBM-DOS/CMD/SD2IEC convention), or a lone CH_LARROW byte (selecting a
+  // ".." entry from the directory listing). Firmware 3.15+'s rewritten
+  // SoftIEC command parser (cbmdos_parser.cc) wants a bare "cd_" for this,
+  // not a colon-prefixed name or "..": see retry below.
+  char is_updir = (strcmp(dirname, "..") == 0) || (l == 1 && (dirname[0] == CH_LARROW || (unsigned char)dirname[0] == 0xff));
 
   //sprintf(linebuffer, "Root. %u", l);
   //cwin_putat_string(&cw, 0, 24, linebuffer, cfg.colors.text);
@@ -1134,6 +1346,16 @@ char dir_changedir(char *dirname)
   else
   {
     ret = cmd(device, linebuffer);
+
+    // Firmware 3.15+ may no longer accept U64's old own "go up" convention.
+    // Retry once with the SD2IEC-style bare underscore if today's default
+    // failed; stateless (no persistent flag) so older firmware, where the
+    // first attempt already succeeds, pays no extra cost.
+    if (ret && is_updir && devicetype[device] == U64)
+    {
+      strcpy(linebuffer, "cd_");
+      ret = cmd(device, linebuffer);
+    }
   }
   if (ret == 0)
   {
@@ -1544,6 +1766,8 @@ void mainLoopBrowse(void)
         {
           getDeviceType(device);
         }
+        showing_partitions = 0;
+        partition_depth = 0;
         memset(&presentdir, 0, sizeof(presentdir));
         dir_draw(1);
       }
@@ -1567,6 +1791,8 @@ void mainLoopBrowse(void)
         {
           getDeviceType(device);
         }
+        showing_partitions = 0;
+        partition_depth = 0;
         memset(&presentdir, 0, sizeof(presentdir));
         dir_draw(1);
       }
@@ -1598,10 +1824,84 @@ void mainLoopBrowse(void)
           fb_uci_mode = 1;
           dir_draw(1);
         }
+        else if (cfg.iec_root_partition && devicetype[device] == U64 && !currentpartition)
+        {
+          // Check first whether the reserved partition number is already in
+          // use for something other than what we'd set it to -- if so, the
+          // user configured it themselves for their own purpose, so leave
+          // it alone entirely rather than silently overwriting it.
+          struct PartitionEntry parts[MAXPARTITIONS_LIST];
+          char found = iec_read_partitions(device, parts, MAXPARTITIONS_LIST);
+          char idx;
+          char conflict = 0;
+
+          for (idx = 0; idx < found; idx++)
+          {
+            if (parts[idx].number == RESERVED_ROOT_PARTITION && strcmp(parts[idx].path, "/") != 0)
+            {
+              conflict = 1;
+              break;
+            }
+          }
+
+          if (conflict)
+          {
+            cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
+            cwin_cursor_move(&cw, 0, 3);
+            cwin_console_printf(&cw, cfg.colors.error, "Partition %u already in use for\nsomething else -- root partition\nauto-config skipped.\n\r", RESERVED_ROOT_PARTITION);
+            cwin_console_printf(&cw, cfg.colors.text, "Press key.");
+            cwin_getch();
+            dir_draw(1);
+          }
+          else
+          {
+            // Auto-provision (or idempotently re-point) a reserved
+            // partition at the filesystem root, once per session. Never
+            // touches any other partition number, so anything the user
+            // configured themselves via the Ultimate's own menu is left
+            // untouched.
+            uii_add_partition(RESERVED_ROOT_PARTITION, "UBOOT", "/");
+            currentpartition = RESERVED_ROOT_PARTITION;
+            iec_select_partition(device, currentpartition);
+            memset(&presentdir, 0, sizeof(presentdir));
+            dir_read(sorted);
+            dir_draw(1);
+          }
+        }
       }
       else
       {
         dir_draw(1);
+      }
+      break;
+
+    case CH_F4:
+      // Show the classic DOS "$=P" partition list (SoftIEC on firmware
+      // 3.15+, but also SD2IEC/CMD-HD-style devices which use the same
+      // convention) -- only meaningful in IEC mode. Not gated to a specific
+      // devicetype: "U64" matched more than just the SoftIEC drive, and
+      // devices that don't support partitions simply return none (see the
+      // error branch below). Selecting an entry from it (CH_ENTER) switches
+      // partition; DEL at a partition's own root returns to this list (see
+      // CH_DEL below).
+      if (!fb_uci_mode)
+      {
+        if (dir_read_partition_list(device))
+        {
+          showing_partitions = 1;
+          partition_depth = 0;
+          dir_draw(0); // NOT dir_draw(1) -- that would re-run dir_read() and stomp our list
+          browse_menu();
+        }
+        else
+        {
+          cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
+          cwin_cursor_move(&cw, 0, 3);
+          cwin_console_printf(&cw, cfg.colors.error, "Could not read partition list.\n\r");
+          cwin_console_printf(&cw, cfg.colors.text, "Press key.");
+          cwin_getch();
+          dir_draw(1);
+        }
       }
       break;
 
@@ -1628,6 +1928,10 @@ void mainLoopBrowse(void)
       if (trace == 1)
       {
         depth = 0;
+      }
+      if (!fb_uci_mode)
+      {
+        partition_depth = 0;
       }
       dir_changedir((char *)"");
       break;
@@ -1695,6 +1999,23 @@ void mainLoopBrowse(void)
     // --- start / enter directory
     case CH_ENTER:
     case CH_CURS_RIGHT:
+      // Selecting an entry from the virtual SoftIEC partition list (F4)?
+      if (showing_partitions)
+      {
+        if (presentdir.firstelement)
+        {
+          char chosen = presentdirelement.meta.size;
+          iec_select_partition(device, chosen);
+          currentpartition = chosen;
+          showing_partitions = 0;
+          partition_depth = 0;
+          depth = 0; // discard any stale dirtrace breadcrumb from a different partition
+          dir_read(sorted);
+          dir_draw(0);
+          browse_menu();
+        }
+        break;
+      }
       // Executable PRG?
       if (!fb_uci_mode && presentdir.firstelement && presentdirelement.meta.type == CBM_T_PRG)
       {
@@ -1721,6 +2042,10 @@ void mainLoopBrowse(void)
           path[depth][MAXFILENAME - 1] = 0;
           depth++;
         }
+        if (!fb_uci_mode)
+        {
+          partition_depth++;
+        }
         dir_changedir(presentdirelement.name);
       }
       if (reuflag)
@@ -1733,7 +2058,11 @@ void mainLoopBrowse(void)
     // --- leave directory
     case CH_CURS_LEFT:
     case CH_DEL:
-      if (inside_mount && !depth)
+      if (showing_partitions)
+      {
+        // nothing above the partition list
+      }
+      else if (inside_mount && !depth)
       {
         inside_mount = 0;
         fb_uci_mode = 1;
@@ -1745,11 +2074,28 @@ void mainLoopBrowse(void)
         dir_draw(1);
         browse_menu();
       }
+      else if (!fb_uci_mode && !inside_mount && !partition_depth)
+      {
+        // At a partition's own root -- go back to the partition list instead
+        // of sending a DOS "go up" command. Not gated to a specific
+        // devicetype (see the CH_F4 comment above); a device without
+        // partitions just returns none here.
+        if (dir_read_partition_list(device))
+        {
+          showing_partitions = 1;
+          dir_draw(0);
+          browse_menu();
+        }
+      }
       else
       {
         if (trace == 1 && depth)
         {
           --depth;
+        }
+        if (!fb_uci_mode && partition_depth)
+        {
+          --partition_depth;
         }
         if (fb_uci_mode)
         {

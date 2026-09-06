@@ -100,6 +100,15 @@ Bits 4 and 5 together indicate state: both clear = idle, bit 5 set only = busy.
 
 The `DATA_QUEUE_SZ` constant is set conservatively to 512 to limit RAM usage. The actual UCI hardware queue is 896 bytes. Increase `DATA_QUEUE_SZ` in `ultimate_common_lib.h` if larger transfers are needed (e.g. for networking).
 
+### Firmware 3.15+ Unlock Sequence
+
+| Register | Address | Write value |
+|----------|---------|-------------|
+| `uci_unlock1` | `$D038` | `0xAB` |
+| `uci_unlock2` | `$D036` | `0xCD` |
+
+Writing `0xAB` to `$D038` then `0xCD` to `$D036`, in that order, enables the UCI I/O mapping from the cartridge itself on firmware 3.15+, without needing "Command Interface" turned on beforehand in the Ultimate's own menu. **Not present in the official Register API PDF as of this writing** — confirmed directly by Gideon Zweijtzer and verified empirically against real Ultimate 64-II hardware (a single write to `$D038` alone, matching the visible `U64Config::unlock_irq()` handler in the firmware source, does **not** work — both writes are required). Harmless on older firmware/bitstreams: nothing else in this project uses `$D030`–`$D03F`, and if the unlock isn't implemented, the writes are simply ignored and `uii_detect()` keeps failing exactly as before. See `uii_enable()` / `uii_wait_for_uci()` in §7.
+
 ---
 
 ## 3. Global Variables and Buffers
@@ -187,6 +196,7 @@ Returns true (non-zero) when the last command completed with status `"00,..."`. 
 | `TARGET_DOS2` | `0x02` | Drive B file system operations |
 | `TARGET_NETWORK` | `0x03` | TCP/UDP networking |
 | `TARGET_CONTROL` | `0x04` | Drive power, disk mounting, system control |
+| `TARGET_SOFTIEC` | `0x05` | SoftIEC partition management (firmware 3.15+) |
 
 ### DOS Command IDs
 
@@ -236,31 +246,39 @@ Returns true (non-zero) when the last command completed with status `"00,..."`. 
 | `CTRL_CMD_DRIVE_A_POWER` | `0x34` | Read drive A power state |
 | `CTRL_CMD_DRIVE_B_POWER` | `0x35` | Read drive B power state |
 | `CTRL_CMD_GET_RAMDISK_INFO` | `0x40` | Get GEOS RAM disk information |
+| `CTRL_CMD_GET_PALETTE` | `0x51` | Read the current 16-color VIC palette (test-merge branch only, not yet in a tagged release) |
+| `CTRL_CMD_SET_PALETTE` | `0x52` | Replace the entire 16-color VIC palette (test-merge branch only) |
+| `CTRL_CMD_SET_PALETTE_COLOR` | `0x53` | Set a single palette color (test-merge branch only) |
+| `CTRL_CMD_RESET_PALETTE` | `0x54` | Restore the default VIC palette (test-merge branch only) |
+
+`CTRL_CMD_READ_RTC` (`0x02`) is defined here for completeness but not currently dispatched anywhere in firmware's `control_target.cc` command switch — treat it as reserved/unimplemented rather than a working command. This project's own time sync uses NTP over the network (`uii_udpconnect()`), not the Ultimate's onboard RTC.
+
+### SoftIEC Command IDs (firmware 3.15+)
+
+| Constant | Value | Description |
+|----------|-------|--------------|
+| `SOFTIEC_CMD_ADD_PARTITION` | `0x20` | Add (or overwrite, if the index is already in use) a SoftIEC partition |
+| `SOFTIEC_CMD_DEL_PARTITION` | `0x21` | Remove a SoftIEC partition by index |
+
+Firmware 3.15 added CMD-HD-style partitions to SoftIEC. The firmware also defines `SOFTIEC_CMD_GET_FATNAME` (`0x22`) and `SOFTIEC_CMD_GET_IECNAME` (`0x23`) — per-name, on-demand conversions between a real filename and its classic-DOS-truncated form, not bulk-listing commands — not wrapped in this library, since the project doesn't need them yet. Also not wrapped: `LOAD_SU`/`LOAD_EX`/`SAVE`/`OPEN`/`CLOSE`/`CHKIN`/`CHKOUT` (`0x10`-`0x16`), a full alternate UCI-native file-I/O path for the Ultimate's own SoftIEC drive that bypasses the classic IEC bus entirely — deliberately deferred, since this project's IEC-mode browsing must also work on real 1541/1571/1581/SD2IEC hardware, which that path can't reach. Selecting *which* partition is current is a classic DOS `CP<n>` command over the regular IEC command channel, not a UCI command — there is no UCI command to change the current partition, only to add/remove one (see `src/core.c`'s `iec_select_partition()`, outside this library's scope since it doesn't use the UCI protocol).
 
 ### Network Command IDs
 
 | Constant | Value | Description |
 |----------|-------|-------------|
+| `NET_CMD_GET_INTERFACE_COUNT` | `0x02` | Get number of network interfaces |
+| `NET_CMD_GET_NETADDR` | `0x04` | Get an interface's MAC address |
 | `NET_CMD_GET_IP_ADDRESS` | `0x05` | Get device IP address |
+| `NET_CMD_SET_IPADDR` | `0x06` | Set an interface's IP configuration |
 | `NET_CMD_TCP_SOCKET_CONNECT` | `0x07` | Open TCP connection |
 | `NET_CMD_UDP_SOCKET_CONNECT` | `0x08` | Open UDP connection |
 | `NET_CMD_SOCKET_CLOSE` | `0x09` | Close socket |
 | `NET_CMD_SOCKET_READ` | `0x10` | Read from socket |
 | `NET_CMD_SOCKET_WRITE` | `0x11` | Write to socket |
-| `NET_CMD_TCP_LISTENER_START` | `0x12` | Start TCP listener |
-| `NET_CMD_TCP_LISTENER_STOP` | `0x13` | Stop TCP listener |
-| `NET_CMD_GET_LISTENER_STATE` | `0x14` | Get listener state |
-| `NET_CMD_GET_LISTENER_SOCKET` | `0x15` | Get accepted connection socket ID |
 
-### Listener State Constants
+`NET_CMD_SET_INTERFACE` (`0x03`) is intentionally not defined: its handler in firmware's `network_target.cc` is compiled out, so it currently does nothing on real hardware. Not wrapped until firmware re-enables it.
 
-| Constant | Value | Meaning |
-|----------|-------|---------|
-| `NET_LISTENER_STATE_NOT_LISTENING` | `0x00` | No listener active |
-| `NET_LISTENER_STATE_LISTENING` | `0x01` | Listening, no connection yet |
-| `NET_LISTENER_STATE_CONNECTED` | `0x02` | Client connected |
-| `NET_LISTENER_STATE_BIND_ERROR` | `0x03` | Bind failed |
-| `NET_LISTENER_STATE_PORT_IN_USE` | `0x04` | Port already in use |
+The `TCP_LISTENER_START`/`STOP`/`GET_LISTENER_STATE`/`GET_LISTENER_SOCKET` commands (`0x12`-`0x15`) and their wrapper functions/state constants were removed from this library (2026-09-06): current firmware's network target dispatch has no case above `WRITE_SOCKET` (`0x11`) at all, so these were unreachable dead code inherited from an older version of the upstream xlar54 library, unused anywhere in this project. This project's own NTP time sync (`uii_udpconnect()`) is a plain client-initiated UDP socket and never needed a listener.
 
 ### File Open Attribute Flags
 
@@ -400,6 +418,47 @@ char uii_detect(void);
 if (!uii_detect())
 {
     // No Ultimate cartridge present — exit
+    fc3_exit();
+}
+```
+
+---
+
+### `uii_enable`
+
+```c
+void uii_enable(void);
+```
+
+**Purpose:** Send the firmware 3.15+ UCI unlock sequence (see §2), enabling UCI from the cartridge without needing it turned on beforehand in the Ultimate's own menu.
+
+**Notes:** Fire-and-forget — does not poll or wait. Harmless on older firmware (see §2). Normally called via `uii_wait_for_uci()` rather than directly.
+
+---
+
+### `uii_wait_for_uci`
+
+```c
+char uii_wait_for_uci(char timeout_seconds);
+```
+
+**Purpose:** Send the firmware 3.15+ unlock sequence, then poll `uii_detect()` for up to `timeout_seconds` seconds (CIA1 TOD-based), so UCI comes up even on firmware where it wasn't enabled in the menu.
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `timeout_seconds` | Maximum seconds to poll before giving up |
+
+**Returns:** `1` if UCI was detected within the timeout, `0` otherwise.
+
+**Notes:** At cold autostart the C64 starts faster than the Ultimate firmware boots, leaving the UCI status register in an undefined state that would make `uii_sendcommand()` spin forever — this is why the wait loop is needed before issuing any other UCI command. Use this in place of a bare `uii_detect()` call at startup.
+
+**Example:**
+```c
+if (!uii_wait_for_uci(10))
+{
+    // Still not detected after 10 seconds
     fc3_exit();
 }
 ```
@@ -568,6 +627,109 @@ void uii_freeze(void);
 ```
 
 **Purpose:** Trigger a freeze (cartridge button press equivalent) via the control interface.
+
+---
+
+### `uii_add_partition`
+
+```c
+void uii_add_partition(char index, const char *name, const char *path);
+```
+
+**Purpose:** Add a SoftIEC partition (firmware 3.15+), or overwrite an existing one's name/path if `index` is already in use.
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `index` | Partition number, 1–255 |
+| `name` | Partition display name |
+| `path` | Root path the partition points to, e.g. `"/"` |
+
+**Wire format:** `$05 $20 <index> "NAME:/path"` — colon-separated name/path in a single command packet, per `software/io/command_interface/softiec_target.cc`'s `cmd_add_partition()` in `github.com/GideonZ/1541ultimate`.
+
+**Notes:** Does not select the new partition as current — that requires the classic DOS `CP<n>` command over the IEC channel, outside this library's scope (see `src/core.c`'s `iec_select_partition()`). Overwriting an existing partition number silently replaces its name/path, so choose an index the user is unlikely to have configured themselves via the Ultimate's own partition-management GUI if the intent is to avoid clobbering their setup.
+
+---
+
+### `uii_del_partition`
+
+```c
+void uii_del_partition(char index);
+```
+
+**Purpose:** Remove a SoftIEC partition (firmware 3.15+).
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `index` | Partition number to remove |
+
+**Wire format:** `$05 $21 <index>` — see `softiec_target.cc`'s `cmd_del_partition()`.
+
+**Notes:** No confirmation or "does this partition still look like ours" check happens in this library — callers are responsible for confirming with the user before calling this on a partition they didn't just create, since it deletes the partition mapping unconditionally.
+
+---
+
+### `uii_getpalette`
+
+```c
+void uii_getpalette(void);
+```
+
+**Purpose:** Read the current 16-color VIC palette into `uii_data[0..47]` (16 RGB triplets, index order matches the VIC color numbers). Firmware test-merge branch only — not yet in a tagged release.
+
+**Wire format:** `$04 $51` — see `control_target.cc`'s `CTRL_CMD_GET_PALETTE`.
+
+---
+
+### `uii_setpalette`
+
+```c
+void uii_setpalette(const char *rgb48);
+```
+
+**Purpose:** Replace the entire 16-color VIC palette. Firmware test-merge branch only.
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `rgb48` | 48 bytes: 16 RGB triplets, same layout `uii_getpalette()` returns |
+
+**Wire format:** `$04 $52 <48 bytes RGB>` — see `control_target.cc`'s `CTRL_CMD_SET_PALETTE` / `palette_command.h`'s `decode_palette_set()`.
+
+---
+
+### `uii_setpalettecolor`
+
+```c
+void uii_setpalettecolor(char index, char r, char g, char b);
+```
+
+**Purpose:** Set a single palette color. Firmware test-merge branch only.
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `index` | Palette index, 0–15 |
+| `r`, `g`, `b` | New color components |
+
+**Wire format:** `$04 $53 <index> <r> <g> <b>` — see `control_target.cc`'s `CTRL_CMD_SET_PALETTE_COLOR` / `palette_command.h`'s `decode_palette_color_set()`.
+
+---
+
+### `uii_resetpalette`
+
+```c
+void uii_resetpalette(void);
+```
+
+**Purpose:** Restore the default VIC palette. Firmware test-merge branch only.
+
+**Wire format:** `$04 $54` — see `control_target.cc`'s `CTRL_CMD_RESET_PALETTE`.
 
 ---
 
@@ -1323,6 +1485,43 @@ char uii_tcpconnect(char *host, unsigned short port);
 
 ---
 
+### `uii_getnetaddr`
+
+```c
+void uii_getnetaddr(char iface);
+```
+
+**Purpose:** Read a network interface's MAC address into `uii_data[0..5]`.
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `iface` | Interface index (`0` for the only interface on this hardware) |
+
+**Wire format:** `$03 $04 <iface>` — see `network_target.cc`'s `NET_CMD_GET_NETADDR`.
+
+---
+
+### `uii_setipaddr`
+
+```c
+void uii_setipaddr(char iface, const char *ipconfig12);
+```
+
+**Purpose:** Set a network interface's IP configuration.
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `iface` | Interface index |
+| `ipconfig12` | 12-byte config blob — same layout the firmware's `NetworkInterface::getIpAddr()` returns (this library doesn't decompose the sub-fields; see `network_target.cc`'s `NET_CMD_SET_IPADDR`/`NET_CMD_GET_IPADDR` in `github.com/GideonZ/1541ultimate` for the exact byte layout if needed) |
+
+**Wire format:** `$03 $06 <iface> <12 bytes>`.
+
+---
+
 ### `uii_udpconnect`
 
 ```c
@@ -1406,54 +1605,6 @@ void uii_socketwritechar(char socketid, char one_char);
 ```
 
 **Purpose:** Write a single byte to a socket.
-
----
-
-### `uii_tcplistenstart`
-
-```c
-unsigned uii_tcplistenstart(unsigned short port);
-```
-
-**Purpose:** Start a TCP listener on the specified port.
-
-**Returns:** Listener state (a `NET_LISTENER_STATE_*` constant).
-
----
-
-### `uii_tcplistenstop`
-
-```c
-unsigned uii_tcplistenstop(void);
-```
-
-**Purpose:** Stop the active TCP listener.
-
-**Returns:** Listener state.
-
----
-
-### `uii_tcpgetlistenstate`
-
-```c
-unsigned uii_tcpgetlistenstate(void);
-```
-
-**Purpose:** Poll the current state of the TCP listener.
-
-**Returns:** A `NET_LISTENER_STATE_*` constant.
-
----
-
-### `uii_tcpgetlistensocket`
-
-```c
-char uii_tcpgetlistensocket(void);
-```
-
-**Purpose:** Get the socket ID of a newly accepted TCP connection. Call after `uii_tcpgetlistenstate()` returns `NET_LISTENER_STATE_CONNECTED`.
-
-**Returns:** Socket ID of the accepted connection.
 
 ---
 

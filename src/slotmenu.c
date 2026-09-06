@@ -464,6 +464,7 @@ void pickmenuslot()
             else
             {
                 Slot.device = pathdevice;
+                Slot.partition = currentpartition; // 0 if never switched (pre-3.15 behavior, no CP sent at boot)
             }
             strncpy(Slot.file, pathfile, MAXFILENAME - 1);
             Slot.file[MAXFILENAME - 1] = 0;
@@ -702,6 +703,13 @@ void runbootfrommenu(char select)
         // file, so there is no path to change into on Slot.device either.
         if (strlen(Slot.file) != 0)
         {
+            // Firmware 3.15+: select the recorded SoftIEC partition before
+            // changing directory, if this slot was created on one (0 = pre-
+            // 3.15 behavior, no CP sent).
+            if (Slot.partition)
+            {
+                iec_select_partition(Slot.device, Slot.partition);
+            }
             cmd(Slot.device, Slot.path);
         }
         execute(Slot.file, Slot.device, Slot.runboot, Slot.cmd);

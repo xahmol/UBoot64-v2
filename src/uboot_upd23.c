@@ -4,7 +4,19 @@
 // https://github.com/xahmol/UBoot64-v2
 // https://www.idreamtin8bits.com/
 //
-// Configuration upgrade utility: migrates v1 slot/config files to v2 format.
+// Configuration upgrade utility: migrates v2 slot/config files to v3 format.
+//
+// v3 adds SlotStruct.partition (firmware 3.15+ SoftIEC partition selection)
+// by repurposing one byte of the old padding[12] array. v2's default-slot-
+// creation code stamped "uboot64 x mol" across that whole array, so that
+// byte holds a watermark character, not a reliable zero, in every existing
+// v2 slot file -- this tool explicitly zeroes it and bumps cfgvs/version,
+// rather than trusting the old bytes as-is. Unlike uboot_upd12 (v1->v2),
+// no field remapping is needed: v2's SlotStruct/ConfigStruct are already
+// today's shape byte-for-byte, aside from that one reinterpreted byte and
+// one appended ConfigStruct field (which is separately safe to read from a
+// shorter old file -- see readconfigfile()'s zero-fill/min-copy pattern in
+// fileio.c -- but the shared CFGVERSION gate still needs bumping here).
 //
 // The code can be used freely as long as you retain
 // a notice describing original source and author.
@@ -32,41 +44,14 @@
 #include "ultimate_dos_lib.h"
 #include "ultimate_time_lib.h"
 
-// Defines
-#define OLDSLOT_BUFFER_START (SLOT_REU_START + (sizeof(Slot) * SLOTS))
-
 // Global variables
 struct SlotStruct Slot;
-struct SlotStruct BufferSlot;
 struct ConfigStruct cfg;
-
-struct OldSlotStruct
-{
-    char path[100];
-    char menu[21];
-    char file[20];
-    char cmd[80];
-    char reu_image[20];
-    char reusize;
-    char runboot;
-    char device;
-    char command;
-    char cfgvs;
-    char image_a_path[100];
-    char image_a_file[20];
-    char image_a_id;
-    char image_b_path[100];
-    char image_b_file[20];
-    char image_b_id;
-};
-struct OldSlotStruct OldSlot;
 char configpath[8] = "";
 char storagepaths[4][8] = {"/sd/", "/usb0/", "/usb1/", "/usb2/"};
 char configfilename[11] = "dmbcfg.cfg";
 char slotfilename[11] = "dmbslt.cfg";
-char configversion = CFGVERSION;
 int reudetected;
-char utilbuffer[86];
 char linebuffer[100];
 
 // Screen output generic routines
@@ -234,49 +219,38 @@ void writeconfigfile()
 }
 
 void read_old_configfile()
-// Function to read old config file and update to new format
+// Read a v2 config file directly into the current ConfigStruct shape (v2
+// and v3 share the same layout aside from one appended trailing field) and
+// bump it to v3. Mirrors fileio.c's readconfigfile() zero-fill/min-copy
+// pattern, since the v2 file is one byte shorter than sizeof(cfg).
 {
-    char x;
+    unsigned bytesread;
 
     uii_open_file(0x01, configfilename);
 
-    // Write a config file with default values if no file is found
     if (strcmp((const char *)uii_status, "00,ok") != 0)
     {
         error("\nNo config file found.");
-        exit(1);
     }
 
-    uii_read_file(sizeof(utilbuffer));
+    memset(&cfg, 0, sizeof(cfg));
+    uii_read_file(sizeof(cfg));
     CheckStatus("reading config");
-    uii_readdata();
+    bytesread = uii_readdata();
     uii_accept();
-
-    // Read variables from read data
-    cfg.timeon = uii_data[1];
-
-    cfg.secondsfromutc = uii_data[5] | (((unsigned long)uii_data[4]) << 8) | (((unsigned long)uii_data[3]) << 16) | (((unsigned long)uii_data[2]) << 24);
-
-    for (x = 0; x < 80; x++)
-    {
-        cfg.host[x] = uii_data[6 + x];
-    }
-
-    // If no hostname is read due to old config file format, set default
-    if (strlen(cfg.host) == 0)
-    {
-        strcpy(cfg.host, "pool.ntp.org");
-    }
+    memcpy(&cfg, uii_data, min((unsigned)sizeof(cfg), bytesread));
 
     uii_close_file();
+
+    cfg.version = CFGVERSION;
 }
 
 void read_old_slotsfile()
-// Function to read old slots file to buffer REU memory
+// Read a v2-format slots file directly into the normal slot REU area -- no
+// remapping needed, since v2's SlotStruct is already today's shape.
 {
-    char x;
-    long count = OLDSLOT_BUFFER_START;
-    long end = count + (sizeof(OldSlot) * SLOTS);
+    long count = SLOT_REU_START;
+    long end = SLOT_REU_START + (sizeof(Slot) * SLOTS);
     unsigned bytesread;
     char ypos;
 
@@ -285,11 +259,9 @@ void read_old_slotsfile()
 
     uii_open_file(0x01, slotfilename);
 
-    // Check if a file already exists, otherwise create new one
     if (strcmp((const char *)uii_status, "00,ok") != 0)
     {
         error("\nNo slots file found.");
-        exit(1);
     }
 
     ypos = cw.cy + 1;
@@ -297,7 +269,7 @@ void read_old_slotsfile()
 
     while (count < end)
     {
-        uii_read_file(sizeof(OldSlot) * SLOTS);
+        uii_read_file(sizeof(Slot) * SLOTS);
 
         while (uii_isdataavailable() || uii_ismoredataavailable())
         {
@@ -316,51 +288,30 @@ void read_old_slotsfile()
     cwin_cursor_newline(&cw);
 }
 
-void convert_slot_data()
-// Function to convert old slot data in buffer REU memory to new format in normal REU
+void sanitize_slot_data()
+// Sanitize each slot already sitting in the normal REU area: v2's default-
+// slot-creation code stamped "uboot64 x mol" across the whole padding[12]
+// array, so the byte that is now Slot.partition holds a watermark
+// character ('u'), not a reliable zero, in every existing v2 slot --
+// explicitly zero it and bump cfgvs, regardless of whatever value happens
+// to already be there.
 {
     char x;
-    long destaddr = SLOT_REU_START;
-    long srcaddr = OLDSLOT_BUFFER_START;
-    char ypos;
-
-    ypos = cw.cy + 1;
+    long address;
+    char ypos = cw.cy + 1;
 
     for (x = 0; x < SLOTS; x++)
     {
-        // Print status
+        address = (long)x * sizeof(Slot) + SLOT_REU_START;
+        reu_load(address, (char *)&Slot, sizeof(Slot));
+
         cwin_cursor_move(&cw, 0, ypos);
-        cwin_console_printf(&cw, VCOL_YELLOW, "Converting slot %u", x);
+        cwin_console_printf(&cw, VCOL_YELLOW, "Sanitizing slot %u", x);
 
-        // Read old slot data from buffer REU memory
-        reu_load(srcaddr, (char *)&OldSlot, sizeof(OldSlot));
-        srcaddr += sizeof(OldSlot);
+        Slot.partition = 0;
+        Slot.cfgvs = CFGVERSION;
 
-        // Convert old slot data to new slot data
-        memset(&Slot, 0, sizeof(Slot));
-        Slot.cfgvs = configversion;
-        strncpy(Slot.path, OldSlot.path, MAXPATHLEN - 1);
-        strncpy(Slot.menu, OldSlot.menu, MAXMENUNAME - 1);
-        strncpy(Slot.file, OldSlot.file, MAXFILENAME - 1);
-        strncpy(Slot.cmd, OldSlot.cmd, MAXCOMMAND - 1);
-        strncpy(Slot.reu_image, OldSlot.reu_image, MAXFILENAME - 1);
-        Slot.reusize = OldSlot.reusize;
-        Slot.runboot = OldSlot.runboot;
-        Slot.device = OldSlot.device;
-        Slot.command = OldSlot.command;
-        strncpy(Slot.image_a_path, OldSlot.image_a_path, MAXPATHLEN - 1);
-        strncpy(Slot.image_a_file, OldSlot.image_a_file, MAXFILENAME - 1);
-        Slot.image_a_id = OldSlot.image_a_id;
-        strncpy(Slot.image_b_path, OldSlot.image_b_path, MAXPATHLEN - 1);
-        strncpy(Slot.image_b_file, OldSlot.image_b_file, MAXFILENAME - 1);
-        Slot.image_b_id = OldSlot.image_b_id;
-        Slot.isdefault = 0;
-        Slot.partition = 0; // Explicit: firmware 3.15+ SoftIEC partition, none by default
-        strncpy(Slot.padding, "uboot64 x mol", 11); // Padding to make structure size a multiple of 16
-
-        // Write new slot data to normal REU memory
-        reu_store(destaddr, (char *)&Slot, sizeof(Slot));
-        destaddr += sizeof(Slot);
+        reu_store(address, (char *)&Slot, sizeof(Slot));
     }
 }
 
@@ -417,24 +368,24 @@ int uboot64_reu_count_pages(void)
 
 int main(void)
 {
-    // Set config defauklt values
-	cfg.version = CFGVERSION;
-	cfg.timeon = 1;
-	cfg.secondsfromutc = 7200;
-	cfg.verbose = 1;
-	cfg.timeoutidx = 0;
-	cfg.colors.background = VCOL_BLACK;
-	cfg.colors.border = VCOL_BLACK;
-	cfg.colors.header1 = VCOL_GREEN;
-	cfg.colors.header2 = VCOL_LT_GREEN;
-	cfg.colors.text = VCOL_YELLOW;
-	cfg.colors.text_input = VCOL_WHITE;
-	cfg.colors.key = VCOL_CYAN;
-	cfg.colors.diritem_normal = VCOL_WHITE;
-	cfg.colors.diritem_select = VCOL_CYAN;
-	cfg.colors.error = VCOL_RED;
-	cfg.colors.ok = VCOL_GREEN;
-	strcpy(cfg.host, "pool.ntp.org");
+    // Set config default values, in case a fresh one needs writing
+    cfg.version = CFGVERSION;
+    cfg.timeon = 1;
+    cfg.secondsfromutc = 7200;
+    cfg.verbose = 1;
+    cfg.timeoutidx = 0;
+    cfg.colors.background = VCOL_BLACK;
+    cfg.colors.border = VCOL_BLACK;
+    cfg.colors.header1 = VCOL_GREEN;
+    cfg.colors.header2 = VCOL_LT_GREEN;
+    cfg.colors.text = VCOL_YELLOW;
+    cfg.colors.text_input = VCOL_WHITE;
+    cfg.colors.key = VCOL_CYAN;
+    cfg.colors.diritem_normal = VCOL_WHITE;
+    cfg.colors.diritem_select = VCOL_CYAN;
+    cfg.colors.error = VCOL_RED;
+    cfg.colors.ok = VCOL_GREEN;
+    strcpy(cfg.host, "pool.ntp.org");
 
     // Init VIC
     vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);
@@ -444,7 +395,7 @@ int main(void)
     // Prepare output window
     cwin_init(&cw, (char *)0x0400, 0, 0, 40, 25);
     cwin_clear(&cw);
-    headertext("Update config 1-2", 0);
+    headertext("Update config 2-3", 0);
     cwin_cursor_move(&cw, 0, 3);
 
     // Is Ultimate Command Interface detected? If no, abort. Sends the
@@ -497,7 +448,7 @@ int main(void)
         cwin_console_printf(&cw, VCOL_YELLOW, "\nStorage found: %s\n", configpath);
     }
 
-    // Read old config file.
+    // Read old config file and bump to v3.
     cwin_console_printf(&cw, VCOL_YELLOW, "\nReading old config file...");
     read_old_configfile();
 
@@ -505,14 +456,14 @@ int main(void)
     cwin_console_printf(&cw, VCOL_YELLOW, "\nWriting new config file...");
     writeconfigfile();
 
-    // Read old slots file to buffer REU memory
+    // Read old slots file directly into the normal slot REU area
     cwin_console_printf(&cw, VCOL_YELLOW, "\nReading old slots file...");
     read_old_slotsfile();
 
-    // Convert old slot data in buffer REU memory to new format in normal REU
+    // Sanitize the partition field and bump cfgvs for every slot
     cwin_cursor_move(&cw, 0, cw.cy + 1);
-    cwin_console_printf(&cw, VCOL_YELLOW, "\nConverting slot data...");
-    convert_slot_data();
+    cwin_console_printf(&cw, VCOL_YELLOW, "\nSanitizing slot data...");
+    sanitize_slot_data();
 
     // Write new slots file
     cwin_cursor_move(&cw, 0, cw.cy + 1);
@@ -527,6 +478,6 @@ int main(void)
 
     // Clear screen and exit to BASIC
     cwin_clear(&cw);
-    
+
     return 0;
 }

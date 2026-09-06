@@ -26,15 +26,24 @@ CC = /home/xahmol/oscar64/bin/oscar64
 # Application names
 MAIN = uboot64
 UPD12 = uboot_upd12
+UPD23 = uboot_upd23
 
 # Build versioning
-VERSION_MAJOR = 2
-VERSION_MINOR = 2
+# Major bumped for the v3 slot/config save format (SlotStruct.partition,
+# ConfigStruct.iec_root_partition; see CFGVERSION in defines.h and the
+# uboot_upd23 migration tool).
+VERSION_MAJOR = 3
+VERSION_MINOR = 0
 VERSION_PATCH = 0
 VERSION_TIMESTAMP = $(shell date "+%Y%m%d-%H%M")
 VERSION = v$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)-$(VERSION_TIMESTAMP)
 
 # Common compile flags
+# -dUBOOT64_BANKED marks the banked uboot64.crt build, distinct from the
+# plain-.prg uboot_upd12 build below: files shared between both (e.g.
+# include/ultimate_time_lib.c) must guard any bank1/bank2 #pragma code/data
+# relocation with #ifdef UBOOT64_BANKED, since uboot_upd12.prg has no bank
+# regions defined at all and errors ("Section not defined") otherwise.
 CFLAGS  = -i=include \
           -tm=$(SYS) \
           -tf=crt16 \
@@ -44,6 +53,7 @@ CFLAGS  = -i=include \
           -O2 \
           -dNOFLOAT \
           -dHEAPCHECK \
+          -dUBOOT64_BANKED \
           -dVERSION="\"$(VERSION)\""
 
 CFLAGSUPD = -i=include \
@@ -78,6 +88,12 @@ UPD12_SRCS = src/uboot_upd12.c \
              include/ultimate_dos_lib.c include/ultimate_dos_lib.h \
              include/ultimate_time_lib.c include/ultimate_time_lib.h
 
+UPD23_SRCS = src/uboot_upd23.c \
+             include/defines.h \
+             include/ultimate_common_lib.c include/ultimate_common_lib.h \
+             include/ultimate_dos_lib.c include/ultimate_dos_lib.h \
+             include/ultimate_time_lib.c include/ultimate_time_lib.h
+
 # Ultimate II+ deployment target. Store only the IP in .env (gitignored,
 # never committed); everything else is derived here.
 -include .env
@@ -94,7 +110,7 @@ README = README.pdf
 
 .SUFFIXES:
 .PHONY: all clean deploy check-deploy docs
-all: $(MAIN).crt $(UPD12).prg $(README) $(ZIP)
+all: $(MAIN).crt $(UPD12).prg $(UPD23).prg $(README) $(ZIP)
 
 $(MAIN).crt: $(MAIN_SRCS)
 	@$(MKDIR) build 2>$(NULLDEV) ; true
@@ -103,6 +119,10 @@ $(MAIN).crt: $(MAIN_SRCS)
 $(UPD12).prg: $(UPD12_SRCS)
 	@$(MKDIR) build 2>$(NULLDEV) ; true
 	$(CC) $(CFLAGSUPD) -n -o=build/$(UPD12).prg src/uboot_upd12.c
+
+$(UPD23).prg: $(UPD23_SRCS)
+	@$(MKDIR) build 2>$(NULLDEV) ; true
+	$(CC) $(CFLAGSUPD) -n -o=build/$(UPD23).prg src/uboot_upd23.c
 
 # Regenerate README.pdf from README.md; skip with a warning if pandoc is absent
 docs: $(README)
@@ -115,9 +135,9 @@ $(README): README.md
 	fi
 
 # Creating ZIP file for distribution
-$(ZIP): $(MAIN).crt $(UPD12).prg $(README)
+$(ZIP): $(MAIN).crt $(UPD12).prg $(UPD23).prg $(README)
 	@$(MKDIR) build 2>$(NULLDEV) ; true
-	zip -j $(ZIP) build/$(MAIN).crt build/$(UPD12).prg $(README)
+	zip -j $(ZIP) build/$(MAIN).crt build/$(UPD12).prg build/$(UPD23).prg $(README)
 
 # Cleaning repo of build files
 clean:
@@ -130,5 +150,5 @@ check-deploy:
 
 # To deploy software to UII+ enter make deploy. Obviously the C64 needs to be
 # powered on with UII+ and USB drive connected.
-deploy: check-deploy $(MAIN).crt $(UPD12).prg
-	wput -u build/$(MAIN).crt build/$(UPD12).prg $(ULTFTP1)
+deploy: check-deploy $(MAIN).crt $(UPD12).prg $(UPD23).prg
+	wput -u build/$(MAIN).crt build/$(UPD12).prg build/$(UPD23).prg $(ULTFTP1)

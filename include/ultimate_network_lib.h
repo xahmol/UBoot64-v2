@@ -18,6 +18,8 @@ Patches and pull requests are welcome
 #define _ULTIMATE_NETWORK_LIB_H_
 
 // prototypes
+void uii_getnetaddr(char iface);                      // Fills uii_data[0..5] with the interface's MAC address
+void uii_setipaddr(char iface, const char *ipconfig12); // Set interface IP config (12-byte blob, see .c file)
 char uii_tcpconnect(char *host, unsigned short port); // Open TCP socket; returns socket id
 char uii_udpconnect(char *host, unsigned short port); // Open UDP socket; returns socket id
 void uii_socketclose(char socketid);                  // Close socket by id
@@ -25,10 +27,6 @@ unsigned uii_socketread(char socketid, unsigned short length); // Read up to len
 void uii_socketwrite(char socketid, char *data);      // Write null-terminated PETSCII string to socket
 void uii_socketwritechar(char socketid, char one_char); // Write single byte to socket
 void uii_socketwrite_ascii(char socketid, char *data);  // Write null-terminated ASCII string to socket
-unsigned uii_tcplistenstart(unsigned short port);     // Start TCP listener on port; returns socket id
-unsigned uii_tcplistenstop(void);                     // Stop TCP listener
-unsigned uii_tcpgetlistenstate(void);                 // Get listener state (NET_LISTENER_STATE_*)
-char uii_tcpgetlistensocket(void);                    // Get socket id of accepted connection
 char uii_tcp_nextchar(char socketid);                 // Read next byte from socket receive buffer
 unsigned uii_tcp_nextline(char socketid, char *);     // Read next line from socket into buffer (PETSCII)
 unsigned uii_tcp_nextline_ascii(char socketid, char *); // Read next line from socket into buffer (ASCII)

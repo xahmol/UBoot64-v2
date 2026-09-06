@@ -400,6 +400,24 @@ char cmd(const char device, const char *cmd)
   return dosCommand(15, device, 15, cmd);
 }
 
+char iec_select_partition(char device, char partnum)
+// Select the current SoftIEC partition via the classic DOS "CP" command
+// (firmware 3.15+; see cbmdos_parser.cc's cp_command() in
+// github.com/GideonZ/1541ultimate). Only meaningful for devicetype U64.
+// Input: device - device number to send command to
+//        partnum - partition number to select
+// Output: status code returned by device, or -1 on error
+{
+  sprintf(linebuffer, "cp%u", partnum);
+  return cmd(device, linebuffer);
+}
+
+// getDeviceType() is only ever called from filebrowse.c (bank 2), so it is
+// compiled into bank 2's own code/data section instead of the shared bank-0
+// pool -- see project memory project_uci315_compat.md's Step 0.
+#pragma code(bcode2)
+#pragma data(bdata2)
+
 const char *getDeviceType(const char device)
 // Function to get device type string for given device number
 // Input: device - device number to check
@@ -430,6 +448,9 @@ const char *getDeviceType(const char device)
   }
   return "!n";
 }
+
+#pragma code(code)
+#pragma data(data)
 
 // Core operations functions
 
@@ -530,6 +551,12 @@ void execute(char *prg, char device, char boot, char *command)
   // exit, which will execute the BASIC LOAD above
   fc3_exit();
 }
+
+// textInput() is only ever called from time.c and slotmenu.c (both bank 1),
+// so it is compiled into bank 1's own code/data section instead of the
+// shared bank-0 pool -- see project memory project_uci315_compat.md's Step 0.
+#pragma code(bcode1)
+#pragma data(bdata1)
 
 signed textInput(char xpos, char ypos, char width, char *str, char size, char validation)
 /**
@@ -701,3 +728,6 @@ signed textInput(char xpos, char ypos, char width, char *str, char size, char va
   }
   return 0;
 }
+
+#pragma code(code)
+#pragma data(data)

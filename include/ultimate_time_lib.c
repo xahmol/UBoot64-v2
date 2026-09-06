@@ -36,6 +36,17 @@ void uii_get_time(void)
 	uii_accept();
 }
 
+// uii_set_time() is only ever called from time.c (bank 1) in the banked
+// uboot64.crt build, so it is compiled into bank 1's own code/data section
+// instead of the shared bank-0 pool there -- see project memory
+// project_uci315_compat.md's Step 0. This file is also compiled into the
+// separate, non-banked uboot_upd12.prg build, which has no bank regions
+// defined at all, hence the guard.
+#ifdef UBOOT64_BANKED
+#pragma code(bcode1)
+#pragma data(bdata1)
+#endif
+
 void uii_set_time(char *data)
 // Set the current time
 // Input: data - the new time to set.

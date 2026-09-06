@@ -36,6 +36,17 @@ void uii_get_path(void)
 	uii_accept();
 }
 
+// uii_open_dir() and uii_get_dir() are only ever called from filebrowse.c
+// (bank 2) in the banked uboot64.crt build, so they are compiled into bank
+// 2's own code/data section instead of the shared bank-0 pool there -- see
+// project memory project_uci315_compat.md's Step 0. This file is also
+// compiled into the separate, non-banked uboot_upd12.prg build, which has
+// no bank regions defined at all, hence the guard.
+#ifdef UBOOT64_BANKED
+#pragma code(bcode2)
+#pragma data(bdata2)
+#endif
+
 void uii_open_dir(void)
 // Open a directory
 // The “Open Directory” command will attempt to start reading the current directory. The command will
@@ -68,6 +79,11 @@ void uii_get_dir(void)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(cmd, 2);
 }
+
+#ifdef UBOOT64_BANKED
+#pragma code(code)
+#pragma data(data)
+#endif
 
 void uii_change_dir(char *directory)
 // Change the current directory
