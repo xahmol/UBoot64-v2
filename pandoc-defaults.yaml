@@ -1,0 +1,20 @@
+from: gfm
+standalone: true
+pdf-engine: xelatex
+number-sections: false
+toc: true
+toc-depth: 2
+highlight-style: tango
+include-in-header:
+  - pandoc-header.tex
+variables:
+  papersize: a4
+  fontsize: 11pt
+  linestretch: 1.15
+  geometry: "top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm"
+  colorlinks: true
+  linkcolor: blue
+  urlcolor: blue
+  mainfont: Liberation Serif
+  sansfont: Arimo
+  monofont: Liberation Mono

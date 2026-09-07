@@ -1,6 +1,6 @@
 # UBoot64 v2
 
-![Logo](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Logo.png?raw=true)
+![Logo](<Screenshots/UBoot64 - Logo.png>)
 
 Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
@@ -40,11 +40,11 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 [Credits](#credits)
 
-![Splash](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Splash.png?raw=true)
+![Splash](<Screenshots/UBoot64 - Splash.png>)
 
-![Startup](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Startup.png?raw=true)
+![Startup](<Screenshots/UBoot64 - Startup.png>)
 
-![Main menu](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Menu.png?raw=true)
+![Main menu](<Screenshots/UBoot64 - Menu.png>)
 
 ## Version history and download
 ([Back to contents](#contents))
@@ -53,10 +53,10 @@ Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
 
-Version 3.0.0 - 20260906:
+Version 3.0.0 - 20260907:
 
 - Compatibility with Ultimate firmware 3.15+: UCI now auto-enables itself from the cartridge (no need to turn it on in the Ultimate menu beforehand), and the classic-IEC "go up one directory" command adapts to the rewritten SoftIEC DOS parser automatically, with no change in behaviour on older firmware.
-- SoftIEC partition support (firmware 3.15+ adds CMD-HD-style partitions to SoftIEC, and this works the same way on any IEC device that supports partitions, e.g. CMD-HD or SD2IEC): press **F4** while browsing in IEC mode to show a list of the device's partitions; select one to browse into it. Pressing **DEL** at a partition's own root returns to this list rather than trying to leave the device entirely. An opt-in "SoftIEC root partition" toggle (config menu, **F8**) auto-creates a partition exposing the whole filesystem at root, without ever touching a partition you've configured yourself — turning it back off offers to remove that partition from the device too. Menu slots can now record and restore a specific partition at boot.
+- SoftIEC partition support (firmware 3.15+ adds CMD-HD-style partitions to SoftIEC, and this works the same way on any IEC device that supports partitions, e.g. CMD-HD or SD2IEC): press **F4** while browsing in IEC mode to show a list of the device's partitions; select one to browse into it. Pressing **DEL** at a partition's own root returns to this list rather than trying to leave the device entirely. An opt-in "SoftIEC root partition" toggle (config menu, **F8**) auto-creates a partition exposing the whole filesystem at root the next time you switch to IEC mode (**F3**), without ever touching a partition you've configured yourself — turning it back off offers to remove that partition from the device too. This partition lives only in the Ultimate's memory until you save it via the Ultimate's own UI (a reminder is shown the first time each session). Menu slots can now record and restore a specific partition at boot.
 - Slot/config file format changed to add partition support — see [Upgrading from v2](#upgrading-from-v2). Major version bumped to 3.0.0 to reflect this.
 
 Version 2.2.0 - 20260816:
@@ -159,25 +159,25 @@ ULTUSB = usb1
 
 * Transfer the `.crt` file to the `/Flash/Carts` directory on your Ultimate device. Either transfer via FTP, or place it on the USB storage, browse to it in the UI filebrowser, press **C= + C** to copy, navigate to `/Flash/Carts` and paste with **C= + V**.
 
-![Ultimate UI](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBooy64%20-%20Ultimate%20UI.png?raw=true)
+![Ultimate UI](<Screenshots/UBooy64 - Ultimate UI.png>)
 
-![Ultimate Flash dir](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Flashdir.png?raw=true)
+![Ultimate Flash dir](<Screenshots/UBoot64 - Flashdir.png>)
 
-![Ultimate Carts dir](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20carts%20dir.png?raw=true)
+![Ultimate Carts dir](<Screenshots/UBoot64 - carts dir.png>)
 
 * Select the `.crt` file as the cartridge to start automatically: in the Ultimate UI press **F2**, navigate to **Cartridge and ROM Settings**, press **RETURN** twice to edit the **Cartridge** option, and select **uboot64.crt** from the drop-down.
 
-![Ultimate UI cart settings](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20UI%20cart%20settings.png?raw=true)
+![Ultimate UI cart settings](<Screenshots/UBoot64 - UI cart settings.png>)
 
-![Ultimate UI select cart](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20UI%20set%20cart.png?raw=true)
+![Ultimate UI select cart](<Screenshots/UBoot64 - UI set cart.png>)
 
 * In the same **Cartridge and ROM Settings** menu, ensure that RAM Expansion Memory (REU) is enabled. Size does not matter as even the smallest possible size of 128KB will be sufficient.
 
-![Ultimate UI enable REU](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20UI%20set%20REU.png?raw=true)
+![Ultimate UI enable REU](<Screenshots/UBoot64 - UI set REU.png>)
 
 * In the same **Cartridge and ROM Settings** menu, ensure that the Ultimate Command Interface is enabled.
 
-![Ultimate UI enable UCI](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20UI%20enable%20UCI.png?raw=true)
+![Ultimate UI enable UCI](<Screenshots/UBoot64 - UI enable UCI.png>)
 
 * Press **STOP** to leave the configuration menu and **RETURN** to confirm saving to flash.
 
@@ -217,26 +217,26 @@ If you have an existing v2 configuration (slot and config files), you must run t
 * On startup a splash screen is shown briefly. Press any key to proceed to the main menu.
 * The empty start menu looks like this:
 
-![Empty boot menu on first run](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20menu%20first%20run.png?raw=true)
+![Empty boot menu on first run](<Screenshots/UBoot64 - menu first run.png>)
 
 ### Add start options via the Filebrowser
 
 * Start options can be added to menu slots **0–9** and **A–Z** (18 slots total) via the Filebrowser.
 * Press **F1** to open the filebrowser:
 
-![File browser in UCI mode](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=true)
+![File browser in UCI mode](<Screenshots/UBoot64 - filebrowser.png>)
 
 * The browser starts in **UCI mode** — browsing via the Ultimate Command Interface on the native filesystem of your Ultimate device.
 * Press **F3** to switch to **IEC mode** for drives connected to the IEC bus. Use **+** / **-** to select the device number.
 
-![File browser in IEC mode](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser%20IEC.png?raw=true)
+![File browser in IEC mode](<Screenshots/UBoot64 - filebrowser IEC.png>)
 
-![File browser status toggles panel in UCI mode](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20UCI.png?raw=true)
+![File browser status toggles panel in UCI mode](<Screenshots/UBoot64 - Toggles UCI.png>)
 
 * Press **F1** to refresh the directory if needed.
 * In IEC mode, press **D** to start a **directory trace** from the root, needed to record the full path for a menu slot. The TRACE toggle in the lower right switches to ON.
 
-![Status toggles panel with directory trace enabled](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
+![Status toggles panel with directory trace enabled](<Screenshots/UBoot64 - Toggles dirtrace.png>)
 
 * **,1 Load** (toggle with **1**): loads with `LOAD"NAME",8` (off) or `LOAD"NAME",8,1` (on).
 * **Demo mode** (toggle with **O**): powers down all drives except ID 8 on start.
@@ -244,22 +244,22 @@ If you have an existing v2 configuration (slot and config files), you must run t
 * Navigate with **cursor keys** (UP/DOWN in dir, ENTER/RIGHT to enter dir or image, DEL/LEFT to go up).
 * From UCI mode, entering a disk image (`.Dxx` extension) mounts it on drive A and switches to IEC mode — "Inside mount" appears in the menu.
 
-![File browser showing inside a mounted disk image](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20FB%20Inside%20Mount.png?raw=true)
+![File browser showing inside a mounted disk image](<Screenshots/UBoot64 - FB Inside Mount.png>)
 
-![Inside mount indicator in the file browser sidebar](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggle%20inside%20mount.png?raw=true)
+![Inside mount indicator in the file browser sidebar](<Screenshots/UBoot64 - Toggle inside mount.png>)
 
 * Press **ENTER** on a program file to select it for a menu slot. In UCI mode the associated drive A disk image is automatically included.
 * Press **A** or **B** on a disk image (`.Dxx`) to select it as the additional image to mount on drive A resp. B when starting from that slot.
 * Press **M** on a program file to select it to be run from the disk image already mounted on drive A.
 * To add a REU file: navigate to it and press **ENTER**, then select the target slot, choose REU size with **+** / **-**, and confirm with **ENTER**.
 
-![Status toggles panel with directory trace enabled](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
+![Status toggles panel with directory trace enabled](<Screenshots/UBoot64 - Toggles dirtrace.png>)
 
 **Note:** The REU file must be in the same filepath as the drive A disk image if one is present.
 
 * After selecting what to place in a slot, you are shown this screen to pick the slot position:
 
-![Pick slot screen to assign the selected item to a menu slot](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Add%20REU.png?raw=true)
+![Pick slot screen to assign the selected item to a menu slot](<Screenshots/UBoot64 - Add REU.png>)
 
 * If the slot is already filled, confirmation is requested. Choose **Y** to proceed or **N** to cancel.
 * Press **0–9** or **A–Z** to choose the slot, enter a name and press **ENTER**.
@@ -276,14 +276,14 @@ You can also create a slot that runs only a BASIC command, with no disk mount an
 
 These combine freely: adding a drive B image or a REU preload to a slot that already launches a program keeps the program intact (useful for programs that expect a second disk or preloaded data). Adding a drive A image to a slot that already launches a program **replaces** the disk the program expects to boot from, so you'll be asked to confirm first — if you just want an extra mount alongside an existing program, add it as drive B instead, or use a fresh slot for a drive-A-only mount.
 
-![Drive A mount conflict warning](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Drive%20A%20warning.png?raw=true)
+![Drive A mount conflict warning](<Screenshots/UBoot64 - Drive A warning.png>)
 
 ### F1: Filebrowse menu
 ([Back to contents](#contents))
 
 The filebrowser is based on and inspired by the DraBrowse program from <https://github.com/doj/dracopy>
 
-![File browser showing directory listing](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20filebrowser.png?raw=true)
+![File browser showing directory listing](<Screenshots/UBoot64 - filebrowser.png>)
 
 #### Key reference
 
@@ -334,7 +334,7 @@ Because IEC drives do not report their full path, pressing **D** activates **dir
 
 Without trace active in IEC mode, only the filename is stored; the path will be empty and the program can only be found if it is in the root directory of the drive.
 
-![Status toggles panel with directory trace enabled](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20%20dirtrace.png?raw=true)
+![Status toggles panel with directory trace enabled](<Screenshots/UBoot64 - Toggles dirtrace.png>)
 
 Press **D** again to turn trace off and reset the recorded path depth.
 
@@ -342,7 +342,11 @@ Press **D** again to turn trace off and reset the recorded path depth.
 
 Some IEC devices — the Ultimate's own SoftIEC on firmware 3.15+, and other partition-capable devices such as CMD-HD or SD2IEC — support multiple partitions on a single device number. Press **F4** to show a list of the device's partitions instead of the normal directory. Select one with **RETURN** to browse into it.
 
+![Partition list shown by F4](<Screenshots/UBoot64 - Partitions.png>)
+
 While inside a partition, pressing **DEL** at that partition's own root shows the partition list again, rather than trying to leave the device entirely — press **DEL** again from a subfolder to go up one level first, as normal.
+
+![Browsing the contents of a selected partition](<Screenshots/UBoot64 - Inside partition.png>)
 
 If the current device doesn't support partitions, **F4** shows a "Could not read partition list" message instead.
 
@@ -356,7 +360,7 @@ The sidebar shows two additional toggles that affect how a program is launched w
 
 **Demo mode** (toggle with **O**): when ON, all Ultimate emulated drives except the one on IEC ID 8 are powered off before the program starts. Many demos and some games require only one drive to be active. Enable this toggle when adding demos to ensure reliable playback on systems with multiple emulated drives.
 
-![File browser status toggles panel in UCI mode](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Toggles%20UCI.png?raw=true)
+![File browser status toggles panel in UCI mode](<Screenshots/UBoot64 - Toggles UCI.png>)
 
 Both toggle states are stored in the menu slot when you confirm the selection.
 
@@ -396,32 +400,32 @@ Loose `.PRG` files on the native UCI file system cannot be added to a menu slot 
 
 Shows first the splash screen, and after pressing any key, the information and credits screen. Press any key to return to the main menu.
 
-![Splash](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Splash.png?raw=true)
+![Splash](<Screenshots/UBoot64 - Splash.png>)
 
-![Information and credits screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Info.png?raw=true)
+![Information and credits screen](<Screenshots/UBoot64 - Info.png>)
 
 ### F3: Edit / re-order / delete
 ([Back to contents](#contents))
 
 Rename, re-order, edit commands for, or delete menu slots.
 
-![Edit, re-order and delete slots menu](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Edit%20menu.png?raw=true)
+![Edit, re-order and delete slots menu](<Screenshots/UBoot64 - Edit menu.png>)
 
 * **F1** — Rename a slot. Choose slot (**0–9** / **A–Z**), enter new name, press **ENTER**.
 
-![Rename slot screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20rename.png?raw=true)
+![Rename slot screen](<Screenshots/UBoot64 - rename.png>)
 
 * **F2** — Add or edit a user-defined BASIC command to execute before the program starts.
 
-![Edit user-defined BASIC command screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20command.png?raw=true)
+![Edit user-defined BASIC command screen](<Screenshots/UBoot64 - command.png>)
 
 * **F3** — Re-order slots. Choose slot to move (**0–9** / **A–Z**), highlighted in white. Press **UP** / **DOWN** to move. Confirm with **ENTER**, cancel with **F7**.
 
-![Re-order slots screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20reorder.png?raw=true)
+![Re-order slots screen](<Screenshots/UBoot64 - reorder.png>)
 
 * **F5** — Delete a slot. Choose slot (**0–9** / **A–Z**), confirm with **Y** or cancel with **N**.
 
-![Delete slot confirmation screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Delete.png?raw=true)
+![Delete slot confirmation screen](<Screenshots/UBoot64 - Delete.png>)
 
 * **F6** — Set or clear the default boot slot. Choose a slot; slots currently marked default are shown with a `[D]` tag in the list. Choosing the slot that already has `[D]` clears it; choosing another slot moves the default there (only one slot can be default at a time). See [Default boot slot and auto-boot timeout](#default-boot-slot-and-auto-boot-timeout).
 
@@ -432,11 +436,11 @@ Rename, re-order, edit commands for, or delete menu slots.
 
 You can mark one menu slot as the default boot target and have it launch automatically after a countdown, without needing to press a key — useful for auto-mounting a disk (or launching a program) on power-on.
 
-![Auto-boot countdown screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Autoboot%20countdown.png?raw=true)
+![Auto-boot countdown screen](<Screenshots/UBoot64 - Autoboot countdown.png>)
 
 * Set the default slot: main menu → **F3** → **F6**, then pick a slot. Slots currently marked default show a `[D]` tag wherever slots are listed.
 
-![Set default boot slot screen](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20Default%20slot.png?raw=true)
+![Set default boot slot screen](<Screenshots/UBoot64 - Default slot.png>)
 
 * Set the timeout: main menu → **F5** → **F4** to cycle Off / 1 / 3 / 5 / 10 seconds. Default is **Off**, so this has no effect until both a default slot and a timeout are configured.
 * When both are set, the boot menu shows a dedicated countdown screen (rather than the full menu) with the default slot's name and remaining seconds. Pressing **any key** cancels the countdown and opens the normal menu — the keypress itself is not treated as a selection. If the countdown reaches zero, the default slot boots automatically, exactly as if you had pressed its key.
@@ -461,7 +465,7 @@ Configure NTP time synchronisation, startup verbosity, and the UI colour scheme.
 
 After pressing **F5**:
 
-![Configuration menu showing NTP time sync and other settings](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20NTP%20menu.png?raw=true)
+![Configuration menu showing NTP time sync and other settings](<Screenshots/UBoot64 - NTP menu.png>)
 
 The screen shows current settings and allows editing:
 
@@ -477,9 +481,19 @@ The screen shows current settings and allows editing:
 
 * **F6** — Edit the UI colour scheme. Use **CURSOR UP** / **DOWN** to select a colour element, **CURSOR LEFT** / **RIGHT** to change its colour value (0–15). **DEL** reverts to the saved colours. **F7** returns to the configuration menu. Changes are saved when you exit the configuration menu.
 
-![UI colour scheme editor](https://github.com/xahmol/UBoot64-v2/blob/main/Screenshots/UBoot64%20-%20colour.png?raw=true)
+![UI colour scheme editor](<Screenshots/UBoot64 - colour.png>)
 
-* **F8** — Toggle the "SoftIEC root partition" option (firmware 3.15+). When turned **on**, UBoot64 auto-creates and selects a partition exposing the whole filesystem at root (`/`) whenever you enter IEC mode on the Ultimate's SoftIEC drive — useful if you haven't set up a partition yourself via the Ultimate's own menu. It never touches a partition you've already configured at that same slot. When turned **off**, you're asked whether to also remove that partition from the device now (**Y**/**N**) — declining just stops UBoot64 from managing it, leaving it in place. Default: off.
+* **F8** — Toggle the "SoftIEC root partition" option (firmware 3.15+).
+
+  **This option by itself does nothing.** Pressing F8 only saves a preference; it does not touch the device. The actual effect only happens later, in the file browser, **the next time you press F3 to switch into IEC mode on the Ultimate's own SoftIEC drive** — that specific transition is the only place this option does anything. If you're already in IEC mode when you turn the option on, or you toggle it while browsing a different (non-SoftIEC) IEC device, nothing happens until you actually switch into IEC mode on the SoftIEC drive.
+
+  When that transition happens with the option **on**: UBoot64 auto-creates and selects a partition exposing the whole filesystem at root (`/`), useful if you haven't set up a partition yourself via the Ultimate's own menu. It never touches a partition you've already configured at that same slot (254) — if one exists there with a different path, UBoot64 shows an error and leaves it alone instead of overwriting it.
+
+  When you later turn the option **off**, you're asked whether to also remove that partition from the device now (**Y**/**N**) — declining just stops UBoot64 from managing it, leaving it in place. Default: off.
+
+  ![Confirmation prompt when turning the SoftIEC root partition option off](<Screenshots/UBoot64 - Partition delete confirm.png>)
+
+  **This partition is temporary.** UBoot64 creates it in the Ultimate's live, in-memory partition table — there's no way for a cartridge to make that permanent, only the Ultimate's own on-screen UI can save the partition table to flash (its "Save Partitions" action, which writes `iec_partitions.ipr`). Without that one-time manual save, the partition is gone after a power cycle and UBoot64 quietly recreates it the next time you press F3 — harmless, but you'll need to do the manual save once if you want it to persist without UBoot64 needing to run first.
 
 * **F7** — Return to main menu. Changes are saved.
 

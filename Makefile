@@ -20,7 +20,10 @@ else
   MKDIR = mkdir -p
 endif
 
-# Tooling paths
+# Toolchain -- override the path if oscar64 lives elsewhere:
+#   make CC=/path/to/oscar64/bin/oscar64
+# (plain '=', not '?=' -- CC is a Make built-in with a default of 'cc',
+# which is never "unset", so '?=' would silently never take effect)
 CC = /home/xahmol/oscar64/bin/oscar64
 
 # Application names
@@ -124,14 +127,17 @@ $(UPD23).prg: $(UPD23_SRCS)
 	@$(MKDIR) build 2>$(NULLDEV) ; true
 	$(CC) $(CFLAGSUPD) -n -o=build/$(UPD23).prg src/uboot_upd23.c
 
-# Regenerate README.pdf from README.md; skip with a warning if pandoc is absent
+# Regenerate README.pdf from README.md (requires pandoc + texlive-xetex).
+# Install: sudo apt install pandoc texlive-xetex
+# Warns and skips (does not fail the build) if pandoc is unavailable, since
+# README.pdf is committed to git and only needs regenerating when docs change.
 docs: $(README)
 
-$(README): README.md
+$(README): README.md pandoc-defaults.yaml pandoc-header.tex
 	@if which pandoc >/dev/null 2>&1; then \
-		pandoc README.md -o $(README); \
+		pandoc --defaults=pandoc-defaults.yaml README.md -o $(README); \
 	else \
-		echo "WARNING: pandoc not found -- $(README) not updated"; \
+		echo "WARNING: pandoc not found -- $(README) not updated (install: sudo apt install pandoc texlive-xetex)"; \
 	fi
 
 # Creating ZIP file for distribution
