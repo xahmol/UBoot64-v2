@@ -111,7 +111,7 @@ Version 0.91 - 20230922:
 | `zip` | Bundles the release ZIP | `sudo apt install zip` |
 | `wput` | FTP upload for `make deploy` | `sudo apt install wput` |
 | `curl` | Reachability check before deploy | `sudo apt install curl` |
-| `pandoc` | Regenerates `README.pdf` from `README.md` (optional — `make all` warns and skips if absent) | `sudo apt install pandoc texlive-xetex` |
+| `pandoc` | Regenerates `README.pdf` from `README.md` (optional — `make all` warns and skips if absent) | `sudo apt install pandoc` `texlive-xetex` |
 
 ### Deployment configuration
 

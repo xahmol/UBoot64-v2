@@ -133,7 +133,7 @@ $(UPD23).prg: $(UPD23_SRCS)
 # README.pdf is committed to git and only needs regenerating when docs change.
 docs: $(README)
 
-$(README): README.md pandoc-defaults.yaml pandoc-header.tex
+$(README): README.md pandoc-defaults.yaml pandoc-header.tex pandoc-wrap-tables.lua
 	@if which pandoc >/dev/null 2>&1; then \
 		pandoc --defaults=pandoc-defaults.yaml README.md -o $(README); \
 	else \

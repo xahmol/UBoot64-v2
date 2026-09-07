@@ -7,6 +7,8 @@ toc-depth: 2
 highlight-style: tango
 include-in-header:
   - pandoc-header.tex
+filters:
+  - pandoc-wrap-tables.lua
 variables:
   papersize: a4
   fontsize: 11pt
