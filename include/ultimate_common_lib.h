@@ -187,7 +187,13 @@ char uii_wait_for_uci(char timeout_seconds);
 void uii_settarget(char id);
 void uii_freeze(void);
 void uii_add_partition(char index, const char *name, const char *path);
-void uii_del_partition(char index);
+// SOFTIEC_CMD_DEL_PARTITION exists in the firmware protocol but a
+// uii_del_partition() wrapper is deliberately not provided: confirmed on
+// real hardware (even from a clean power-cycle) that it does not actually
+// remove the partition from the live table. Since UBoot64's own partitions
+// are never persisted to flash anyway, there's nothing useful this would
+// do -- a power cycle already clears them. See project docs/README for
+// the "SoftIEC root partition" toggle this replaced.
 void uii_getpalette(void);                                       // fills uii_data[0..47] with 16x RGB triplets
 void uii_setpalette(const char *rgb48);                           // rgb48: 16x RGB triplets, 48 bytes
 void uii_setpalettecolor(char index, char r, char g, char b);

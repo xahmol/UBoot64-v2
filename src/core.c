@@ -137,7 +137,15 @@ char *pathconcat()
   {
     if (devicetype[pathdevice] == VICE || devicetype[pathdevice] == U64)
     {
-      strcat(concat, "cd:/");
+      // Double slash, not single: firmware's iec_path_to_fs_path()
+      // (software/io/iec/iec_channel.cc in github.com/GideonZ/1541ultimate)
+      // strips a single leading "/" and treats what's left as relative to
+      // the drive's current directory -- only "//" resolves to the actual
+      // partition root. A single slash "worked" for years only because the
+      // drive's current directory happened to already be at root the first
+      // time this ran; it breaks once something (e.g. iec_select_partition())
+      // has moved the current directory away from root first.
+      strcat(concat, "cd://");
     }
     else
     {
@@ -399,6 +407,22 @@ char cmd(const char device, const char *cmd)
 
   return dosCommand(15, device, 15, cmd);
 }
+
+// The Name UBoot64 gives its own auto-provisioned reserved root partition
+// (RESERVED_ROOT_PARTITION, 254) -- both when creating it (uii_add_partition()
+// in filebrowse.c and slotmenu.c) and when later recognizing it as "already
+// ours" (filebrowse.c's CH_F3 conflict check). A single shared, identity-
+// charmap-protected constant, not a literal re-typed at each call site: this
+// file's default petscii.h charmap (case-inverting) would otherwise transform
+// each independent occurrence of "UBOOT" on its own, with no guarantee they
+// fold to the same bytes as each other or as parts[idx].path (a raw,
+// charmap-unaffected wire string) -- see feedback_petscii_charmap_string_literals
+// in project memory for the general pitfall this avoids.
+#pragma charmap(97, 97, 26)  // a-z -> a-z (identity)
+#pragma charmap(65, 65, 26)  // A-Z -> A-Z (identity)
+const char UBOOT_PARTITION_NAME[] = "UBOOT";
+#pragma charmap(97, 65, 26)  // restore petscii.h
+#pragma charmap(65, 97, 26)
 
 char iec_select_partition(char device, char partnum)
 // Select the current SoftIEC partition via the classic DOS "CP" command

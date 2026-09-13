@@ -432,7 +432,10 @@ char iec_read_partitions(char device, struct PartitionEntry *out, char maxcount)
 // charmap (included project-wide) inverts letter case in string literals,
 // so this needs an identity-charmap override -- see oscar64manual.md's
 // "petscii.h charmap is global" section.
-// Each entry's quoted "filename" is the partition's root path. The 16-bit
+// Each entry's quoted "filename" is the partition's root path on firmware
+// 3.15, but its configured Name on 3.15a+ (PR #878 switched
+// read_dir_entry() from prt->GetRootPath() to prt->GetName()) -- don't
+// assume either meaning when consuming PartitionEntry.path. The 16-bit
 // "size" field is the partition number as-is (NOT times 254): firmware's
 // read_dir_entry() (e_partlist branch) sets info.size = part_idx*254, but
 // then the SAME block-count conversion applied to every dir entry --
@@ -529,8 +532,10 @@ char dir_read_partition_list(char device)
 // Populate the REU-backed directory list with a synthetic "virtual
 // directory" of the SoftIEC partitions on this device, one per entry, so
 // the existing browse/select/draw machinery (dir_draw(), CH_ENTER, cursor
-// navigation) works on it unmodified. Each entry's name is the partition's
-// root path; its meta.size carries the partition number through selection
+// navigation) works on it unmodified. Each entry's displayed name is the
+// partition's root path (firmware 3.15) or configured Name (3.15a+, see
+// iec_read_partitions()); selection below uses meta.size (the partition
+// number), never this string, so the version difference is cosmetic here.
 // (char is unsigned by default in Oscar64, so 254 fits -- see
 // oscar64manual.md's type table).
 // Input: device - device number
@@ -1818,7 +1823,7 @@ void mainLoopBrowse(void)
         {
           cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
           cwin_cursor_move(&cw, 0, 3);
-          cwin_console_printf(&cw, cfg.colors.error, "No active IEC drives.\n\r");
+          cwin_console_printf(&cw, cfg.colors.error, "No active IEC drives.\n");
           cwin_console_printf(&cw, cfg.colors.text, "Press key.");
           cwin_getch();
           fb_uci_mode = 1;
@@ -1830,6 +1835,24 @@ void mainLoopBrowse(void)
           // use for something other than what we'd set it to -- if so, the
           // user configured it themselves for their own purpose, so leave
           // it alone entirely rather than silently overwriting it.
+          // Firmware 3.15a (PR #878) changed the "$=P" listing's quoted
+          // field from the partition's root path to its configured Name
+          // (iec_channel.cc's read_dir_entry() now does
+          // strncpy(info.lfname, prt->GetName(), ...) instead of
+          // prt->GetRootPath()) -- so parts[idx].path holds "/" on 3.15
+          // but our partition's Name (UBOOT_PARTITION_NAME, src/core.c) on
+          // 3.15a+. Accept either so this keeps working across both
+          // firmware behaviors without needing a version check.
+          //
+          // UBOOT_PARTITION_NAME is a single shared, identity-charmap-
+          // protected constant (src/core.c) reused by every create and
+          // compare site (here and slotmenu.c's boot path) -- not a
+          // "UBOOT" literal re-typed at each site, which would each be an
+          // independent compile-time occurrence under this file's default
+          // petscii.h charmap (case-inverting), with no guarantee they'd
+          // fold to identical bytes as each other or as parts[idx].path (a
+          // raw wire string, never charmap-adjusted). See
+          // feedback_petscii_charmap_string_literals.md in project memory.
           struct PartitionEntry parts[MAXPARTITIONS_LIST];
           char found = iec_read_partitions(device, parts, MAXPARTITIONS_LIST);
           char idx;
@@ -1837,7 +1860,9 @@ void mainLoopBrowse(void)
 
           for (idx = 0; idx < found; idx++)
           {
-            if (parts[idx].number == RESERVED_ROOT_PARTITION && strcmp(parts[idx].path, "/") != 0)
+            if (parts[idx].number == RESERVED_ROOT_PARTITION &&
+                strcmp(parts[idx].path, "/") != 0 &&
+                strcmp(parts[idx].path, UBOOT_PARTITION_NAME) != 0)
             {
               conflict = 1;
               break;
@@ -1846,9 +1871,18 @@ void mainLoopBrowse(void)
 
           if (conflict)
           {
+            // Oscar64's charwin console (include/c64/charwin.c,
+            // cwin_console_write_string()) only treats \n as a line break --
+            // a trailing \r prints as a literal stray glyph, not a real
+            // carriage return -- and wraps at the window's own configured
+            // width, not at the 24 columns cwin_fill_rect_raw() actually
+            // cleared here (the right-hand static menu panel starts at
+            // column 24), so any explicit line over ~23 chars bled into it.
+            // Every line below is kept under that width, and there's no
+            // trailing \r.
             cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
             cwin_cursor_move(&cw, 0, 3);
-            cwin_console_printf(&cw, cfg.colors.error, "Partition %u already in use for\nsomething else -- root partition\nauto-config skipped.\n\r", RESERVED_ROOT_PARTITION);
+            cwin_console_printf(&cw, cfg.colors.error, "Partition %u already\nin use for something\nelse -- root partition\nauto-config skipped.\n", RESERVED_ROOT_PARTITION);
             cwin_console_printf(&cw, cfg.colors.text, "Press key.");
             cwin_getch();
             dir_draw(1);
@@ -1860,7 +1894,7 @@ void mainLoopBrowse(void)
             // touches any other partition number, so anything the user
             // configured themselves via the Ultimate's own menu is left
             // untouched.
-            uii_add_partition(RESERVED_ROOT_PARTITION, "UBOOT", "/");
+            uii_add_partition(RESERVED_ROOT_PARTITION, UBOOT_PARTITION_NAME, "/");
             currentpartition = RESERVED_ROOT_PARTITION;
             iec_select_partition(device, currentpartition);
             memset(&presentdir, 0, sizeof(presentdir));
@@ -1897,7 +1931,7 @@ void mainLoopBrowse(void)
         {
           cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
           cwin_cursor_move(&cw, 0, 3);
-          cwin_console_printf(&cw, cfg.colors.error, "Could not read partition list.\n\r");
+          cwin_console_printf(&cw, cfg.colors.error, "Could not read partition list.\n");
           cwin_console_printf(&cw, cfg.colors.text, "Press key.");
           cwin_getch();
           dir_draw(1);
@@ -2103,7 +2137,15 @@ void mainLoopBrowse(void)
         }
         else
         {
-          dir_changedir((devicetype[device] == U64) ? (char *)".." : (char *)"\xff");
+          // Generic CBM-DOS/CMD/SD2IEC convention is CH_LARROW (0x5f, "_"),
+          // not the internal 0xff sentinel dir_changedir()'s is_updir check
+          // also accepts -- that sentinel is only ever meant for detection,
+          // not for the literal byte sent on the wire. Sending raw 0xff here
+          // built a nonsense "cd/<0xff>/" command that a real SD2IEC/CMD
+          // drive silently rejects, while depth/partition_depth were still
+          // decremented above regardless -- desyncing our breadcrumb from
+          // the drive's real (unchanged) position on every press.
+          dir_changedir((devicetype[device] == U64) ? (char *)".." : (char *)"_");
         }
       }
       break;

@@ -553,7 +553,6 @@ void edittimeconfig()
     char key;
     char offsetinput[10];
     char *ptrend;
-    char yesno;
 
     do
     {
@@ -646,21 +645,14 @@ void edittimeconfig()
             break;
 
         case CH_F8:
-            if (cfg.iec_root_partition)
-            {
-                // Currently on, about to turn off -- offer to remove the
-                // partition it auto-created, rather than leaving it orphaned
-                // on the device. Confirmation is the safeguard here (no
-                // device/IEC context exists on this screen to double-check
-                // the partition still looks like ours before deleting it).
-                cwin_putat_string(&cw, 0, 23, "Also delete partition from device? Y/N", cfg.colors.text);
-                yesno = getkey(128);
-                if (yesno == 'Y')
-                {
-                    uii_del_partition(RESERVED_ROOT_PARTITION);
-                }
-                cwin_fill_rect_raw(&cw, 0, 23, 40, 1, SC_SPACE, cfg.colors.text);
-            }
+            // No delete-on-toggle-off here: uii_del_partition() (firmware's
+            // SOFTIEC_CMD_DEL_PARTITION) does not actually remove the
+            // partition from the live table in practice, confirmed on real
+            // hardware even from a clean power-cycle state (a firmware-side
+            // issue, not something fixable from here). Since the partition
+            // was never persisted to flash in the first place -- it's gone
+            // on the next power cycle regardless (see the note below) --
+            // there is nothing useful this toggle could do about it anyway.
             cfg.iec_root_partition = (cfg.iec_root_partition == 0) ? 1 : 0;
             changesmade = 1;
             break;

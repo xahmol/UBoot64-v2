@@ -125,6 +125,7 @@ extern char reuflag;
 extern char addmountflag;
 extern char runmountflag;
 extern char currentpartition;
+extern const char UBOOT_PARTITION_NAME[]; // "UBOOT", identity-charmap-protected -- see src/core.c
 extern int reudetected;
 struct SlotStruct
 {

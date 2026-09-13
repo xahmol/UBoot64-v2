@@ -53,6 +53,16 @@ Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
 
+Version 3.0.1 - 20260913:
+
+- Fixed a regression against Ultimate firmware 3.15a: the "SoftIEC root partition" auto-provisioning (config menu, **F8**) could misreport the reserved partition as already in use by something else and refuse to set itself up, because firmware 3.15a changed what the partition listing's name field contains. No user-visible change on firmware 3.15 or earlier.
+- Fixed a boot-time gap: a menu slot recording the "SoftIEC root partition" would select it via the classic `CP` command without first making sure it actually still existed. Since that partition only lives in the Ultimate's memory (not saved to flash unless you do so yourself), booting straight into such a slot after a power cycle -- without ever browsing into IEC mode first -- could send that select command against a partition that was no longer there. The slot now re-creates it (harmlessly, if it's already present) before selecting it.
+- Fixed a related bug uncovered by the above: a menu slot's recorded directory path, when rebuilt for a SoftIEC or VICE device, used a single leading slash (`cd:/path`). Ultimate firmware treats a single leading slash as relative to wherever the drive's directory position currently is, not as absolute from the drive's root -- only a double slash (`cd://path`) is. This had quietly relied on the drive always still being positioned at its root the first time a slot ran; selecting a specific SoftIEC partition first (see above) no longer guarantees that, so affected slots could fail to find their file. Slots now save with the correct double-slash form; existing slots pick this up automatically the next time they're saved (re-edited or re-created).
+- Fixed a display glitch where the "partition already in use" message (see above) could overflow into the side menu panel and show a stray character, instead of staying inside its own message box.
+- Fixed "go up one directory" (**DEL**) on real IEC hardware that reports CMD-HD-style partitions (e.g. SD2IEC) sending an invalid command that the drive silently rejected, while UBoot64's own idea of the current directory moved anyway -- so the display and the drive disagreed on where you were, showing stale or jumbled directory content on the next move. Only affected non-Ultimate IEC devices; the Ultimate's own SoftIEC drive was unaffected.
+- Fixed the "SoftIEC root partition" conflict check occasionally misfiring even against its own, correctly-created partition, due to an internal text-encoding inconsistency between where the partition is created and where it's checked.
+- Removed the "delete partition from device" prompt when turning the "SoftIEC root partition" option off (confirmed on real hardware that the underlying firmware command doesn't actually remove it). Since the partition was never saved to flash in the first place, a power cycle already clears it -- there was nothing this prompt could reliably do.
+
 Version 3.0.0 - 20260907:
 
 - Compatibility with Ultimate firmware 3.15+: UCI now auto-enables itself from the cartridge (no need to turn it on in the Ultimate menu beforehand), and the classic-IEC "go up one directory" command adapts to the rewritten SoftIEC DOS parser automatically, with no change in behaviour on older firmware.
@@ -489,11 +499,9 @@ The screen shows current settings and allows editing:
 
   When that transition happens with the option **on**: UBoot64 auto-creates and selects a partition exposing the whole filesystem at root (`/`), useful if you haven't set up a partition yourself via the Ultimate's own menu. It never touches a partition you've already configured at that same slot (254) — if one exists there with a different path, UBoot64 shows an error and leaves it alone instead of overwriting it.
 
-  When you later turn the option **off**, you're asked whether to also remove that partition from the device now (**Y**/**N**) — declining just stops UBoot64 from managing it, leaving it in place. Default: off.
+  Turning the option **off** just stops UBoot64 from creating/selecting that partition on future **F3** transitions — it does not remove an already-created partition from the device. Default: off.
 
-  ![Confirmation prompt when turning the SoftIEC root partition option off](<Screenshots/UBoot64 - Partition delete confirm.png>)
-
-  **This partition is temporary.** UBoot64 creates it in the Ultimate's live, in-memory partition table — there's no way for a cartridge to make that permanent, only the Ultimate's own on-screen UI can save the partition table to flash (its "Save Partitions" action, which writes `iec_partitions.ipr`). Without that one-time manual save, the partition is gone after a power cycle and UBoot64 quietly recreates it the next time you press F3 — harmless, but you'll need to do the manual save once if you want it to persist without UBoot64 needing to run first.
+  **This partition is temporary regardless.** UBoot64 creates it in the Ultimate's live, in-memory partition table — there's no way for a cartridge to make that permanent, only the Ultimate's own on-screen UI can save the partition table to flash (its "Save Partitions" action, which writes `iec_partitions.ipr`). Without that one-time manual save, the partition is gone after a power cycle either way, so there's nothing to actively clean up: if you want it gone, a power cycle (without a manual save) removes it, same as it always would have.
 
 * **F7** — Return to main menu. Changes are saved.
 

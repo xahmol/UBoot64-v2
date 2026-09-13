@@ -708,6 +708,22 @@ void runbootfrommenu(char select)
             // 3.15 behavior, no CP sent).
             if (Slot.partition)
             {
+                // UBoot64's own reserved root partition only lives in the
+                // Ultimate's live memory, not flash (see ARCHITECTURE.md's
+                // "not persistent" note) -- a slot referencing it can't
+                // assume F3's auto-provisioning already ran this power
+                // cycle, or that the user saved the partition table. Re-add
+                // it here unconditionally; uii_add_partition() is
+                // idempotent, so this is a no-op if it's already there.
+                // UBOOT_PARTITION_NAME (src/core.c) is a shared, identity-
+                // charmap-protected constant -- must match filebrowse.c's
+                // CH_F3 conflict check byte-for-byte, which a separately
+                // re-typed "UBOOT" literal here would not be guaranteed to
+                // do (see feedback_petscii_charmap_string_literals.md).
+                if (Slot.partition == RESERVED_ROOT_PARTITION)
+                {
+                    uii_add_partition(RESERVED_ROOT_PARTITION, UBOOT_PARTITION_NAME, "/");
+                }
                 iec_select_partition(Slot.device, Slot.partition);
             }
             cmd(Slot.device, Slot.path);

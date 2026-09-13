@@ -144,22 +144,6 @@ void uii_add_partition(char index, const char *name, const char *path)
 	uii_accept();
 }
 
-void uii_del_partition(char index)
-// Remove a SoftIEC partition. Firmware 3.15+ only. Wire format:
-// $05 $21 <index> -- see softiec_target.cc's cmd_del_partition().
-// Input: index - partition number to remove
-{
-	char cmd[] = {0x00, SOFTIEC_CMD_DEL_PARTITION, 0x00};
-	cmd[2] = index;
-
-	uii_settarget(TARGET_SOFTIEC);
-	uii_sendcommand(cmd, 3);
-
-	uii_readdata();
-	uii_readstatus();
-	uii_accept();
-}
-
 void uii_getpalette(void)
 // Read the current 16-color VIC palette into uii_data[0..47] (16x RGB
 // triplets). Firmware test-merge branch only (not yet in a tagged release).
