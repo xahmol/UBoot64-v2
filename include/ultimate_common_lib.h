@@ -120,8 +120,7 @@ struct UII_WRITE
 #define CTRL_CMD_DRIVE_A_POWER  0x34
 #define CTRL_CMD_DRIVE_B_POWER  0x35
 #define CTRL_CMD_GET_RAMDISK_INFO 0x40
-// Palette commands (firmware test-merge branch as of 2026-09; not yet in a
-// tagged release, same status LOAD_CONFIG had before it shipped)
+// Palette commands (shipped in firmware 3.15/3.15a)
 #define CTRL_CMD_GET_PALETTE       0x51
 #define CTRL_CMD_SET_PALETTE       0x52
 #define CTRL_CMD_SET_PALETTE_COLOR 0x53

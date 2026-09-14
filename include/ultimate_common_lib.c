@@ -146,7 +146,7 @@ void uii_add_partition(char index, const char *name, const char *path)
 
 void uii_getpalette(void)
 // Read the current 16-color VIC palette into uii_data[0..47] (16x RGB
-// triplets). Firmware test-merge branch only (not yet in a tagged release).
+// triplets). Shipped in firmware 3.15/3.15a.
 // Wire format: $04 $51 -- see control_target.cc's CTRL_CMD_GET_PALETTE.
 {
 	char cmd[] = {0x00, CTRL_CMD_GET_PALETTE};
@@ -160,7 +160,7 @@ void uii_getpalette(void)
 }
 
 void uii_setpalette(const char *rgb48)
-// Replace the entire 16-color VIC palette. Firmware test-merge branch only.
+// Replace the entire 16-color VIC palette. Shipped in firmware 3.15/3.15a.
 // Wire format: $04 $52 <48 bytes RGB> -- see control_target.cc's
 // CTRL_CMD_SET_PALETTE / palette_command.h's decode_palette_set().
 // Input: rgb48 - 16x RGB triplets, 48 bytes
@@ -179,7 +179,7 @@ void uii_setpalette(const char *rgb48)
 }
 
 void uii_setpalettecolor(char index, char r, char g, char b)
-// Set a single palette color. Firmware test-merge branch only.
+// Set a single palette color. Shipped in firmware 3.15/3.15a.
 // Wire format: $04 $53 <index> <r> <g> <b> -- see control_target.cc's
 // CTRL_CMD_SET_PALETTE_COLOR / palette_command.h's decode_palette_color_set().
 // Input: index - palette index (0-15), r/g/b - new color
@@ -199,7 +199,7 @@ void uii_setpalettecolor(char index, char r, char g, char b)
 }
 
 void uii_resetpalette(void)
-// Restore the default VIC palette. Firmware test-merge branch only.
+// Restore the default VIC palette. Shipped in firmware 3.15/3.15a.
 // Wire format: $04 $54 -- see control_target.cc's CTRL_CMD_RESET_PALETTE.
 {
 	char cmd[] = {0x00, CTRL_CMD_RESET_PALETTE};
