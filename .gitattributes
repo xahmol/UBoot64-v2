@@ -1,0 +1,24 @@
+# Line endings: LF for all text files, in the repository and the working copy
+* text=auto eol=lf
+
+# Commodore and other binary data: never convert (a .seq holds raw PETSCII
+# with CR bytes, and text=auto could mistake small data files for text)
+*.prg binary
+*.seq binary
+*.bin binary
+*.d64 binary
+*.d71 binary
+*.d81 binary
+*.g64 binary
+*.dnp binary
+*.crt binary
+*.reu binary
+*.sid binary
+*.ctm binary
+*.spd binary
+*.zip binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.psd binary
+*.bak binary
