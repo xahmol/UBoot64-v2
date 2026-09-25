@@ -66,8 +66,18 @@ struct UII_WRITE
 #define TARGET_SOFTIEC 0x05
 
 // UCI SoftIEC target commands (firmware 3.15+)
+#define SOFTIEC_CMD_IDENTIFY      0x01
+#define SOFTIEC_CMD_LOAD_SU       0x10  // Load set-up: open file, return its start address
+#define SOFTIEC_CMD_LOAD_EX       0x11  // Load execute: firmware DMA-loads into C64/C128 RAM
+#define SOFTIEC_CMD_SAVE          0x12  // Save: firmware DMA-reads C64/C128 RAM into a file
+#define SOFTIEC_CMD_OPEN          0x13
+#define SOFTIEC_CMD_CLOSE         0x14
+#define SOFTIEC_CMD_CHKIN         0x15
+#define SOFTIEC_CMD_CHKOUT        0x16
 #define SOFTIEC_CMD_ADD_PARTITION 0x20
 #define SOFTIEC_CMD_DEL_PARTITION 0x21
+#define SOFTIEC_CMD_GET_FATNAME   0x22
+#define SOFTIEC_CMD_GET_IECNAME   0x23
 
 // UCI command IDs
 // DOS layer commands
@@ -106,6 +116,8 @@ struct UII_WRITE
 #define CTRL_CMD_FINISH_CAPTURE 0x03
 #define CTRL_CMD_FREEZE        0x05
 #define CTRL_CMD_REBOOT        0x06
+#define CTRL_CMD_LOAD_REU      0x08  // Load the REU preload image configured in the Ultimate menu
+#define CTRL_CMD_SAVE_REU      0x09  // Save the REU to the configured REU preload image
 #define CTRL_CMD_U64_SAVEMEM   0x0F
 #define CTRL_CMD_DECODE_TRACK  0x11
 #define CTRL_CMD_ENCODE_TRACK  0x12
@@ -120,6 +132,7 @@ struct UII_WRITE
 #define CTRL_CMD_DRIVE_A_POWER  0x34
 #define CTRL_CMD_DRIVE_B_POWER  0x35
 #define CTRL_CMD_GET_RAMDISK_INFO 0x40
+#define CTRL_CMD_LOAD_CONFIG      0x50  // Firmware 3.15+: load settings from a .cfg text file
 // Palette commands (shipped in firmware 3.15/3.15a)
 #define CTRL_CMD_GET_PALETTE       0x51
 #define CTRL_CMD_SET_PALETTE       0x52
@@ -147,6 +160,10 @@ struct UII_WRITE
 
 // Macro for checking if last command was successful
 #define UII_SUCCESS (uii_status[0] == '0' && uii_status[1] == '0')
+
+// Longest name/path accepted by the commands that take a string argument
+// (checked, not truncated: longer names are rejected, see uii_send_with_name)
+#define UII_NAME_MAX 255
 
 // Global variables
 extern char uii_status[STATUS_QUEUE_SZ + 1];
@@ -184,6 +201,7 @@ char uii_detect(void);
 void uii_enable(void);
 char uii_wait_for_uci(char timeout_seconds);
 void uii_settarget(char id);
+char uii_send_with_name(char target, const char *header, char headerlen, const char *name);
 void uii_freeze(void);
 void uii_add_partition(char index, const char *name, const char *path);
 // SOFTIEC_CMD_DEL_PARTITION exists in the firmware protocol but a

@@ -49,3 +49,13 @@ There is no automated test suite; testing requires deploying to hardware.
 - REU addresses in `DirMeta.next/prev` are raw 32-bit byte offsets, not CPU pointers
 - Slot data lives in REU starting at address 0; directory listing follows after slot data
 - UCI transfers are limited to 500 bytes per chunk (`SAVE_BUF_SIZE`) due to 512-byte queue cap
+
+## Pending verification (changes from the DMBoot 128 v5 work, 2026-09-25)
+
+These changes were made while rebuilding DMBoot 128 v5 (https://github.com/xahmol/DMBoot, branch `Oscar64Rebuild`) and are **not yet tested on real C64 hardware. Test them before releasing a new UBoot64 build**, then remove this section.
+
+1. **`textInput()` overflow fix** (`src/core.c`, callers in `src/slotmenu.c`, `src/time.c`): `size` is now the buffer size (`sizeof`), the maximum length is `size - 1`, and every write is bounds-checked. Before, typing the last allowed character or pressing SHIFT-DEL (insert) on a nearly full string wrote past the buffer (for a slot name into `Slot.file`). `offsetinput` grew from 10 to 12 bytes. To test:
+   - slot names up to 30 characters, commands up to 80, NTP host up to 80, UTC offset up to 11 characters;
+   - SHIFT-DEL near a full string; RUN/STOP; RETURN;
+   - after each edit, check that the slot's program file name is intact.
+2. **UCI library completed** against released firmware 3.15a (`include/ultimate_*`, new `include/ultimate_softiec_lib.c/h`, `UCILIBMANUAL.md` §14-§18). UBoot64 itself calls none of the new functions (bank usage unchanged). The only behaviour change for UBoot64: `uii_load_reu()` / `uii_save_reu()` now ignore a size index above 7. To test: REU preload from a slot still works.

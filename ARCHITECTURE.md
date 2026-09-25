@@ -348,6 +348,8 @@ The UCI is the hardware interface exposed by the Ultimate II+/U64 cartridge at m
 
 **Source:** firmware lives in [GideonZ/1541ultimate](https://github.com/GideonZ/1541ultimate). The C libraries in `include/ultimate_*` are adapted from [xlar54/ultimateii-dos-lib](https://github.com/xlar54/ultimateii-dos-lib).
 
+**Coverage (2026-09-25):** the library now wraps every command of released firmware 3.15a that works on an Ultimate II+ except the new HTTP target (deferred), including the SoftIEC target functions in `include/ultimate_softiec_lib.c/h`. UBoot64 itself uses only the subset below; Oscar64 drops the uncalled functions, so bank usage is unchanged. See `UCILIBMANUAL.md` §17 for the full command coverage table.
+
 ### Registers
 
 | Register | Address | Direction | Purpose |
@@ -687,7 +689,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `const char *getDeviceType(char device)` | Detect and return device type string for IEC device |
 | `void DoDemoMode()` | Power down all Ultimate emulated drives not on ID 8 |
 | `void execute(char *prg, char device, char boot, char *command)` | Build BASIC LOAD+RUN command sequence in keyboard buffer and exit to BASIC |
-| `signed textInput(char xpos, char y, char width, char *str, char size, char val)` | Interactive in-place text input field |
+| `signed textInput(char xpos, char y, char width, char *str, char size, char val)` | Interactive in-place text input field. `size` is the buffer size (pass `sizeof(buffer)`); the string never exceeds `size - 1` characters (fixed 2026-09-25: `size` used to be treated as the maximum length, so the last allowed character or SHIFT-DEL could write past the buffer) |
 
 #### `src/fileio.c` — Config/slot persistence: REU ↔ USB/SD via UCI
 

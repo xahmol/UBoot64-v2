@@ -212,6 +212,57 @@ void uii_resetpalette(void)
 	uii_accept();
 }
 
+// ---------------------------------------------------------------------------
+// Title:       Send a command with a name argument
+// Description: Builds a command from a fixed header (target placeholder,
+//              command byte and optional parameter bytes) followed by a
+//              name or path string, sends it to the given target and reads
+//              data and status. The name is length-checked instead of
+//              silently truncated: names longer than UII_NAME_MAX are
+//              rejected with status "96,NAME TOO LONG" (nothing is sent).
+// Syntax:      char uii_send_with_name(char target, const char *header,
+//                                      char headerlen, const char *name);
+// Input:       target    - TARGET_* the command is for
+//              header    - header bytes; header[0] is the target
+//                          placeholder, header[1] the command byte
+//              headerlen - number of header bytes (2..16)
+//              name      - 0-terminated name or path (not sent with its
+//                          terminator: the command length defines its end)
+// Output:      1 when the command was sent, 0 when it was rejected (bad
+//              header length, name too long or out of memory)
+//              uii_data / uii_status hold the reply
+// ---------------------------------------------------------------------------
+char uii_send_with_name(char target, const char *header, char headerlen, const char *name)
+{
+	static const char toolong[] = {0x39, 0x36, 0x2c, 0x4e, 0x41, 0x4d, 0x45, 0x20, 0x54, 0x4f, 0x4f, 0x20, 0x4c, 0x4f, 0x4e, 0x47, 0x00}; // "96,NAME TOO LONG" in ASCII
+	unsigned namelen = strlen(name);
+	char *fullcmd;
+
+	if (headerlen < 2 || headerlen > 16 || namelen > UII_NAME_MAX)
+	{
+		memcpy(uii_status, toolong, sizeof(toolong));
+		uii_data[0] = 0;
+		return 0;
+	}
+
+	fullcmd = (char *)malloc(headerlen + namelen);
+	if (!fullcmd)
+	{
+		return 0;
+	}
+	memcpy(fullcmd, header, headerlen);
+	memcpy(fullcmd + headerlen, name, namelen);
+
+	uii_settarget(target);
+	uii_sendcommand(fullcmd, headerlen + namelen);
+	free(fullcmd);
+
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+	return 1;
+}
+
 void uii_settarget(char id)
 // Set the target for the next command
 // Input: id - the target ID -> 1 = DOS1, 2 = DOS2, 3 = NETWORK, 4 = CONTROL

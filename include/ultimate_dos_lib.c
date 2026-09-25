@@ -583,6 +583,11 @@ void uii_save_reu(char size)
 	char cmd[] = {0x00, DOS_CMD_SAVE_REU, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0x01};
 	char sizes[8] = {0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff};
 
+	// Reject invalid size indexes instead of reading past sizes[]
+	if (size >= sizeof(sizes))
+	{
+		return;
+	}
 	cmd[8] = sizes[size];
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(cmd, 10);
@@ -613,6 +618,11 @@ void uii_load_reu(char size)
 	char cmd[] = {0x00, DOS_CMD_LOAD_REU, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x01};
 	char sizes[8] = {0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff};
 
+	// Reject invalid size indexes instead of reading past sizes[]
+	if (size >= sizeof(sizes))
+	{
+		return;
+	}
 	cmd[8] = sizes[size];
 
 	uii_settarget(TARGET_DOS1);
@@ -850,4 +860,385 @@ void uii_get_hwinfo(char device)
 	uii_readdata();
 	uii_readstatus();
 	uii_accept();
+}
+
+// ===========================================================================
+// Additions (DMBoot v5, 2026-09-25): commands of released firmware (3.14 /
+// 3.15a, GideonZ/1541ultimate software/filemanager/dos.cc and
+// software/io/command_interface/control_target.cc) that had no wrapper yet.
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Title:       Size of the open file
+// Description: Returns the size of the currently open file, taken from the
+//              "File Info" reply (first 4 bytes, LSB first).
+// Syntax:      unsigned long uii_file_size(void);
+// Input:       None (a file must be open)
+// Output:      File size in bytes (0 when no file is open, see uii_status)
+// ---------------------------------------------------------------------------
+unsigned long uii_file_size(void)
+{
+	unsigned long size;
+
+	uii_file_info();
+	if (!UII_SUCCESS)
+	{
+		return 0;
+	}
+
+	size = (unsigned long)(unsigned char)uii_data[0];
+	size |= (unsigned long)(unsigned char)uii_data[1] << 8;
+	size |= (unsigned long)(unsigned char)uii_data[2] << 16;
+	size |= (unsigned long)(unsigned char)uii_data[3] << 24;
+	return size;
+}
+
+// ---------------------------------------------------------------------------
+// Title:       REU address command (internal)
+// Description: Sends a "Load REU" or "Save REU" DOS command with an explicit
+//              REU address and length (both 32-bit LSB first; the firmware
+//              masks the top bytes and truncates at the end of the REU).
+// Syntax:      void uii_reu_address_command(char command,
+//                                           unsigned long reu_addr,
+//                                           unsigned long length);
+// Input:       command  - DOS_CMD_LOAD_REU or DOS_CMD_SAVE_REU
+//              reu_addr - REU address
+//              length   - number of bytes
+// Output:      uii_data: text such as "$008000 BYTES LOADED TO REU $852000"
+//              uii_status: "00,OK", "02,REQUEST TRUNCATED" or a file
+//              system error
+// ---------------------------------------------------------------------------
+static void uii_reu_address_command(char command, unsigned long reu_addr, unsigned long length)
+{
+	char cmd[10];
+
+	cmd[0] = 0x00;
+	cmd[1] = command;
+	cmd[2] = (char)(reu_addr & 0xff);
+	cmd[3] = (char)((reu_addr >> 8) & 0xff);
+	cmd[4] = (char)((reu_addr >> 16) & 0xff);
+	cmd[5] = (char)((reu_addr >> 24) & 0xff);
+	cmd[6] = (char)(length & 0xff);
+	cmd[7] = (char)((length >> 8) & 0xff);
+	cmd[8] = (char)((length >> 16) & 0xff);
+	cmd[9] = (char)((length >> 24) & 0xff);
+
+	uii_settarget(TARGET_DOS1);
+	uii_sendcommand(cmd, sizeof(cmd));
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Load open file into the REU at an address
+// Description: Reads length bytes of the open file into the REU starting at
+//              reu_addr, without passing through C64/C128 memory. Unlike
+//              uii_load_reu(size), which always loads at REU address 0.
+// Syntax:      void uii_load_reu_at(unsigned long reu_addr,
+//                                   unsigned long length);
+// Input:       reu_addr - REU destination address
+//              length   - number of bytes to read
+// Output:      See uii_reu_address_command
+// ---------------------------------------------------------------------------
+void uii_load_reu_at(unsigned long reu_addr, unsigned long length)
+{
+	uii_reu_address_command(DOS_CMD_LOAD_REU, reu_addr, length);
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Save REU memory from an address to the open file
+// Description: Writes length bytes of REU memory starting at reu_addr to the
+//              open file, without passing through C64/C128 memory.
+// Syntax:      void uii_save_reu_at(unsigned long reu_addr,
+//                                   unsigned long length);
+// Input:       reu_addr - REU source address
+//              length   - number of bytes to write
+// Output:      See uii_reu_address_command
+// ---------------------------------------------------------------------------
+void uii_save_reu_at(unsigned long reu_addr, unsigned long length)
+{
+	uii_reu_address_command(DOS_CMD_SAVE_REU, reu_addr, length);
+}
+
+// ASCII bytes used for matching storage names, independent of any charmap
+#define UII_ASC_SLASH	0x2f
+#define UII_ASC_B		0x62
+#define UII_ASC_D		0x64
+#define UII_ASC_S		0x73
+#define UII_ASC_U		0x75
+
+// ---------------------------------------------------------------------------
+// Title:       Lower case an ASCII character (internal)
+// Description: Converts an ASCII upper case letter to lower case.
+// Syntax:      char uii_ascii_lower(char c);
+// Input:       c - ASCII character
+// Output:      Lower case character, others unchanged
+// ---------------------------------------------------------------------------
+static char uii_ascii_lower(char c)
+{
+	return (c >= 0x41 && c <= 0x5a) ? (char)(c | 0x20) : c;
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Scan storage media
+// Description: Scans the UCI root directory for storage devices:
+//              directories whose name starts with "sd" or "usb" (case
+//              insensitive). Fills drives[] with lower case paths such as
+//              "/usb0/" (the Ultimate II+ only has USB storage; SD cards
+//              exist on other Ultimate models). Leaves the current
+//              directory at the root.
+// Syntax:      char uii_scan_media(char drives[UII_MAX_DRIVES]
+//                                  [UII_DRIVE_PATH_LEN], char *count);
+// Input:       drives - array to fill
+//              count  - receives the number of drives found
+// Output:      1 when the root could be read, 0 on error
+// ---------------------------------------------------------------------------
+char uii_scan_media(char drives[UII_MAX_DRIVES][UII_DRIVE_PATH_LEN], char *count)
+{
+	static char root[2] = {UII_ASC_SLASH, 0x00};
+	char j;
+	char *name;
+
+	*count = 0;
+
+	uii_change_dir(root);
+	uii_open_dir();
+	if (!UII_SUCCESS)
+	{
+		return 0;
+	}
+
+	uii_get_dir();
+	while (uii_isdataavailable())
+	{
+		uii_readdata();
+		uii_accept();
+
+		// Byte 0 is the attribute, bit 4 = directory; name follows
+		if (!(uii_data[0] & 0x10) || *count >= UII_MAX_DRIVES)
+		{
+			continue;
+		}
+		name = uii_data + 1;
+
+		char n0 = uii_ascii_lower(name[0]);
+		char n1 = n0 ? uii_ascii_lower(name[1]) : 0;
+		char n2 = n1 ? uii_ascii_lower(name[2]) : 0;
+		if (!((n0 == UII_ASC_S && n1 == UII_ASC_D) ||
+			  (n0 == UII_ASC_U && n1 == UII_ASC_S && n2 == UII_ASC_B)))
+		{
+			continue;
+		}
+
+		// Build "/name/" within UII_DRIVE_PATH_LEN bytes
+		drives[*count][0] = UII_ASC_SLASH;
+		for (j = 0; name[j] && j < UII_DRIVE_PATH_LEN - 3; j++)
+		{
+			drives[*count][j + 1] = uii_ascii_lower(name[j]);
+		}
+		drives[*count][j + 1] = UII_ASC_SLASH;
+		drives[*count][j + 2] = 0;
+		(*count)++;
+	}
+	return 1;
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Find a path on the storage media
+// Description: Tries drives[0..count-1] in order and changes to
+//              drive + subpath on the first drive where that directory
+//              exists. The full path is copied to result (bounded).
+// Syntax:      char uii_find_media_path(char drives[UII_MAX_DRIVES]
+//                                       [UII_DRIVE_PATH_LEN], char count,
+//                                       const char *subpath, char *result,
+//                                       unsigned resultsize);
+// Input:       drives     - drive paths from uii_scan_media
+//              count      - number of drives
+//              subpath    - path below the drive root, e.g. "11/"
+//              result     - buffer for the found full path
+//              resultsize - size of result in bytes
+// Output:      1 when found (current directory is there), 0 when not
+//              found or the path does not fit (result is then "")
+// ---------------------------------------------------------------------------
+char uii_find_media_path(char drives[UII_MAX_DRIVES][UII_DRIVE_PATH_LEN], char count,
+						 const char *subpath, char *result, unsigned resultsize)
+{
+	unsigned sublen = strlen(subpath);
+
+	if (!resultsize)
+	{
+		return 0;
+	}
+	result[0] = 0;
+
+	for (char i = 0; i < count; i++)
+	{
+		unsigned drivelen = strlen(drives[i]);
+		if (drivelen + sublen + 1 > resultsize)
+		{
+			continue;
+		}
+
+		memcpy(result, drives[i], drivelen);
+		memcpy(result + drivelen, subpath, sublen + 1);
+		uii_change_dir(result);
+		if (UII_SUCCESS)
+		{
+			return 1;
+		}
+	}
+	result[0] = 0;
+	return 0;
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Finish tape capture
+// Description: Ends a running tape recording (Ultimate tape capture).
+// Syntax:      void uii_finish_capture(void);
+// Input:       None
+// Output:      uii_status
+// ---------------------------------------------------------------------------
+void uii_finish_capture(void)
+{
+	char cmd[] = {0x00, CTRL_CMD_FINISH_CAPTURE};
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, sizeof(cmd));
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Decode a GCR track
+// Description: Lets the Ultimate decode a raw GCR track that is in the REU
+//              into sector data, also in the REU.
+// Syntax:      void uii_decode_track(char track, char maxsector,
+//                                    unsigned long gcr_addr,
+//                                    unsigned long bin_addr,
+//                                    unsigned tracklength);
+// Input:       track       - track number
+//              maxsector   - number of sectors expected on the track
+//              gcr_addr    - REU address of the GCR data (24 bit)
+//              bin_addr    - REU address for the decoded sectors (24 bit)
+//              tracklength - length of the GCR data in bytes
+// Output:      uii_data[0] = number of sectors found, followed by 2 status
+//              bytes per sector; uii_status "00,OK" or errors on track
+// ---------------------------------------------------------------------------
+void uii_decode_track(char track, char maxsector, unsigned long gcr_addr, unsigned long bin_addr, unsigned tracklength)
+{
+	char cmd[14];
+
+	cmd[0] = 0x00;
+	cmd[1] = CTRL_CMD_DECODE_TRACK;
+	cmd[2] = track;
+	cmd[3] = maxsector;
+	cmd[4] = (char)(gcr_addr & 0xff);
+	cmd[5] = (char)((gcr_addr >> 8) & 0xff);
+	cmd[6] = (char)((gcr_addr >> 16) & 0xff);
+	cmd[7] = 0x00;
+	cmd[8] = (char)(bin_addr & 0xff);
+	cmd[9] = (char)((bin_addr >> 8) & 0xff);
+	cmd[10] = (char)((bin_addr >> 16) & 0xff);
+	cmd[11] = 0x00;
+	cmd[12] = (char)(tracklength & 0xff);
+	cmd[13] = (char)(tracklength >> 8);
+
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, sizeof(cmd));
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Erase an EasyFlash sector
+// Description: Erases (fills with $FF) one EasyFlash sector of the cartridge
+//              ROM emulated by the Ultimate: 8 banks of 8 KB, low or high ROM.
+// Syntax:      void uii_easyflash_erase(char bank, char baseaddr);
+// Input:       bank     - first bank of the sector (bits 3-5 are used)
+//              baseaddr - high byte of the ROM address ($80 low ROM,
+//                         $A0/$E0 high ROM)
+// Output:      uii_status
+// ---------------------------------------------------------------------------
+void uii_easyflash_erase(char bank, char baseaddr)
+{
+	char cmd[] = {0x00, CTRL_CMD_EASYFLASH, 0x00, 0x00, 0x00};
+
+	cmd[3] = bank;
+	cmd[4] = baseaddr;
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, sizeof(cmd));
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+// ---------------------------------------------------------------------------
+// Title:       REU preload command (internal)
+// Description: Sends the control target "Load REU" / "Save REU" command,
+//              which loads or saves the REU preload image configured in the
+//              Ultimate's own menu (C64 and Cartridge Settings).
+// Syntax:      void uii_reu_preload_command(char command);
+// Input:       command - CTRL_CMD_LOAD_REU or CTRL_CMD_SAVE_REU
+// Output:      uii_data: 4 bytes result code (LSB first) + message text
+//              uii_status: "00,OK", "84,REU NOT ENABLED",
+//              "86,REU OFFSET > SIZE. NOT SAVED" or cannot open file
+// ---------------------------------------------------------------------------
+static void uii_reu_preload_command(char command)
+{
+	char cmd[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+
+	cmd[1] = command;
+	uii_settarget(TARGET_CONTROL);
+	uii_sendcommand(cmd, sizeof(cmd));
+	uii_readdata();
+	uii_readstatus();
+	uii_accept();
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Load the configured REU preload image
+// Description: Loads the REU preload image set in the Ultimate menu.
+// Syntax:      void uii_load_reu_preload(void);
+// Input:       None
+// Output:      See uii_reu_preload_command
+// ---------------------------------------------------------------------------
+void uii_load_reu_preload(void)
+{
+	uii_reu_preload_command(CTRL_CMD_LOAD_REU);
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Save the REU to the configured preload image
+// Description: Saves the REU to the REU preload image set in the Ultimate
+//              menu.
+// Syntax:      void uii_save_reu_preload(void);
+// Input:       None
+// Output:      See uii_reu_preload_command
+// ---------------------------------------------------------------------------
+void uii_save_reu_preload(void)
+{
+	uii_reu_preload_command(CTRL_CMD_SAVE_REU);
+}
+
+// ---------------------------------------------------------------------------
+// Title:       Load settings from a config file
+// Description: Firmware 3.15+: loads Ultimate settings from a .cfg text file
+//              ("[store]" sections with "item=value" lines, as written by the
+//              Ultimate's "Save Settings") and applies them. Only the items
+//              present in the file are changed.
+// Syntax:      void uii_load_config(const char *filename);
+// Input:       filename - full path of the .cfg file; "" uses the firmware
+//                         default "/temp/uci_config.cfg"
+// Output:      uii_data: parse log of lines that could not be applied
+//              uii_status: "00,OK", "88,CANNOT OPEN CONFIG FILE" or
+//              "89,CONFIG FILE HAD ERRORS"
+// ---------------------------------------------------------------------------
+void uii_load_config(const char *filename)
+{
+	char header[2] = {0x00, CTRL_CMD_LOAD_CONFIG};
+
+	uii_send_with_name(TARGET_CONTROL, header, sizeof(header), filename);
 }

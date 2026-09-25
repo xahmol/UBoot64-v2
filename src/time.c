@@ -551,7 +551,7 @@ void edittimeconfig()
 {
     char changesmade = 0;
     char key;
-    char offsetinput[10];
+    char offsetinput[12]; // "%ld" of a long: up to 11 characters plus terminator
     char *ptrend;
 
     do
@@ -620,7 +620,7 @@ void edittimeconfig()
         case CH_F3:
             sprintf(offsetinput, "%ld", cfg.secondsfromutc);
             cwin_putat_string(&cw, 0, 23, "Input time offset to UTC:", cfg.colors.text);
-            textInput(0, 24, 10, offsetinput, 10, 0);
+            textInput(0, 24, 11, offsetinput, sizeof(offsetinput), 0);
             cfg.secondsfromutc = strtol(offsetinput, &ptrend, 10);
             changesmade = 1;
             break;
@@ -636,7 +636,7 @@ void edittimeconfig()
 
         case CH_F5:
             cwin_putat_string(&cw, 0, 23, "Input NTP server hostname:", cfg.colors.text);
-            textInput(0, 24, 40, cfg.host, MAXHOSTLENGTH - 1, 0);
+            textInput(0, 24, 40, cfg.host, sizeof(cfg.host), 0);
             changesmade = 1;
             break;
 

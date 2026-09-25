@@ -55,6 +55,26 @@ void uii_disable_drive_b(void);                      // Power off Ultimate emula
 void uii_get_drive_a_power(void);                    // Read drive A power state into uii_data
 void uii_get_drive_b_power(void);                    // Read drive B power state into uii_data
 
+// Additions: remaining commands of released firmware (see UCILIBMANUAL.md)
+#ifndef UII_MAX_DRIVES
+#define UII_MAX_DRIVES      5       // Storage devices tracked by uii_scan_media
+#endif
+#ifndef UII_DRIVE_PATH_LEN
+#define UII_DRIVE_PATH_LEN  16      // Bytes per stored drive path, e.g. "/usb0/"
+#endif
+unsigned long uii_file_size(void);                   // Size of the open file
+void uii_load_reu_at(unsigned long reu_addr, unsigned long length); // Load open file into REU at an address
+void uii_save_reu_at(unsigned long reu_addr, unsigned long length); // Save REU range to the open file
+char uii_scan_media(char drives[UII_MAX_DRIVES][UII_DRIVE_PATH_LEN], char *count); // List /usbN/ and /sd/ devices
+char uii_find_media_path(char drives[UII_MAX_DRIVES][UII_DRIVE_PATH_LEN], char count,
+                         const char *subpath, char *result, unsigned resultsize); // First drive with subpath
+void uii_finish_capture(void);                       // End tape capture
+void uii_decode_track(char track, char maxsector, unsigned long gcr_addr, unsigned long bin_addr, unsigned tracklength); // GCR decode in REU
+void uii_easyflash_erase(char bank, char baseaddr);  // Erase EasyFlash sector
+void uii_load_reu_preload(void);                     // Load the REU preload image set in the Ultimate menu
+void uii_save_reu_preload(void);                     // Save REU to the configured preload image
+void uii_load_config(const char *filename);              // Firmware 3.15+: apply settings from a .cfg file
+
 #pragma compile("ultimate_dos_lib.c")
 
 #endif

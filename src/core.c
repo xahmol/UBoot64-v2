@@ -589,8 +589,10 @@ signed textInput(char xpos, char ypos, char width, char *str, char size, char va
  * Created 2009 by Sascha Bader.
  * @param[in] xpos screen x where input starts.
  * @param[in] ypos screen y where input starts.
- * @param[in,out] str string that is edited, it can have content and must have at least @p size + 1 bytes. Maximum size     if 255 bytes.
- * @param[in] size maximum length of @p str in bytes.
+ * @param[in,out] str string that is edited, it can have content.
+ * @param[in] size size of the buffer @p str in bytes (pass sizeof(buffer)).
+ *                 The string never grows beyond size - 1 characters, so the
+ *                 buffer can never overflow.
  * @return -1 if input was aborted.
  * @return >= 0 length of edited string @p str.
  */
@@ -600,13 +602,29 @@ signed textInput(char xpos, char ypos, char width, char *str, char size, char va
 //                          +   4   Also wildcards * and ? allowed
 //                          Add numbers to combine or 0 for no validation
 //              width:      =   width of input viewport, can be less than size
+//
+// Fix (2026-09-25): size used to mean "maximum length" while callers passed
+// the buffer size, so typing the last allowed character wrote the
+// terminator one byte past the buffer, and SHIFT-DEL (insert) on a string of
+// size - 1 characters shifted up to str[size + 1]. Now size is the buffer
+// size, the maximum length is size - 1 and every write is bounds-checked.
 {
   char c;
-  char idx = strlen(str);
   char len;
+  char maxlen;
+  char idx;
   char valid = 0;
   char offs = 0;
-  char flag = 0;
+
+  if (size < 2)
+  {
+    return -1;
+  }
+  maxlen = size - 1;
+
+  // Make sure the incoming string is terminated inside the buffer
+  str[maxlen] = 0;
+  idx = strlen(str);
 
   while (1)
   {
@@ -646,47 +664,29 @@ signed textInput(char xpos, char ypos, char width, char *str, char size, char va
       return -1;
 
     case CH_ENTER:
-      idx = strlen(str);
-      str[idx] = 0;
       cwin_cursor_show(&cw, 0);
       cwin_cursor_move(&cw, xpos, ypos);
       cwin_fill_rect_raw(&cw, xpos, ypos, width, 1, SC_SPACE, cfg.colors.text_input);
       strncpy(linebuffer, str + offs, width - 1);
       linebuffer[width - 1] = 0;
       cwin_console_printf(&cw, cfg.colors.text_input, "%s", linebuffer);
-      return idx;
+      return len;
 
     case CH_DEL:
       if (idx)
       {
+        // Shift the tail including the terminator one position left
+        memmove(str + idx - 1, str + idx, len - idx + 1);
         --idx;
-        for (c = idx; 1; ++c)
-        {
-          char b = str[c + 1];
-          str[c] = b;
-
-          if (b == 0)
-          {
-            break;
-          }
-        }
       }
       break;
 
     case CH_INS:
-      c = strlen(str);
-      if (c < size && c > 0 && idx < c)
+      if (len < maxlen && len > 0 && idx < len)
       {
-        ++c;
-        while (c >= idx)
-        {
-          str[c + 1] = str[c];
-          if (c == 0)
-          {
-            break;
-          }
-          --c;
-        }
+        // Shift the tail including the terminator one position right;
+        // len < maxlen guarantees str[len + 1] is inside the buffer
+        memmove(str + idx + 1, str + idx, len - idx + 1);
         str[idx] = ' ';
       }
       break;
@@ -699,7 +699,7 @@ signed textInput(char xpos, char ypos, char width, char *str, char size, char va
       break;
 
     case CH_CURS_RIGHT:
-      if (idx < strlen(str) && idx < size)
+      if (idx < len)
       {
         ++idx;
       }
@@ -736,16 +736,21 @@ signed textInput(char xpos, char ypos, char width, char *str, char size, char va
       {
         valid = 1;
       }
-      if (idx < size && valid)
+      if (valid)
       {
-        flag = str[idx];
-        str[idx] = c;
-        ++idx;
-        if (!flag)
+        if (idx < len)
         {
+          // Overwrite inside the string
+          str[idx] = c;
+          ++idx;
+        }
+        else if (len < maxlen)
+        {
+          // Append at the end, terminator stays inside the buffer
+          str[idx] = c;
+          ++idx;
           str[idx] = 0;
         }
-        break;
       }
       break;
     }

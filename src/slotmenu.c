@@ -359,7 +359,7 @@ void pickmenuslot()
         cwin_fill_rect_raw(&cw, 0, 22, 40, 3, SC_SPACE, cfg.colors.text);
         cwin_console_printf(&cw, cfg.colors.text, "Choose name for slot:");
 
-        textInput(0, 24, 40, Slot.menu, MAXMENUNAME, 0);
+        textInput(0, 24, 40, Slot.menu, sizeof(Slot.menu), 0);
 
         cwin_fill_rect_raw(&cw, 0, 23, 40, 2, SC_SPACE, cfg.colors.text);
         cwin_cursor_move(&cw, 0, 23);
@@ -914,7 +914,7 @@ char renamemenuslot()
     if (selected == 1)
     {
         cwin_putat_string(&cw, 0, 23, "Choose name for slot:", cfg.colors.text);
-        textInput(0, 24, 31, Slot.menu, 30, 0);
+        textInput(0, 24, 31, Slot.menu, sizeof(Slot.menu), 0);
         save_slot_to_reu(menuslot);
         changesmade = 1;
     }
@@ -1155,13 +1155,13 @@ char edituserdefinedcommand()
         if (newslotname)
         {
             cwin_putat_string(&cw, 0, 6, "Choose name for slot:", cfg.colors.text);
-            textInput(0, 7, 40, Slot.menu, MAXMENUNAME, 0);
+            textInput(0, 7, 40, Slot.menu, sizeof(Slot.menu), 0);
         }
 
         cwin_putat_string(&cw, 5, 4, Slot.menu, cfg.colors.text);
 
         cwin_putat_string(&cw, 0, 9, "Enter command (empty=none):", cfg.colors.text);
-        textInput(0, 10, 80, Slot.cmd, MAXCOMMAND, 0);
+        textInput(0, 10, 80, Slot.cmd, sizeof(Slot.cmd), 0);
 
         if (strlen(Slot.cmd) == 0)
         {
