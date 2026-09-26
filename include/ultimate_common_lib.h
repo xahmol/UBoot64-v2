@@ -57,6 +57,7 @@ struct UII_WRITE
 // Buffer size is chosen smaller here to lower memory usage, increase if needed (for example for networking)
 #define DATA_QUEUE_SZ 512
 #define STATUS_QUEUE_SZ 256
+#define UII_COMMAND_MAX 520     // Shared command buffer (uii_command_buffer)
 
 // UCI target IDs
 #define TARGET_DOS1 0x01
@@ -201,6 +202,7 @@ char uii_detect(void);
 void uii_enable(void);
 char uii_wait_for_uci(char timeout_seconds);
 void uii_settarget(char id);
+char *uii_command_buffer(unsigned length);  // Shared command buffer, NULL if too long
 char uii_send_with_name(char target, const char *header, char headerlen, const char *name);
 void uii_freeze(void);
 void uii_add_partition(char index, const char *name, const char *path);

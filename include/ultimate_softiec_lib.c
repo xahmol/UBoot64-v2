@@ -182,7 +182,7 @@ void uii_softiec_chkout(char sa, const char *data, unsigned length)
 	{
 		return;
 	}
-	fullcmd = (char *)malloc(length + 4);
+	fullcmd = uii_command_buffer(length + 4);
 	if (!fullcmd)
 	{
 		return;
@@ -195,7 +195,6 @@ void uii_softiec_chkout(char sa, const char *data, unsigned length)
 
 	uii_settarget(TARGET_SOFTIEC);
 	uii_sendcommand(fullcmd, length + 4);
-	free(fullcmd);
 
 	uii_readdata();
 	uii_readstatus();

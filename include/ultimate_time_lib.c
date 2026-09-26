@@ -56,8 +56,9 @@ void uii_set_time(char *data)
 // This function may be enabled or disabled by the ultimate settings. In the latter case the status will read
 // “98,FUNCTION PROHIBITED”.
 {
+	// Fixed size: a local buffer, no malloc
+	char fullcmd[8];
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(8);
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_SET_TIME;
 
@@ -67,7 +68,9 @@ void uii_set_time(char *data)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, 8);
 
-	free(fullcmd);
+	// The firmware replies with the new date as data before the status:
+	// read it, or the status read is out of step (an old status came back)
+	uii_readdata();
 	uii_readstatus();
 	uii_accept();
 }

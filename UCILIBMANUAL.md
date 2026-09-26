@@ -2152,3 +2152,16 @@ Checked against the released firmware v3.15a (GideonZ/1541ultimate:
   helpers do.
 - **Keyboard buffer:** on the C128 it is at `$034A` with the count at `$D0`
   (the C64 uses `$0277`/`$C6`).
+
+
+## Command buffer (no heap)
+
+The library builds every command in one shared static buffer of
+`UII_COMMAND_MAX` (520) bytes, obtained with `uii_command_buffer(length)`,
+instead of `malloc`/`free`. A command is always built and sent before the
+next one is built, so one buffer is enough, and the program needs no heap
+for the library. A command longer than the buffer (in practice only
+possible with names or paths beyond the Ultimate's own limits) is not sent:
+`uii_command_buffer` returns `NULL` and sets `uii_status` to `99` (no
+text, so the library needs no initialised data for it), which
+`UII_SUCCESS` reports as a failure.

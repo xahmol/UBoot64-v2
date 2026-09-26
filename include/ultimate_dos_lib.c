@@ -99,7 +99,7 @@ void uii_change_dir(char *directory)
 // successful. The two possible responses are: “00,OK”, or “83,NO SUCH DIRECTORY”.
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(strlen(directory) + 2);
+	char *fullcmd = uii_command_buffer(strlen(directory) + 2);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_CHANGE_DIR;
@@ -110,7 +110,6 @@ void uii_change_dir(char *directory)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, strlen(directory) + 2);
 
-	free(fullcmd);
 
 	uii_readstatus();
 	uii_accept();
@@ -124,7 +123,7 @@ void uii_create_dir(char *directory)
 // the appropriate filesystem error message.
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(strlen(directory) + 2);
+	char *fullcmd = uii_command_buffer(strlen(directory) + 2);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_CREATE_DIR;
@@ -135,7 +134,6 @@ void uii_create_dir(char *directory)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, strlen(directory) + 2);
 
-	free(fullcmd);
 
 	uii_readstatus();
 	uii_accept();
@@ -171,7 +169,7 @@ void uii_mount_disk(char id, char *filename)
 // On successful mount the status channel reports “00,OK”. This command never returns any data.
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	char *fullcmd = uii_command_buffer(strlen(filename) + 3);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_MOUNT_DISK;
@@ -183,7 +181,6 @@ void uii_mount_disk(char id, char *filename)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, strlen(filename) + 3);
 
-	free(fullcmd);
 
 	uii_readdata();
 	uii_readstatus();
@@ -244,7 +241,7 @@ void uii_open_file(char attrib, char *filename)
 // system.
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	char *fullcmd = uii_command_buffer(strlen(filename) + 3);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_OPEN_FILE;
@@ -256,7 +253,6 @@ void uii_open_file(char attrib, char *filename)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, strlen(filename) + 3);
 
-	free(fullcmd);
 
 	uii_readdata();
 	uii_readstatus();
@@ -288,7 +284,7 @@ void uii_write_file(char *data, unsigned length)
 // return “ACCESS DENIED” onto the status channel. The command will never return data.
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(length + 4);
+	char *fullcmd = uii_command_buffer(length + 4);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_WRITE_DATA;
@@ -301,7 +297,6 @@ void uii_write_file(char *data, unsigned length)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, length + 4);
 
-	free(fullcmd);
 
 	uii_readdata();
 	uii_readstatus();
@@ -383,7 +378,7 @@ void uii_file_stat(char *filename)
 // “00,OK”, or “88,FILE NOT FOUND”
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(strlen(filename) + 2);
+	char *fullcmd = uii_command_buffer(strlen(filename) + 2);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_FILE_STAT;
@@ -394,7 +389,6 @@ void uii_file_stat(char *filename)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, strlen(filename) + 2);
 
-	free(fullcmd);
 
 	uii_readdata();
 	uii_readstatus();
@@ -409,7 +403,7 @@ void uii_delete_file(char *filename)
 // the appropriate filesystem error message.
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(strlen(filename) + 2);
+	char *fullcmd = uii_command_buffer(strlen(filename) + 2);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_DELETE_FILE;
@@ -420,7 +414,6 @@ void uii_delete_file(char *filename)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, strlen(filename) + 2);
 
-	free(fullcmd);
 
 	uii_readstatus();
 	uii_accept();
@@ -436,7 +429,7 @@ void uii_rename_file(char *oldname, char *newname)
 {
 	unsigned x = 0;
 	unsigned count = 0;
-	char *fullcmd = (char *)malloc(strlen(oldname) + strlen(newname) + 3);
+	char *fullcmd = uii_command_buffer(strlen(oldname) + strlen(newname) + 3);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_RENAME_FILE;
@@ -454,7 +447,6 @@ void uii_rename_file(char *oldname, char *newname)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, count);
 
-	free(fullcmd);
 
 	uii_readstatus();
 	uii_accept();
@@ -471,7 +463,7 @@ void uii_copy_file(char *source, char *destination)
 {
 	unsigned x = 0;
 	unsigned count = 0;
-	char *fullcmd = (char *)malloc(strlen(source) + strlen(destination) + 3);
+	char *fullcmd = uii_command_buffer(strlen(source) + strlen(destination) + 3);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_COPY_FILE;
@@ -489,7 +481,6 @@ void uii_copy_file(char *source, char *destination)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, count);
 
-	free(fullcmd);
 
 	uii_readstatus();
 	uii_accept();
@@ -516,7 +507,7 @@ void uii_loadIntoRamDisk(char id, char *filename, char whatif)
 //        whatif - if enabled load as trial to check for success (correct size and type)
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	char *fullcmd = uii_command_buffer(strlen(filename) + 3);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_LOAD_INTO_RAMDISK;
@@ -528,7 +519,6 @@ void uii_loadIntoRamDisk(char id, char *filename, char whatif)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, strlen(filename) + 3);
 
-	free(fullcmd);
 
 	uii_readdata();
 	uii_readstatus();
@@ -541,7 +531,7 @@ void uii_saveRamDisk(char id, char *filename)
 //        filename - the name of the file to save
 {
 	unsigned x = 0;
-	char *fullcmd = (char *)malloc(strlen(filename) + 3);
+	char *fullcmd = uii_command_buffer(strlen(filename) + 3);
 	if (!fullcmd) return;
 	fullcmd[0] = 0x00;
 	fullcmd[1] = DOS_CMD_SAVE_RAMDISK;
@@ -553,7 +543,6 @@ void uii_saveRamDisk(char id, char *filename)
 	uii_settarget(TARGET_DOS1);
 	uii_sendcommand(fullcmd, strlen(filename) + 3);
 
-	free(fullcmd);
 
 	uii_readdata();
 	uii_readstatus();
