@@ -65,6 +65,6 @@ Everything from the DMBoot v5 port and the v3.1.0 fix round was tested on the U6
 
 Not yet tested:
 - Firmware 3.15b (Christian Gleissner's SoftIEC compatibility builds, GitHub #3).
-- An intermittent glitch seen once: right after entering a D64 on the SoftIEC drive, one listing line came through garbled (`1000          PRG`); correct after F1. Not reproduced.
+- An intermittent glitch seen once: right after entering a D64 on the SoftIEC drive, one listing line came through garbled (`1000          PRG`); correct after F1. Not reproduced in 6 further enter/leave rounds (2026-09-28). The garbled text is exactly what the parser makes of the line `1000  "BIG 1000"   PRG` without its opening quote (the name is then taken from after the closing quote), so most likely one byte was lost on the IEC bus, not a parser bug. Watch for it.
 
 Remove this section once these are done.
