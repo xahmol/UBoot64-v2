@@ -70,6 +70,9 @@ Version 3.1.0 - (in development):
   - REU images chosen in IEC mode now get their real Ultimate path, so they can be preloaded.
 - **F4** (partitions) on a drive without partition support now says so, instead of listing its files as partitions.
 - The USR file type showed as "URS".
+- A new REU or mount-only slot gets the file name as its default name (it started empty, which hid the slot in the menu); an emptied name falls back to it.
+- The file browser's side menu shows **M** (run mount) in IEC mode inside a disk image.
+- Messages in the file browser no longer leave the last letter of the file type column on screen.
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
 
 Version 3.0.1 - 20260913:

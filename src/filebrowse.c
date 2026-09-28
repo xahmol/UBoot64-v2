@@ -674,6 +674,8 @@ char iec_root_free(char dev)
   return (UII_SOFTIEC_OK) ? 1 : 0;
 }
 
+void browse_menu(void);
+
 void iec_leave_image(void)
 // Forget the disk image tracked on the SoftIEC drive (see CH_ENTER)
 {
@@ -681,6 +683,7 @@ void iec_leave_image(void)
   {
     iec_inimage = 0;
     imageaid = 0;
+    browse_menu(); // M is no longer available
   }
 }
 
@@ -1334,7 +1337,17 @@ void browse_menu(void)
   cwin_putat_string(&cw, 26, ++menuy, "  O Demo mode", cfg.colors.text);
   cwin_putat_string(&cw, 26, ++menuy, " F7 Quit", cfg.colors.text);
 
-  menuy++;
+  // In IEC mode inside a disk image (mounted from UCI mode, or entered on
+  // the SoftIEC drive): M makes a mount-and-run slot. Takes the place of
+  // the blank line, so the panel still fits 25 rows with "Inside mount".
+  if (!fb_uci_mode && (inside_mount || iec_inimage))
+  {
+    cwin_putat_string(&cw, 26, ++menuy, "  M Run mount", cfg.colors.text);
+  }
+  else
+  {
+    menuy++;
+  }
   if (fb_uci_mode)
   {
     cwin_putat_string(&cw, 26, ++menuy, "UCI mode", cfg.colors.text);
@@ -1974,7 +1987,7 @@ void mainLoopBrowse(void)
         FindFirstIECDrive();
         if (!device)
         {
-          cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
+          cwin_fill_rect_raw(&cw, 0, 3, 25, 22, SC_SPACE, cfg.colors.text); // 25: the file type column ends in column 24
           cwin_cursor_move(&cw, 0, 3);
           cwin_console_printf(&cw, cfg.colors.error, "No active IEC drives.\n");
           cwin_console_printf(&cw, cfg.colors.text, "Press key.");
@@ -1997,7 +2010,7 @@ void mainLoopBrowse(void)
               // Oscar64's charwin console only treats \n as a line break and
               // wraps at the window width, not at the 24 columns cleared
               // here: every line stays under 24 characters.
-              cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
+              cwin_fill_rect_raw(&cw, 0, 3, 25, 22, SC_SPACE, cfg.colors.text); // 25: the file type column ends in column 24
               cwin_cursor_move(&cw, 0, 3);
               cwin_console_printf(&cw, cfg.colors.error, "Partition %u already\nin use for something\nelse -- root partition\nauto-config skipped.\n", RESERVED_ROOT_PARTITION);
               cwin_console_printf(&cw, cfg.colors.text, "Press key.");
@@ -2044,7 +2057,7 @@ void mainLoopBrowse(void)
         }
         else
         {
-          cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
+          cwin_fill_rect_raw(&cw, 0, 3, 25, 22, SC_SPACE, cfg.colors.text); // 25: the file type column ends in column 24
           cwin_cursor_move(&cw, 0, 3);
           cwin_console_printf(&cw, cfg.colors.error, "No partitions on\nthis drive.\n");
           cwin_console_printf(&cw, cfg.colors.text, "Press key.");

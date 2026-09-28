@@ -314,6 +314,32 @@ void mainmenu()
     menuselect = key;
 }
 
+static const char *slotdefaultname(void)
+// Default name for a new slot: the program, else the REU or disk image file
+// (REU and mount-only slots have no program, and an empty name hides the
+// slot in the menu)
+{
+    // REU and mount flags first: they are reset per browser session,
+    // pathfile is not
+    if (reuflag)
+    {
+        return imagename;
+    }
+    if (addmountflag == 1)
+    {
+        return imageaname;
+    }
+    if (addmountflag == 2)
+    {
+        return imagebname;
+    }
+    if (pathfile[0])
+    {
+        return pathfile;
+    }
+    return "Slot";
+}
+
 void pickmenuslot()
 // Routine to pick a slot to store the chosen dir trace path
 {
@@ -350,7 +376,7 @@ void pickmenuslot()
     }
     else
     {
-        strncpy(Slot.menu, pathfile, MAXMENUNAME - 1);
+        strncpy(Slot.menu, slotdefaultname(), MAXMENUNAME - 1);
         Slot.menu[MAXMENUNAME - 1] = 0;
     }
     if (selected == 1)
@@ -360,6 +386,12 @@ void pickmenuslot()
         cwin_console_printf(&cw, cfg.colors.text, "Choose name for slot:");
 
         textInput(0, 24, 40, Slot.menu, sizeof(Slot.menu), 0);
+        if (!Slot.menu[0])
+        {
+            // An empty name hides the slot in the menu: keep the default
+            strncpy(Slot.menu, slotdefaultname(), MAXMENUNAME - 1);
+            Slot.menu[MAXMENUNAME - 1] = 0;
+        }
 
         cwin_fill_rect_raw(&cw, 0, 23, 40, 2, SC_SPACE, cfg.colors.text);
         cwin_cursor_move(&cw, 0, 23);
