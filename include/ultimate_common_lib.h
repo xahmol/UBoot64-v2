@@ -162,6 +162,13 @@ struct UII_WRITE
 // Macro for checking if last command was successful
 #define UII_SUCCESS (uii_status[0] == '0' && uii_status[1] == '0')
 
+// Success check for the SoftIEC target (TARGET_SOFTIEC, firmware 3.15+):
+// its commands answer with a one-byte binary status, 0x00 = OK, 0x01-0x09
+// = error codes (softiec_target.cc, c_status_all_ok ...), not the "00,OK"
+// text UII_SUCCESS checks. Older firmware without the target answers with
+// an error text, which this also rejects.
+#define UII_SOFTIEC_OK (uii_status[0] == 0x00 || UII_SUCCESS)
+
 // Longest name/path accepted by the commands that take a string argument
 // (checked, not truncated: longer names are rejected, see uii_send_with_name)
 #define UII_NAME_MAX 255

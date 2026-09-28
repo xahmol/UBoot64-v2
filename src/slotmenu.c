@@ -453,7 +453,10 @@ void pickmenuslot()
         }
         else
         {
-            if (inside_mount)
+            // inside_mount: a disk image mounted on drive A from UCI mode;
+            // iec_inimage: a disk image entered on the SoftIEC drive, which
+            // the slot mounts on drive A (image tracked in filebrowse.c)
+            if (inside_mount || iec_inimage)
             {
                 Slot.device = imageaid;
                 Slot.image_a_id = imageaid;
@@ -466,7 +469,12 @@ void pickmenuslot()
             else
             {
                 Slot.device = pathdevice;
-                Slot.partition = currentpartition; // 0 if never switched (pre-3.15 behavior, no CP sent at boot)
+                // Firmware 3.15+ SoftIEC with UBoot64's root partition usable:
+                // the slot uses that partition + the host path (pathconcat()),
+                // independent of the partition that was browsed (GitHub #16).
+                // Otherwise the browsed partition, 0 if never switched (pre-3.15
+                // behavior, no CP sent at boot).
+                Slot.partition = (iec_rootok && devicetype[pathdevice] == U64) ? RESERVED_ROOT_PARTITION : currentpartition;
             }
             strncpy(Slot.file, pathfile, MAXFILENAME - 1);
             Slot.file[MAXFILENAME - 1] = 0;

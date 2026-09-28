@@ -910,6 +910,18 @@ Not gated to a specific devicetype — `F4` and the partition-list logic key off
 
 **Deletion (`SOFTIEC_CMD_DEL_PARTITION`) does not work in practice.** `uii_del_partition()` was implemented (matching firmware's documented wire format exactly) and wired to the F8 "turn root partition option off" prompt in v3.0.1, but confirmed on real hardware -- even from a clean power-cycle state -- that it does not actually remove the partition from the live table, despite firmware's `IecFileSystem::RemovePartition()` looking structurally correct on inspection. Since the wrapper served no other purpose and there's no way to distinguish "confirmed broken" from "some other precondition we're missing" without firmware-side debugging, `uii_del_partition()` was removed entirely rather than left as dead/misleading code. This is not a loss in practice: UBoot64's partitions are never persisted to flash regardless (see above), so a power cycle already clears them -- the F8-off prompt is gone too, since there's nothing it could reliably do.
 
+### SoftIEC Host Paths and Root-Partition Slots (firmware 3.15+, v3.1.0)
+
+Ported from DMBoot v5 (`src/browse.c`), GitHub #14-#17, verified on an Ultimate 64-II with firmware 3.15a (2026-09-28):
+
+- **Per-device check** (`browse_device_setup()`, `filebrowse.c`), whenever a device is chosen in IEC mode: on the SoftIEC drive (`devicetype == U64`), `iec_hostpaths` = the drive answers `SOFTIEC_CMD_GET_FATNAME` with `"$"` (`iec_hostpath()`, `core.c`), `iec_rootfree` = partition 254 is free or UBoot64's own and `uii_add_partition()` accepted it (`iec_root_free()`), `iec_rootok` = both. The flags are uninitialised globals, so they live in bss RAM, not the full shared data segment.
+- **Slots on the SoftIEC drive** (#16): with `iec_rootok`, a program/boot slot records partition 254 and the path `"cd://" + host path` (`pathconcat()`), so it works whichever partition or directory the drive is in when the slot starts (tested: the drive left in the user's C64OS partition). Otherwise the old behaviour: browsed partition + dirtrace.
+- **Image tracking** (#15): entering a disk image on the SoftIEC drive in IEC mode records its directory (host path) and file name before the `cd`, sets `iec_inimage`, and `imageaid` = drive A; **M** on a file inside it then makes a slot that mounts the image on drive A and runs the file, without the dirtrace. Leaving the image (DEL up to its depth, root, partition or device change) clears it.
+- **REU images in IEC mode** (#14): the REU path is the host path, not a `cd` command.
+- **`"$=P"` check** (#17): an entry with a file type means the drive does not support partitions (a 1581 image on drive A was tested: "No partitions on this drive"); partition 0 is skipped; numbers above 255 are rejected.
+- **Status check**: the SoftIEC target answers with a binary status byte, see `UII_SOFTIEC_OK` and `docs/UCILIB_MANUAL.md` §14. The first port used `UII_SUCCESS` (as DMBoot does) and every check failed on 3.15a.
+- File names: `GET_FATNAME` with a file name returns a constructed name with a type extension on 3.15a, not the existing file (see the manual), so `iec_fatpath()` uses the `"$"` directory plus the IEC name converted to ASCII.
+
 ### REU as a Pointer-Based Heap
 
 The file browser uses REU addresses as if they were 32-bit pointers into a flat memory space. The `next` and `prev` fields of `DirMeta` hold raw REU byte addresses. Navigation is always via DMA: to follow a link, call `dir_get_element(meta.next)` which DMA-loads the target element into `presentdirelement`.

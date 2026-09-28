@@ -216,6 +216,9 @@ extern char iec_devices[23];
 extern char configpath[];
 extern char storagepaths[4][8];
 extern char inside_mount;
+extern char iec_hostpaths; // SoftIEC state of the browsed device, see src/core.c
+extern char iec_rootok;
+extern char iec_inimage;
 extern char verbosecounter;
 
 // Import from cartridge back to BASIC code

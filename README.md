@@ -64,6 +64,12 @@ Version 3.1.0 - (in development):
 - Start-up messages: a third option, **Show messages + wait**, keeps the start-up feedback on screen until a key is pressed.
 - "IDs needing manual power switching" now reports "Yes" when any such device is on the bus, not only when it is the last one checked.
 - REU preload: the path of the REU image is now stored in the slot. Before, a slot loaded the REU file from the directory of its drive A image. Existing slots are converted automatically: by the upgrade tools, or at the first boot of the slot.
+- Firmware 3.15+ SoftIEC drive (IEC mode):
+  - Slots made on the SoftIEC drive now use UBoot64's own root partition and the drive's real host path, so they keep working whichever partition or directory you browsed in, and no dirtrace is needed.
+  - **M** (mount and run) now also works for a disk image entered on the SoftIEC drive in IEC mode: the slot mounts that image on drive A and runs the chosen file.
+  - REU images chosen in IEC mode now get their real Ultimate path, so they can be preloaded.
+- **F4** (partitions) on a drive without partition support now says so, instead of listing its files as partitions.
+- The USR file type showed as "URS".
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
 
 Version 3.0.1 - 20260913:

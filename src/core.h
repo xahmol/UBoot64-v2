@@ -8,6 +8,8 @@ void errorexit(const char *msg);
 void delay(char seconds);
 void mid(const char *src, char start, char length, char *dst, char dstlen);
 char *pathconcat();
+char iec_hostpath(void);
+void asc2pet_path(char *dst, const char *src, unsigned size);
 char getkey(char mask);
 void cwin_putat_string_reverse(CharWin *win, char x, char y, const char *str, char color);
 void headertext(const char *subtitle, char time);

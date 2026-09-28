@@ -64,6 +64,7 @@
 #include "fc3.h"
 #include "ultimate_common_lib.h"
 #include "ultimate_dos_lib.h"
+#include "ultimate_softiec_lib.h"
 #include "ultimate_time_lib.h"
 #include "ultimate_network_lib.h"
 #include "core.h"
@@ -165,6 +166,8 @@ char sorted;            // Sorted flag
 // SoftIEC partition-list browsing state (firmware 3.15+, U64 devices only)
 char showing_partitions; // 1 while the virtual partition-list view is displayed
 char partition_depth;    // how many real subfolders deep into the current partition
+char iec_rootfree;       // Partition RESERVED_ROOT_PARTITION is free or UBoot64's (browse_device_setup())
+char iec_imagedepth;     // partition_depth outside the tracked disk image (iec_inimage)
 
 // Buffers for full paths
 char pathbuffer[256];
@@ -454,7 +457,7 @@ char iec_read_partitions(char device, struct PartitionEntry *out, char maxcount)
 // Output: number of partitions found, 0 on failure
 {
   char count = 0;
-  char b, i;
+  char b, i, len;
   char first = 1;
   unsigned size;
 
@@ -480,7 +483,7 @@ char iec_read_partitions(char device, struct PartitionEntry *out, char maxcount)
     krnio_chrin(); // skip second link byte
 
     size = krnio_chrin();
-    size |= (krnio_chrin()) << 8;
+    size |= (unsigned)krnio_chrin() << 8;
 
     // read line into linebuffer, same convention as dir_readentry_iec()
     memset(linebuffer, 0, sizeof(linebuffer));
@@ -514,6 +517,32 @@ char iec_read_partitions(char device, struct PartitionEntry *out, char maxcount)
     if (linebuffer[0] == 'b')
     {
       break;
+    }
+
+    // A drive without partition support does not reject "$=P": the 3.14
+    // SoftIEC drive reads "=P" as a file filter and returns a normal
+    // listing. An entry with a file type means "not a partition list"
+    // (GitHub #17; as DMBoot v5, src/browse.c, dir_list(true)).
+    len = i;
+    while (len > 0 && (linebuffer[len - 1] == ' ' || linebuffer[len - 1] == 0xA0))
+    {
+      len--;
+    }
+    if (len > 0 && linebuffer[len - 1] == 0x3C) // "<" of a locked file
+    {
+      len--;
+    }
+    if ((X('p', 'r', 'g')) || (X('s', 'e', 'q')) || (X('u', 's', 'r')) || (X('r', 'e', 'l')) || (X('d', 'e', 'l')) ||
+        size > 255)
+    {
+      count = 0;
+      break;
+    }
+
+    // Partition 0 is the CMD system partition, not one to select
+    if (size == 0)
+    {
+      continue;
     }
 
     // skip until first quote, then copy until closing quote or buffer limit
@@ -616,6 +645,109 @@ char dir_read_partition_list(char device)
   {
     present = 0;
   }
+  return 1;
+}
+
+char iec_root_free(char dev)
+// Check that partition RESERVED_ROOT_PARTITION is free or already UBoot64's
+// (the "$=P" list shows its path "/" on firmware 3.15, its name on 3.15a),
+// then create it at "/" (idempotent, not kept in flash). A partition of the
+// user's own on that number is left alone.
+// Adapted from DMBoot v5 (src/browse.c, browse_root_usable()).
+// Input: dev - device number
+// Output: 1 when partition RESERVED_ROOT_PARTITION points to "/"
+{
+  struct PartitionEntry parts[MAXPARTITIONS_LIST];
+  char found = iec_read_partitions(dev, parts, MAXPARTITIONS_LIST);
+  char idx;
+
+  for (idx = 0; idx < found; idx++)
+  {
+    if (parts[idx].number == RESERVED_ROOT_PARTITION &&
+        strcmp(parts[idx].path, "/") != 0 &&
+        strcmp(parts[idx].path, UBOOT_PARTITION_NAME) != 0)
+    {
+      return 0;
+    }
+  }
+  uii_add_partition(RESERVED_ROOT_PARTITION, UBOOT_PARTITION_NAME, "/");
+  return (UII_SOFTIEC_OK) ? 1 : 0;
+}
+
+void iec_leave_image(void)
+// Forget the disk image tracked on the SoftIEC drive (see CH_ENTER)
+{
+  if (iec_inimage)
+  {
+    iec_inimage = 0;
+    imageaid = 0;
+  }
+}
+
+void browse_device_setup(void)
+// Per-device SoftIEC checks, once when a device is chosen in IEC mode
+// (GitHub #15/#16, as DMBoot v5 src/browse.c, browse_device()): does the
+// drive tell its host paths (firmware 3.15+ SoftIEC), and can slots use
+// UBoot64's root partition. Only the SoftIEC drive (devicetype U64).
+{
+  iec_leave_image();
+  iec_hostpaths = 0;
+  iec_rootok = 0;
+  iec_rootfree = 0;
+  if (!fb_uci_mode && device && devicetype[device] == U64)
+  {
+    iec_hostpaths = iec_hostpath();
+    iec_rootfree = iec_root_free(device);
+    iec_rootok = iec_hostpaths && iec_rootfree;
+  }
+}
+
+char iec_fatpath(const char *name, char *dir, char *file)
+// Host path of a file in the SoftIEC drive's current directory, split into
+// directory (ending in '/') and file name, both ASCII. The directory comes
+// from SOFTIEC_CMD_GET_FATNAME with "$" (firmware 3.15+); the file name is
+// the IEC name converted to ASCII (host names are case-insensitive), as
+// DMBoot v5 does. GET_FATNAME with the file name itself does not return the
+// existing file on 3.15a: it builds a name with a type extension ("name.prg"
+// on channel 0/1, "name.???" on channel 2), so it is not used for files.
+// Names the IEC listing truncates to 16 characters cannot be resolved.
+// Input: name - IEC name as listed (PETSCII)
+//        dir, file - MAXPATHLEN / MAXFILENAME buffers
+// Output: 1 on success, 0 when the drive cannot tell
+{
+  unsigned len;
+  unsigned x;
+  char c;
+
+  if (!iec_hostpath())
+  {
+    return 0;
+  }
+  len = strlen(uii_data);
+  if (len + 2 >= MAXPATHLEN || strlen(name) >= MAXFILENAME)
+  {
+    return 0;
+  }
+  strcpy(dir, uii_data);
+  if (dir[len - 1] != '/')
+  {
+    dir[len] = '/';
+    dir[len + 1] = 0;
+  }
+  for (x = 0; name[x]; x++)
+  {
+    c = name[x];
+    if (c >= 0x41 && c <= 0x5a)
+    {
+      c += 0x20; // PETSCII unshifted letters -> ASCII a-z
+    }
+    else if (c >= 0xc1 && c <= 0xda)
+    {
+      c -= 0x80; // PETSCII shifted letters -> ASCII A-Z
+    }
+    file[x] = c;
+  }
+  file[x] = 0;
   return 1;
 }
 
@@ -1267,7 +1399,7 @@ char dir_changedir(char *dirname)
   {
     CheckMounttype(dirname);
 
-    if (mountflag == 2 && (trace == 1 || fb_uci_mode))
+    if (mountflag == 2 && (trace == 1 || fb_uci_mode || iec_hostpaths))
     {
       reuflag = 1;
       strncpy(imagename, dirname, MAXFILENAME);
@@ -1279,9 +1411,15 @@ char dir_changedir(char *dirname)
         uii_get_path();
         strncpy(reufilepath, uii_data, MAXPATHLEN);
       }
+      else if (iec_hostpaths && iec_fatpath(dirname, reufilepath, imagename))
+      {
+        // Firmware 3.15+ SoftIEC: the drive tells the host path and the
+        // real file name (GitHub #14, #15)
+      }
       else
       {
-        // Not an Ultimate path: see GitHub issue #14
+        // No Ultimate path available here (other drives, older firmware):
+        // the old behaviour, an IEC command, not usable for loading
         strncpy(reufilepath, pathconcat(), MAXPATHLEN);
       }
       reufilepath[MAXPATHLEN - 1] = 0; // Ensure null termination
@@ -1685,6 +1823,7 @@ void mainLoopBrowse(void)
 {
   char key;
   char done = 0;
+  char pendingimage;
 
   sorted = 0;
   trace = 0;
@@ -1696,6 +1835,7 @@ void mainLoopBrowse(void)
   inside_mount = 0;
   fb_uci_mode = 1;
   fb_selection_made = 2;
+  browse_device_setup(); // UCI mode: clears the SoftIEC state
   comma1 = 1;
   demomode = 0;
 
@@ -1784,6 +1924,7 @@ void mainLoopBrowse(void)
         }
         showing_partitions = 0;
         partition_depth = 0;
+        browse_device_setup();
         memset(&presentdir, 0, sizeof(presentdir));
         dir_draw(1);
       }
@@ -1809,6 +1950,7 @@ void mainLoopBrowse(void)
         }
         showing_partitions = 0;
         partition_depth = 0;
+        browse_device_setup();
         memset(&presentdir, 0, sizeof(presentdir));
         dir_draw(1);
       }
@@ -1840,82 +1982,44 @@ void mainLoopBrowse(void)
           fb_uci_mode = 1;
           dir_draw(1);
         }
-        else if (cfg.iec_root_partition && devicetype[device] == U64 && !currentpartition)
+        else
         {
-          // Check first whether the reserved partition number is already in
-          // use for something other than what we'd set it to -- if so, the
-          // user configured it themselves for their own purpose, so leave
-          // it alone entirely rather than silently overwriting it.
-          // Firmware 3.15a (PR #878) changed the "$=P" listing's quoted
-          // field from the partition's root path to its configured Name
-          // (iec_channel.cc's read_dir_entry() now does
-          // strncpy(info.lfname, prt->GetName(), ...) instead of
-          // prt->GetRootPath()) -- so parts[idx].path holds "/" on 3.15
-          // but our partition's Name (UBOOT_PARTITION_NAME, src/core.c) on
-          // 3.15a+. Accept either so this keeps working across both
-          // firmware behaviors without needing a version check.
-          //
-          // UBOOT_PARTITION_NAME is a single shared, identity-charmap-
-          // protected constant (src/core.c) reused by every create and
-          // compare site (here and slotmenu.c's boot path) -- not a
-          // "UBOOT" literal re-typed at each site, which would each be an
-          // independent compile-time occurrence under this file's default
-          // petscii.h charmap (case-inverting), with no guarantee they'd
-          // fold to identical bytes as each other or as parts[idx].path (a
-          // raw wire string, never charmap-adjusted). See
-          // feedback_petscii_charmap_string_literals.md in project memory.
-          struct PartitionEntry parts[MAXPARTITIONS_LIST];
-          char found = iec_read_partitions(device, parts, MAXPARTITIONS_LIST);
-          char idx;
-          char conflict = 0;
-
-          for (idx = 0; idx < found; idx++)
+          browse_device_setup();
+          if (cfg.iec_root_partition && devicetype[device] == U64 && !currentpartition)
           {
-            if (parts[idx].number == RESERVED_ROOT_PARTITION &&
-                strcmp(parts[idx].path, "/") != 0 &&
-                strcmp(parts[idx].path, UBOOT_PARTITION_NAME) != 0)
+            if (!iec_rootfree)
             {
-              conflict = 1;
-              break;
+              // Partition RESERVED_ROOT_PARTITION is the user's own (or the
+              // firmware has no partitions): leave it alone. The check itself
+              // is iec_root_free() (called by browse_device_setup()); it
+              // accepts both "/" (3.15) and UBOOT_PARTITION_NAME (3.15a+,
+              // PR #878 lists names instead of root paths).
+              // Oscar64's charwin console only treats \n as a line break and
+              // wraps at the window width, not at the 24 columns cleared
+              // here: every line stays under 24 characters.
+              cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
+              cwin_cursor_move(&cw, 0, 3);
+              cwin_console_printf(&cw, cfg.colors.error, "Partition %u already\nin use for something\nelse -- root partition\nauto-config skipped.\n", RESERVED_ROOT_PARTITION);
+              cwin_console_printf(&cw, cfg.colors.text, "Press key.");
+              cwin_getch();
+              dir_draw(1);
             }
-          }
-
-          if (conflict)
-          {
-            // Oscar64's charwin console (include/c64/charwin.c,
-            // cwin_console_write_string()) only treats \n as a line break --
-            // a trailing \r prints as a literal stray glyph, not a real
-            // carriage return -- and wraps at the window's own configured
-            // width, not at the 24 columns cwin_fill_rect_raw() actually
-            // cleared here (the right-hand static menu panel starts at
-            // column 24), so any explicit line over ~23 chars bled into it.
-            // Every line below is kept under that width, and there's no
-            // trailing \r.
-            cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
-            cwin_cursor_move(&cw, 0, 3);
-            cwin_console_printf(&cw, cfg.colors.error, "Partition %u already\nin use for something\nelse -- root partition\nauto-config skipped.\n", RESERVED_ROOT_PARTITION);
-            cwin_console_printf(&cw, cfg.colors.text, "Press key.");
-            cwin_getch();
-            dir_draw(1);
-          }
-          else
-          {
-            // Auto-provision (or idempotently re-point) a reserved
-            // partition at the filesystem root, once per session. Never
-            // touches any other partition number, so anything the user
-            // configured themselves via the Ultimate's own menu is left
-            // untouched.
-            uii_add_partition(RESERVED_ROOT_PARTITION, UBOOT_PARTITION_NAME, "/");
-            currentpartition = RESERVED_ROOT_PARTITION;
-            iec_select_partition(device, currentpartition);
-            memset(&presentdir, 0, sizeof(presentdir));
-            dir_read(sorted);
-            dir_draw(1);
+            else
+            {
+              // iec_root_free() already created (or re-pointed) the
+              // partition at "/" (not kept in flash); select it
+              currentpartition = RESERVED_ROOT_PARTITION;
+              iec_select_partition(device, currentpartition);
+              memset(&presentdir, 0, sizeof(presentdir));
+              dir_read(sorted);
+              dir_draw(1);
+            }
           }
         }
       }
       else
       {
+        browse_device_setup(); // UCI mode: clears the SoftIEC state
         dir_draw(1);
       }
       break;
@@ -1942,7 +2046,7 @@ void mainLoopBrowse(void)
         {
           cwin_fill_rect_raw(&cw, 0, 3, 24, 22, SC_SPACE, cfg.colors.text);
           cwin_cursor_move(&cw, 0, 3);
-          cwin_console_printf(&cw, cfg.colors.error, "Could not read partition list.\n");
+          cwin_console_printf(&cw, cfg.colors.error, "No partitions on\nthis drive.\n");
           cwin_console_printf(&cw, cfg.colors.text, "Press key.");
           cwin_getch();
           dir_draw(1);
@@ -1977,6 +2081,7 @@ void mainLoopBrowse(void)
       if (!fb_uci_mode)
       {
         partition_depth = 0;
+        iec_leave_image();
       }
       dir_changedir((char *)"");
       break;
@@ -2054,6 +2159,7 @@ void mainLoopBrowse(void)
           currentpartition = chosen;
           showing_partitions = 0;
           partition_depth = 0;
+          iec_leave_image();
           depth = 0; // discard any stale dirtrace breadcrumb from a different partition
           dir_read(sorted);
           dir_draw(0);
@@ -2087,11 +2193,30 @@ void mainLoopBrowse(void)
           path[depth][MAXFILENAME - 1] = 0;
           depth++;
         }
+        // Entering a disk image on the SoftIEC drive (firmware 3.15+):
+        // remember its host path and real file name before the cd, so M
+        // (mount on drive A and run) works here without the dirtrace
+        // (GitHub #15; as DMBoot v5 src/browse.c, browse_cd()).
+        pendingimage = 0;
+        if (!fb_uci_mode && iec_hostpaths && !iec_inimage)
+        {
+          CheckMounttype(presentdirelement.name);
+          if (mountflag == 1 && iec_fatpath(presentdirelement.name, imageapath, imageaname))
+          {
+            pendingimage = 1;
+          }
+        }
         if (!fb_uci_mode)
         {
           partition_depth++;
         }
-        dir_changedir(presentdirelement.name);
+        if (dir_changedir(presentdirelement.name) == 0 && pendingimage && uii_parse_deviceinfo())
+        {
+          iec_inimage = 1;
+          iec_imagedepth = partition_depth - 1;
+          imageaid = uii_devinfo[0].id;
+          browse_menu();
+        }
       }
       if (reuflag)
       {
@@ -2141,6 +2266,10 @@ void mainLoopBrowse(void)
         if (!fb_uci_mode && partition_depth)
         {
           --partition_depth;
+          if (iec_inimage && partition_depth <= iec_imagedepth)
+          {
+            iec_leave_image();
+          }
         }
         if (fb_uci_mode)
         {

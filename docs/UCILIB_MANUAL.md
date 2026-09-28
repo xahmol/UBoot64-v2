@@ -1830,6 +1830,14 @@ Firmware 3.15+, file `ultimate_softiec_lib.c/h` (*new*). Wire formats from
 firmware write or read computer memory itself by DMA. On a C128 this is only
 reliable at 1 MHz and reaches bank 0 RAM (see §18).
 
+**Status is binary for this target.** SoftIEC commands answer with a one-byte
+status, `0x00` = OK, `0x01`-`0x09` = error codes (`c_status_all_ok`,
+`c_status_file_not_found` ... in `softiec_target.cc`), not the `"00,OK"` text
+of the DOS and control targets. `UII_SUCCESS` therefore fails even on success:
+check `UII_SOFTIEC_OK` (`ultimate_common_lib.h`, 2026-09-28) instead. Found on
+an Ultimate 64-II with firmware 3.15a: `uii_add_partition()` left
+`uii_status` as `"\0"`.
+
 ### `uii_softiec_identify`
 
 ```c
@@ -1912,7 +1920,11 @@ void uii_softiec_get_fatname(char channel, const char *iecname);
 
 **Purpose:** Which file on the Ultimate file system an IEC name would open on a channel. Turns IEC paths (for example `"//GAMES/:FILE"`, or a name with a partition number) into full paths for DOS target commands such as mount and open.
 
-**Data returned:** full path in `uii_data` (`/buffer`, `/partitions` for special streams). **Status:** OK, invalid name, invalid partition or invalid directory.
+**Data returned:** full path in `uii_data` (`/buffer`, `/partitions` for special streams). **Status:** binary (see above; check `UII_SOFTIEC_OK`): OK, invalid name, invalid partition or invalid directory.
+
+**Behaviour seen on firmware 3.15a (Ultimate 64-II, 2026-09-28):**
+- `"$"` on channel 0 returns the host path of the drive's current directory, in any partition (e.g. `/USB0/DEV/`, in upper case). Reliable; UBoot64 uses it for mount, REU and slot paths.
+- A file name does **not** resolve to the existing file: the firmware builds the name it would *create* (`IecChannel::ConstructPath()`). On channel 0/1 a name without type becomes `name.prg`; on channel 2 (read, any type) `name.???`. For `UBTEST.D64` (an existing `ubtest.d64`) that gave `/USB0/DEV/UBTEST.D64.prg` and `.../UBTEST.D64.???`. Use `"$"` for the directory and the IEC name for the file instead (as UBoot64 and DMBoot do); names the listing truncates to 16 characters cannot be resolved that way.
 
 ---
 

@@ -66,6 +66,7 @@
 #include "ultimate_dos_lib.h"
 #include "ultimate_time_lib.h"
 #include "ultimate_network_lib.h"
+#include "ultimate_softiec_lib.h"
 #include "u-time.h"
 #include "core.h"
 
@@ -74,7 +75,7 @@
 #pragma data(data)
 
 const char *value2hex = "0123456789abcdef";
-const char *reg_types[] = {"SEQ", "PRG", "URS", "REL", "VRP"};
+const char *reg_types[] = {"SEQ", "PRG", "USR", "REL", "VRP"};
 const char *oth_types[] = {"DEL", "CBM", "DIR", "LNK", "OTH", "HDR"};
 char bad_type[4];
 
@@ -86,6 +87,13 @@ char DOSstatus[40];
 /// string descriptions of enum drive_e
 const char *drivetype[LAST_DRIVE_E] = {"", "Pi1541", "1540", "1541", "1551", "1570", "1571", "1581", "1001", "2031", "8040", "sd2iec", "cmd", "vice", "u64"}; /// enum drive_e value for each device 0-19.
 char devicetype[MAXDEVID + 1];
+
+// SoftIEC state of the browsed device (firmware 3.15+), set by the file
+// browser (src/filebrowse.c, browse_device_setup()), read when a slot is
+// made. Uninitialised on purpose: bss, not the full shared data segment.
+char iec_hostpaths; // 1 = the drive tells the host path of its directory (SOFTIEC_CMD_GET_FATNAME)
+char iec_rootok;    // 1 = slots use UBoot64's root partition + host path (GitHub #16)
+char iec_inimage;   // 1 = browsing inside a disk image on the SoftIEC drive
 
 // Generic functions
 void errorexit(const char *msg)
@@ -122,17 +130,74 @@ void mid(const char *src, char start, char length, char *dst, char dstlen)
   dst[len] = 0; // strncpy doesn't null-terminate when source fills the count
 }
 
-char *pathconcat()
-// Function to concatenate the path string array to one path string
+char iec_hostpath(void)
+// Ask the SoftIEC drive for the host path of its current directory
+// (SOFTIEC_CMD_GET_FATNAME with "$", firmware 3.15+; correct in any
+// partition). Older firmware rejects the command.
+// Adapted from DMBoot v5 (src/browse.c, browse_hostpath()).
+// Output: 1 with the path (ASCII) in uii_data, else 0
 {
-  char concat[MAXPATHLEN] = "";
+  static const char dirname[] = {0x24, 0x00}; // "$"
+
+  uii_softiec_get_fatname(0, dirname);
+  return (UII_SOFTIEC_OK && uii_data[0] == '/' && strlen(uii_data) < MAXPATHLEN - 8) ? 1 : 0;
+}
+
+void asc2pet_path(char *dst, const char *src, unsigned size)
+// Convert an ASCII path from the Ultimate to PETSCII for a DOS command
+// (a-z -> $41-$5A, A-Z -> $C1-$DA, the rest unchanged); dst is always
+// terminated. Bank 0 copy for pathconcat(): AscToPet() lives in bank 2.
+{
+  unsigned x = 0;
+  char c;
+
+  while (x + 1 < size && src[x])
+  {
+    c = src[x];
+    if (c >= 0x61 && c <= 0x7a)
+    {
+      c -= 0x20; // ASCII a-z -> PETSCII unshifted letters
+    }
+    else if (c >= 0x41 && c <= 0x5a)
+    {
+      c += 0x80; // ASCII A-Z -> PETSCII shifted letters
+    }
+    dst[x] = c;
+    x++;
+  }
+  dst[x] = 0;
+}
+
+char *pathconcat()
+// Function to concatenate the path string array to one path string.
+// Returns a static buffer (it returned a pointer to a local array before).
+{
+  static char concat[MAXPATHLEN];
   int x;
+
+  concat[0] = 0;
 
   if (fb_uci_mode)
   {
     uii_get_path();
     strncpy(concat, uii_data, MAXPATHLEN - 1);
     concat[MAXPATHLEN - 1] = 0; // Ensure zero termination
+  }
+  else if (iec_rootok && devicetype[pathdevice] == U64 && iec_hostpath())
+  {
+    // Firmware 3.15+ SoftIEC with UBoot64's root partition (254 at "/"):
+    // "cd://" + the host path, used from that partition (the slot records
+    // it, see slotmenu.c), so no dirtrace is needed and the slot does not
+    // depend on the user's own partitions (GitHub #16). As DMBoot v5
+    // (src/browse.c, browse_pathconcat()).
+    strcpy(concat, "cd:/");
+    asc2pet_path(concat + 4, uii_data, MAXPATHLEN - 5);
+    x = strlen(concat);
+    if (concat[x - 1] != '/')
+    {
+      concat[x] = '/';
+      concat[x + 1] = 0;
+    }
   }
   else
   {
