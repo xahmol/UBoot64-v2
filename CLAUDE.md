@@ -61,10 +61,9 @@ There is no automated test suite; testing is on the real U64 through c64bridge (
 
 ## Verification status (v3.1.0, branch `v3.1.0-fixes`)
 
-Everything from the DMBoot v5 port and the v3.1.0 fix round was tested on the U64 (firmware 3.15a) via c64bridge on 2026-09-28: the `textInput()` overflow fix, the completed and malloc-free UCI library (mounts, REU preload, UCI listing, config/slot save and load, NTP "00,OK"), GitHub #4-#18, three NTP servers and start-up modes, SoftIEC host paths / root-partition slots / image tracking, and both upgraders (`uboot_upd23` on a v2 file set, `uboot_upd12` on a v1 file set: config and slots converted, REU slots get `reu_path`, NTP servers 2 and 3 filled, the converted slots boot). Details are in the closed GitHub issues and the git log.
+Everything from the DMBoot v5 port and the v3.1.0 fix round was tested on the U64 (firmware 3.15a) via c64bridge on 2026-09-28: the `textInput()` overflow fix, the completed and malloc-free UCI library (mounts, REU preload, UCI listing, config/slot save and load, NTP "00,OK"), GitHub #4-#18, three NTP servers and start-up modes, SoftIEC host paths / root-partition slots / image tracking, NTP server editing (F5 → F5: RUN/STOP keeps a server, also after typing in it; RETURN changes it; only that field is saved), and both upgraders (`uboot_upd23` on a v2 file set, `uboot_upd12` on a v1 file set: config and slots converted, REU slots get `reu_path`, NTP servers 2 and 3 filled, the converted slots boot). Details are in the closed GitHub issues and the git log.
 
 Not yet tested:
-- F5 → F5 NTP server editing with RUN/STOP (keeps a server).
 - Firmware 3.15b (Christian Gleissner's SoftIEC compatibility builds, GitHub #3).
 - An intermittent glitch seen once: right after entering a D64 on the SoftIEC drive, one listing line came through garbled (`1000          PRG`); correct after F1. Not reproduced.
 
