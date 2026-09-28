@@ -53,6 +53,17 @@ Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
 
+Version 3.1.0 - (in development):
+
+- Directory block sizes in IEC mode are no longer shown modulo 256 (a 300-block file showed as 44).
+- IEC directory listings: locked files (`PRG<`) and file types UBoot64 does not know no longer replace the disk name at the top of the listing; they show as normal entries.
+- Slot editor: an earlier change is no longer lost when a later action in the same session changes nothing.
+- Configuration: changes are no longer lost when the colour editor is left without changes; **DEL** (undo) in the colour editor now only undoes the colour changes, not other unsaved configuration changes.
+- NTP time sync: the date is now correct in leap years from March on (February always had 28 days).
+- "IDs needing manual power switching" now reports "Yes" when any such device is on the bus, not only when it is the last one checked.
+- REU preload: the path of the REU image is now stored in the slot. Before, a slot loaded the REU file from the directory of its drive A image. Existing slots are converted automatically: by the upgrade tools, or at the first boot of the slot.
+- Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
+
 Version 3.0.1 - 20260913:
 
 - Fixed a regression against Ultimate firmware 3.15a: the "SoftIEC root partition" auto-provisioning (config menu, **F8**) could misreport the reserved partition as already in use by something else and refuse to set itself up, because firmware 3.15a changed what the partition listing's name field contains. No user-visible change on firmware 3.15 or earlier.
@@ -214,7 +225,7 @@ If you have an existing v2 configuration (slot and config files), you must run t
 
 * Transfer `uboot_upd23.prg` to your USB storage.
 * Run `uboot_upd23.prg` from the Ultimate UI or a BASIC prompt before starting UBoot64 v3.
-* The tool reads your existing v2 configuration files and rewrites them in the v3 format.
+* The tool reads your existing v2 configuration files and rewrites them in the v3 format. It also moves the REU image path of REU preload slots to its own field (from v3.1.0).
 * After the upgrade tool completes successfully, start UBoot64 v3 normally.
 
 **If you do not run the upgrade tool**, UBoot64 v3 will detect the old format and exit with an error asking you to run the upgrade tool first.

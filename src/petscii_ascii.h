@@ -1,7 +1,7 @@
 #ifndef PETSCII_ASCII__H
 #define PETSCII_ASCII__H
 
-char* AscToPet( char* ascii );
+void AscToPet(char *dest, const char *ascii, unsigned size);
 
 #pragma compile("petscii_ascii.c")
 

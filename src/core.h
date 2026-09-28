@@ -20,6 +20,8 @@ char iec_select_partition(char device, char partnum);
 const char *getDeviceType(const char device);
 void execute(char *prg, char device, char boot, char *command);
 signed textInput(char xpos, char ypos, char width, char *str, char size, char validation);
+__noinline void uboot_reu_load(unsigned long raddr, volatile char *dp, unsigned length);
+__noinline void uboot_reu_store(unsigned long raddr, const volatile char *sp, unsigned length);
 
 /// if you change this enum, also change the "drivetype" array in ops.c
 enum drive_e {NONE=0, PI1541, D1540, D1541, D1551, D1570, D1571, D1581, D1001, D2031, D8040, SD2IEC, CMD, VICE, U64, LAST_DRIVE_E};

@@ -250,13 +250,56 @@ byte data[] = {
 
 **Gotcha**: if `malloc`/`free` are fully stubbed (e.g. a bare-metal
 runtime where `crt_malloc` always returns NULL, no real heap ever used),
-and `#embed`-ing enough data fills most of the `main` region, oscar64 can
-fail with `error 3034: Cannot place heap section` even though the total
-binary size is well under the region's nominal size — the heap section
-still needs *some* room and a full code+data+bss leaves none. Fix: drop
-`heap` from the region's section list (`#pragma region(main, ..., {code,
-data, bss})` instead of `{code, data, bss, heap}`) once you've confirmed
-nothing in the program actually allocates from it.
+and `#embed`-ing enough data (or just plain code growth) fills most of the
+`main` region, oscar64 can fail with `error 3034: Cannot place heap
+section` even though the total binary size is well under the region's
+nominal size — the heap section still needs *some* room and a full
+code+data+bss leaves none. The docs' own suggested fix — drop `heap` from
+an explicit `#pragma region(main, start, end, , , {code, data, bss})`
+override's own section list — is NOT the safest first move if the project
+has no pre-existing region pragma of its own: hand-copying the "main"
+region's bounds out of a working build's own `.map` file (its `regions`
+section shows `start - end : used, free, name`) and pinning them via a
+brand-new pragma can make things WORSE, not better — confirmed live
+(vdcmaniac project, 2026-08-19): copying `1c80-b000` verbatim out of a
+known-good `.map` into `#pragma region(main, 0x1c80, 0xb000, , , {code,
+data, bss})` turned ONE clean "cannot place heap section" error into a
+cascade of unrelated "Could not place object"/`sstack` failures across
+totally unrelated functions, even with the triggering function reduced to
+an empty stub — the compiler's own default region inference isn't fully
+reproduced by just copying the two visible bounds (something about the
+omitted flags/bank parameters or internal alignment differs). **Prefer
+`#pragma heapsize(0)` instead** when nothing in the program actually
+allocates from the heap: it doesn't touch the region at all, just tells
+oscar64 not to reserve heap space, leaving its own (correct) default
+region inference completely untouched. Reserve the region-pragma-with-
+heap-dropped approach for projects that already have their own custom
+`#pragma region(main, ...)` for some other reason (e.g. a "no BASIC, use
+all RAM" memory map) — there, editing a region you already fully specify
+yourself is safe; introducing one for the first time just to drop `heap`
+is the risky part.
+
+**Gotcha**: an `#embed`-initialized array that is *only ever accessed
+through raw hardcoded-address `__asm` blocks* (not through the C array
+symbol itself — e.g. hand-written 6502 reading `$1000,y` directly rather
+than indexing the C array) gets silently dropped by the optimizer,
+**with no warning and a successful build**. Oscar64's dataflow tracing
+can't see the asm-level dependency, concludes the array is unreferenced,
+and simply doesn't emit its initialized content into the compiled
+`.prg` — the region/address range is still reserved (so nothing looks
+wrong in a cursory `.map` read), but the actual bytes aren't there.
+Confirmed (Land of Ice and Fire, 2026-09-09): a 49,152-byte `#embed`ed
+image at a fixed address, read only via literal-address `__asm`
+opcodes, compiled clean but the embedded byte signature was nowhere in
+the output `.prg` at all; the region's own `.map` summary line read
+`0000, 0000` used/free instead of the full size. **Fix**: mark the
+array `__export`, e.g. `__export volatile char buf[N] = { #embed
+"file.bin" };` — forces the symbol (and its initialized content) into
+the output regardless of whether the compiler can trace a C-level
+reference to it. Minimal repro: `const char t[] = { #embed "x.bin" };
+int main(void){return t[0];}` drops the array entirely (even a plain,
+non-asm reference like `t[0]` isn't enough to save it once the compiler
+can constant-fold the specific access away); adding `__export` fixes it.
 
 ---
 
@@ -660,6 +703,78 @@ hardware. Applied in UBoot64-v2 as `uboot64_reu_count_pages()` in
 `reu_count_pages()`, since the library function itself can't be patched from
 project source).
 
+**Third instance, wider scope (DMBoot v5, 2026-09-26): not only probes.**
+Any code whose reads of DMA-loaded data can be scheduled across an inlined
+`reu_load` is affected. A project wrapper `reu128_load()` (1 MHz switch +
+`reu_load`) was auto-inlined at `-O2` into a linked-list walk:
+`struct DirMeta meta; reu128_load(addr, (volatile char *)&meta, sizeof meta);
+target = meta.next;` compiled to reading `meta.next`/`meta.prev` **once,
+before the loop and before the DMA** (seen in the `.asm`: `LDA meta.next`
+hoisted above the `$DF01` write). The walk followed stale links and the
+browser hung on cursor down; the inlined `reu_store` of a link address
+likewise risked storing memory the compiler had not written yet. **Fix:
+declare the project's REU load/store wrappers `__noinline`** (in the header
+prototype and the definition). The call is then opaque and the reads follow
+the `JSR` (verified in the `.asm`). Rule: never let `reu_load`/`reu_store`
+be inlined into code that uses the transferred data; wrap them once in
+`__noinline` functions and use only those.
+
+**`__noinline` alone does not make the call opaque (UBoot64-v2, 2026-09-28,
+Oscar64 1.32.273).** The optimizer still analyses the body of a
+non-inlined function: a wrapper that only calls the inline `reu_load` is
+seen as writing nothing but the REU registers, not the buffer. In a
+load-modify-store sequence (`store(a, &m); load(b, &m); m.next = x;
+store(b, &m);`) the `.asm` wrote `m.next` byte 0 *before* the first store
+and the load; the DMA then overwrote it and the first store wrote a wrong
+link. **Fix: a barrier access in the wrapper** that makes the buffer access
+visible — `dp[0] = dp[0];` after `reu_load` (the call "writes" the buffer),
+`volatile char barrier = sp[0];` before `reu_store` (the call "reads" it).
+With the barrier all bytes of `m.next` were written after the load and
+before the store (verified in the `.asm`). The optimizer treated the
+one-byte access as touching the whole object.
+
+**Follow-up trap of the `__noinline` fix (DMBoot v5, 2026-09-26, Oscar64
+1.32.273 at both f38a1f2 and 546b627): register-parameter tracking across
+calls in a loop.** With the REU wrappers no longer inlined, the size probe
+loop `reu128_store(page << 16, ...); reu128_store(0, ...); reu128_load(page << 16, ...)`
+compiled to: loop top `STY P2` (address byte 2 = page), then for the call
+with address 0 only `STA P3` (byte 3 = 0) — P2 was left at the page, as if
+the compiler still knew the pre-loop value 0 in P2. The "reset" marker went
+to the probed page and every REU read as 64 KB. Not cured by: a `volatile
+unsigned long origin = 0` local (folded to the constant anyway), a separate
+`__noinline` helper for the address-0 write (the caller then assumed P2
+survived the helper, whose tail-jumped `@proxy` sets it), or `#pragma
+optimize(noconstparams)` around the callee (proxies still generated).
+**Fix used:** in that one probe function call Oscar64's inline
+`reu_store`/`reu_load` directly (no register parameters at all), keep the
+`__noinline` wrappers everywhere else. Watch for the pattern: a loop that
+calls the same function with a multi-byte parameter that changes only in
+some bytes, and a constant that equals the value those bytes had before the
+loop. Check the `.asm` for every `P0`-`P3` store before such calls.
+
+**Oscar64 546b627 (2026-09-26) regression, not isolated:** built with the
+latest main (29 commits after f38a1f2), DMBoot v5's 80 column start-up
+console scrolled wrongly on hardware (earlier lines lost, a line cut off);
+the same source built with f38a1f2 was fine. About 100 functions compiled
+differently; the ones checked by hand (`vdc_hchar`, `dwin_cursor_newline`)
+were equivalent. DMBoot now builds with the official release tag v1.32.273
+(`git checkout v1.32.273` in `~/oscar64`, then `make compiler` in `make/`),
+not with main. Before adopting a new Oscar64 in a project,
+re-test on hardware; keep the previous binary to compare (`make CC=...`).
+
+**Second confirmed instance (heartbeat-demo, 2026-07-29):** same exact bug,
+same Oscar64 build. detect_reu() (src/detect.c) called the library's
+reu_count_pages() directly and always got 0 (REU check failed on real
+hardware, U64 Elite-II with 16 MB REU present and working fine in
+UltimateDemo2026 on the same box) — confirms this is not project-specific
+and will resurface anywhere `reu_count_pages()` is called under `-O2` on
+this toolchain version. UltimateDemo2026 "still working" is not evidence
+against the bug; its currently-deployed `.prg` predates this Oscar64
+regression and simply hasn't been rebuilt with the current compiler since.
+Fixed the same way: local `hbdemo_reu_count_pages()` in `src/detect.c` with
+the `__noinline` barrier, verified via `-g` build + `.asm` inspection
+(`JSR reu_probe_barrier` followed by a real `BNE`, not a fallthrough).
+
 **Status as of Oscar64 commit `0808a62` (2026-07-18, v1.32.272):** still
 broken. Pulled and rebuilt Oscar64 from `d0e1f5b` to `0808a62` (11 commits,
 including "Improve cross block/function accu forwarding", "Optimize switch
@@ -719,6 +834,64 @@ definition, not call site, if a call-site scope doesn't work), or via an
 `__noinline` call-boundary barrier if the affected value is a `volatile`
 local rather than a whole function's control flow.
 
+## Third confirmed instance: inline-`__asm`-block store to a local variable ignored entirely
+
+Found in heartbeat-demo (2026-07-29) porting a raster-line PAL/NTSC detection
+routine (`hb_detect_ntsc()`, `include/hbplayer.c`) that computes a 0/1 result
+inside an inline `__asm { }` block (via branches, ending `sta result` where
+`result` is a local) and then uses that local in ordinary C code afterward
+(`hb_state.ntsc_detected = result; return result;`).
+
+**Symptom:** compiles with `warning 2009: Use of uninitialized variable
+'result'` — which turned out to be a correct diagnostic, not a false
+positive. The generated `.asm` for `hb_state.ntsc_detected = result;`
+compiled to an unconditional `LDA #$00 / STA hb_state.ntsc_detected`,
+completely discarding the value the asm block actually computed and stored.
+The raster loop itself compiled correctly (real `BEQ`/`BMI`/`BNE` branches
+verified in the `.asm`) — only the hand-off of the result out of the asm
+block into subsequent C code was wrong.
+
+**This is worse than the two instances above:** it does not require the
+value to come from a `volatile`-qualified read of a hardware/library side
+effect (instance 1) or from accumulation across conditionally-taken branches
+(instance 2) — a plain local, written by a single unconditional `sta` inside
+an inline asm block and read once immediately after, still gets treated as
+compile-time-constant (apparently defaulting to whatever the declaration's
+"uninitialized" value is assumed to be, i.e. 0).
+
+**Confirmed NOT sufficient:** declaring the local `volatile`. **Confirmed
+NOT sufficient:** routing the read through a `__noinline` barrier call
+(the instance-1 fix) — with a compile-time-constant argument the barrier
+call itself gets trivially inlined/folded away, defeating the barrier.
+Both retested via a standalone build with `.asm` inspection; the bogus
+`LDA #$00` reappeared either way.
+
+**Confirmed workaround:** don't use a local at all — have the `__asm` block
+store directly into a file-scope `static` variable, then read that static
+from ordinary C code:
+```c
+static unsigned char hb_ntsc_probe;   // file-scope, not a local
+
+char hb_detect_ntsc(void)
+{
+    __asm {
+        // ... raster-line test ...
+        sta hb_ntsc_probe   // store to a real global, not a local
+    }
+    hb_state.ntsc_detected = hb_ntsc_probe;  // now a genuine LDA/STA round trip
+    return hb_ntsc_probe;
+}
+```
+Verified via `.asm`: this produces a real `STA hb_ntsc_probe` inside the asm
+block followed by a real `LDA hb_ntsc_probe` / `STA hb_state.ntsc_detected`
+afterward — no constant substitution, no warning.
+
+**Pattern to add to the "watch for" list above:** whenever an inline
+`__asm { }` block's *only* purpose is computing a value for later C-level
+use, give it a file-scope `static` destination rather than a local variable
+— even a `volatile` local is not safe here. This is now the default way any
+inline-asm-computed value should be threaded into this codebase's C code.
+
 ### `memmap.h` — Memory Mapping
 
 ```c
@@ -766,6 +939,31 @@ void cwin_console_init(CharWin *w, ...);
 void cwin_console_printf(CharWin *w, const char *fmt, ...);
 void cwin_console_edit_line(CharWin *w, char *buf, byte len);
 ```
+
+### `cwin_put*`/`cwin_putat*` (non-`_raw`) apply PETSCII conversion to the `ch` argument too, not just to strings
+
+The non-`_raw` `cwin_put_char`/`cwin_putat_char` family runs their single-character
+`ch` argument through the *same* runtime PETSCII→screencode conversion
+(`ch ^ p2smap[ch>>5]`, internal to `charwin.c`) used for string functions. This is
+easy to miss because it's natural to assume a single "character" argument is a raw
+screen code you're placing directly — it isn't, unless you use the `_raw` variant.
+
+Confirmed the hard way: a VU-meter bar renderer passed a literal, already-final
+screen code (`0xA0`, a solid reverse-video block) directly to `cwin_putat_char()`
+expecting it to appear as-is. It silently became `0x60` (an unrelated glyph)
+instead — reading live screen RAM on real hardware while the bug was present
+showed the corrupted byte directly, confirming the conversion was the cause, not a
+drawing-coordinate or color bug. The fix was switching to `cwin_putat_char_raw()`,
+which passes `ch` straight through.
+
+**Rule of thumb**: if the value you're writing is already a real screen code (a
+constant like a project's own `SC_SPACE`/`SC_REVSPACE`, or something read back via
+`cwin_getat_char_raw()`), use the `_raw` function. Only use the non-raw variant for
+values that are genuinely still in "PETSCII source" form and need the conversion —
+e.g. characters coming straight from a C string literal or `sprintf()` output. This
+project's own `screen.c` (`header_line()`/`screen_header_line()`) already worked
+around this correctly for its reverse-video header bars; it just wasn't obvious
+that the same trap applies to plain non-reversed literal screencodes too.
 
 ### `kernalio.h` — Kernal File I/O
 
@@ -938,6 +1136,77 @@ void     bnk1_writem(void *dst, const void *src, unsigned len);
 ```
 
 ---
+
+### C128 gotchas (found in DMBoot v5 Phase 0, 2026-09-25)
+
+- **`kbhit()` is wrong on the C128.** `conio.c`'s `kbhit()` reads `$C6`, the
+  C64 keyboard buffer count. On the C128 the count is at `$D0` (buffer at
+  `$034A`). Poll with KERNAL `GETIN` instead:
+  `char key_poll(void) { return __asm { jsr $ffe4 \n sta accu }; }`
+  (`\n` here means a line break: each instruction must be on its own
+  source line; a literal `\n` in a one-line `__asm` block is a syntax error,
+  "End of line expected")
+  (`getchx()` also uses GETIN but applies the `giocharmap` conversion).
+- **Do not name a function `startup`.** `crt.c` already defines `startup`;
+  a user function with that name gives "error 3023: Duplicate definition
+  'startup'" (and the compiler may segfault right after).
+- **`petscii.h` + `printf` is fine.** With the global charmap from
+  `petscii.h`, format specifiers become PETSCII too (`%u` -> `%U`); Oscar64's
+  `printf` accepts both (`case p'u'`, `p's'`, `p'd'`, ...). Still print
+  `CHR$(14)` (`putrch(14)`) once to switch to the lower/upper case charset.
+- **`c128e` overlays (VDCSE pattern):** `#pragma overlay(name, N)` with a
+  region per overlay writes `build/name.prg` next to the main output, load
+  address = region start. The LMC (`#pragma overlay(xxxlmc, 1)`, region
+  `$1300-$1B00`) only contains functions that are actually referenced.
+- **Empty "release" macros must still evaluate their arguments.** A
+  debug hook like `#define tm_set_x(v)` (empty) silently removes a call
+  passed as its argument (`tm_set_x(overlay_fn())` compiles to nothing).
+  Use `#define tm_set_x(v) ((void)(v))`.
+- **Hardware testing via Ultimate REST memory access (c64bridge):** the
+  Ultimate reads/writes C128 memory with DMA. The C128 crashes (BRK into the
+  monitor, PC inside the Device Manager ROM) when this happens while it runs
+  at 2 MHz. Only access memory over REST while the C128 is at 1 MHz; the
+  same rule as REU DMA (wrap `reu_load`/`reu_store` in a 1 MHz switch via
+  `$D030` bit 0).
+- **Returning to BASIC 7 leaves BASIC's zero page corrupted.** Oscar64's
+  default zero page (`MachineTypes.cpp`) is `$02-$26` (registers),
+  `$43-$62` (`T*` temporaries) and `$F7-$FF` (auto zero page). On the C128
+  this overlaps BASIC 7 work storage that `RUN` does not reinitialise, for
+  example the function dispatch `JMP` near `$54-$56` (Oscar64 keeps T1/T2 at
+  `$53-$55`). `crt.c` `spexit` only resets `$13/$16/$18/$1A/$54`, and
+  `exit()` only `$54/$13`. Symptom: after exiting, a BASIC program that uses
+  variables or string functions (`A=1`, `CHR$(14)`) crashes with BREAK,
+  PC `$1005B`. Fix: copy those three ranges to a buffer as the first
+  statement of `main()` (only `ip $19-$1A` and `sp $23-$24` were changed
+  before it), and restore them in an assembler exit routine
+  (`ldx spentry; txs`, copy back, then `$13=0, $1A=0, $18=$1B, $16=$19`,
+  `rts`). cc65's C128 runtime does the same with its own zero page.
+- **C128 function keys return their strings, not key codes.** The screen
+  editor expands F1-F8/HELP (F7 = `LIST` + RETURN) before `GETIN` sees
+  them. Set the key store vector `$033C` to `$C6B7` (past the expansion;
+  as cc65 `libsrc/c128/cgetc.s`) and restore the saved value on exit.
+- **A global written inside an `__asm` block can be "forgotten".** In
+  `x = param; __asm { lda x \n jsr ... \n sta x } return x;` the compiler
+  returns the parameter it still holds in a register (`T0`), not the value
+  the assembler stored. A `*(volatile char *)&x` read-back is also folded
+  away. Declare the variable itself `volatile` (or return via `accu` from
+  the assembler). Found in DMBoot's Device Manager drive type call.
+- **Code used only through its address is dropped, and the address becomes 0.**
+  `__asm entry { ... }` whose only use is `(unsigned)entry` (for a BASIC
+  `SYS`) was removed by the linker, and `sprintf("sys %u", (unsigned)entry)`
+  compiled to a constant 0. A C function with an `__asm` body plus
+  `#pragma reference(entry)` keeps the code, but the C expression
+  `(unsigned)entry` was still folded to 0, even through a `volatile`
+  function pointer (which was optimised away too). What works: take the
+  address in assembler,
+  `unsigned entry_address(void) { return __asm { lda #<entry \n sta accu \n lda #>entry \n sta accu + 1 }; }`
+  (one instruction per source line, see above).
+  Always check such addresses in the generated `.asm`. Found in DMBoot's
+  C64-mode `SYS` entry (it typed `SYS 0`).
+- **An `__asm name { ... }` function cannot also have a C prototype.**
+  Declaring `void name(void);` in a header gives "error 3023: Duplicate
+  definition". To call assembler from C, write a normal function whose body
+  is an `__asm { ... }` block (no `rts`).
 
 ## PLUS4 Libraries (`include/plus4/`)
 
@@ -1377,6 +1646,54 @@ __interrupt void modplay_tick(void) { /* logic */ }
 The `__asm` entry has zero C overhead. The `jsr/__interrupt/rts` trio is balanced
 so the hardware stack is clean when JMP executes.
 
+**Gotcha: don't factor a second `jsr` hop in front of the `__interrupt`
+worker, even to deduplicate identical save/restore code.** Given the
+pattern above (`__asm entry → jsr __interrupt-worker`), adding a THIRD
+tier so two different `__asm` entry points share one intermediate
+wrapper (`entry_a → jsr shared_wrapper → jsr worker`, `entry_b → jsr
+shared_wrapper` too) makes Oscar64 fail to compile the `__interrupt`
+worker itself with `error 3035: Function to complex for interrupt` —
+even though nothing about the worker function's own body changed.
+Confirmed via bisection (Land of Ice and Fire, 2026-09-09): the
+original two-tier `modplay_irq → jsr modplay_tick` compiles clean in
+isolation; introducing one extra named-`__asm`-function hop between
+them (`modplay_irq → jsr modplay_tick_safe → jsr modplay_tick`) is
+enough to trip the error, with literally nothing else in the file
+changed — restoring the direct two-tier call immediately fixes it.
+**Fix**: when a second, cooperative (non-IRQ) caller needs the exact
+same save-gaps/call-worker/restore-gaps sequence an existing `__asm`
+IRQ entry already performs, duplicate that `__asm` block under a new
+name (ending `rts` instead of chaining onward) rather than factoring it
+into a third tier both entries call through. Costs a repeated block of
+identical save/restore instructions, but keeps each entry point at the
+same two-tier distance from the `__interrupt` worker that compiles.
+
+**Follow-on gotcha (Land of Ice and Fire, 2026-09-13): a plain C
+function calling that duplicated `__asm` block via `jsr` reintroduces
+the SAME error, even though it's not another named-`__asm` entry.**
+Needed the cooperative tick handler above to be callable from other
+*files*, not just other places in the same file — but a named `__asm`
+function can't have a separate C prototype at all (see the entry
+below, "Duplicate definition"), so it isn't visible for calling across
+translation units, only from within the same file it's defined in.
+The natural-looking fix — wrap it in an ordinary C function so it gets
+a normal, cross-file-callable prototype (`void modplay_poll_tick(void)
+{ __asm { jsr modplay_poll_tick_asm } }`) — adds exactly the "third
+tier in front of the `__interrupt` worker" the gotcha above warns
+about (`modplay_poll_tick → jsr modplay_poll_tick_asm → jsr
+modplay_tick`), and trips the identical `error 3035` on `modplay_tick`,
+even though the wrapper is a normal function, not another `__asm`
+entry point. **Fix**: don't call a separately-named `__asm` block from
+the wrapper at all — put the ENTIRE save-gaps/`jsr worker`/restore-gaps
+sequence directly inside the plain C function's own single inline
+`__asm { ... }` body instead (`void modplay_poll_tick(void) { __asm {
+lda $dc0d ... jsr modplay_tick ... } }`, no separately-named `__asm`
+function in between). This keeps the exact same one-`jsr`-hop distance
+in front of the `__interrupt` worker as the original IRQ entry had,
+while still producing an ordinary, prototype-able, cross-file-callable
+C function. Confirmed: this compiles clean where both other forms hit
+`error 3035`.
+
 ### D64 disk image
 ```
 oscar64 main.c -d64=output.d64 -fz=resource.bin -f=uncompressed.bin
@@ -1575,29 +1892,50 @@ __asm crt_breakpoint { rts }
 #pragma runtime(breakpoint, crt_breakpoint)
 ```
 
-### Inline asm syntax for non-ZP hardware addresses
+### Inline asm syntax: `$` immediates and addresses actually work fine (correction)
 
-In `__asm { }` inline blocks, absolute addresses above $FF require bracket notation:
+An earlier version of this note claimed `$0e`-style immediates (`lda #$0e`) and bare
+`$XXXX` absolute addresses (`sta $030f`) fail in inline `__asm { }` blocks (requiring
+decimal/`0x` immediates and `[0xXXXX]` bracket-notation addresses instead), and that
+named `__asm funcname { }` blocks accept `$` for addresses but still reject it for
+immediates.
+
+**Retested and found not to reproduce** (heartbeat-demo, 2026-07-29, same Oscar64
+build documented elsewhere in this file as v1.32.272 / commit `0808a62`): both of the
+following compile with no errors —
 ```c
-// WRONG — $ prefix only works for named asm blocks (addresses), NOT for immediates ever
-lda #$0e         // error: End of line expected ($ invalid for immediates)
-sta $030f        // error or wrong result in inline blocks
+// Inline block: $ immediate AND bare $-address both fine
+int main(void) {
+    __asm {
+        lda #$0e
+        sta $030f
+    }
+    return 0;
+}
 
-// CORRECT in inline __asm { }:
-lda #14          // immediate: use decimal
-lda #0x0e        // immediate: 0x prefix also works
-sta [0x030f]     // absolute address > $FF: use [0xXXXX] bracket notation
-lda [0x0300]
-```
-
-In **named** `__asm funcname { }` blocks, `$XX` IS valid for addresses but still NOT for immediates:
-```c
+// Named block: $ immediate fine too
 __asm my_func {
-    sta $0245    // OK: $ for addresses in named blocks
-    lda #$0e     // STILL wrong — named blocks also reject $ for immediates
-    lda #14      // correct
+    lda #$01
+    and #$0e
+    sta $0400
+    rts
 }
 ```
+This also matches `UltimateDemo2026/include/modplay.c`'s `modplay_irq` named `__asm`
+block, which already uses `and #$01` (a `$`-prefixed immediate) in production code.
+`[0xXXXX]` bracket notation and decimal/`0x` immediates still work too (unaffected,
+just no longer *required*) — use whichever reads better; `$XXXX` matches 6502
+convention and the original assembly source more closely when porting existing code.
+
+If you hit a real "End of line expected" or "Function expected" error near a `$`
+token in an `__asm` block, look elsewhere first (e.g. calling a named `__asm` block
+with `()` instead of taking its address, or a different address range) before
+assuming this specific restriction — it does not currently reproduce.
+
+**Named asm blocks are addresses, not callables:** a named `__asm funcname { }` block
+is not invoked as `funcname()` — attempting that gives `error 3013: Function expected
+for call`. Instead take its address, e.g. to install it as a hardware vector:
+`*((void **)0x0314) = funcname;` (see `modplay_irq`'s installation pattern).
 
 ### `#pragma compile` path resolution
 
@@ -1683,6 +2021,62 @@ void cwin_putat_printf(OricCharWin *w, uint8_t x, uint8_t y, const char *fmt, ..
     _cwin_vformat(pbuf, 80, fmt, (int *)&fmt + 1);  // fmt is last named param
 }
 ```
+
+### Static assertions via negative array size do NOT work
+
+The classic portable-C idiom `typedef char assert_name[(cond) ? 1 : -1];` (fails to
+compile if `cond` is false, because a negative array size is invalid) does **not**
+error in Oscar64 — confirmed by deliberately breaking a real condition (a struct-size
+check comparing `sizeof(struct)` against a wrong constant) and rebuilding: no error,
+no warning, build succeeds silently. This held even with an actual (unused) static
+instance of the typedef declared, not just the bare typedef — so it isn't simply
+"unused typedefs are never validated," Oscar64's array-bound checking in this context
+just doesn't reject the negative/absurd size at all.
+
+There is no working compile-time `_Static_assert`/`#error`-based struct-size check
+found for Oscar64 (no `_Static_assert` keyword, and `#if` cannot see `sizeof` of a
+type). **Verify struct/type sizes at runtime instead** — print `sizeof(x)` to the
+screen (or over serial/UCI) and check it against the expected value by eye/log, e.g.:
+```c
+sprintf(buf, "size: %u", (unsigned)sizeof(my_struct_t));
+screen_info(buf);
+```
+Cross-check any offset arithmetic independently too (e.g. in a scratch Python/shell
+script) rather than trusting a from-source struct layout alone, since there's no
+compiler-enforced safety net here.
+
+### `-O2` optimizer can non-terminate on certain branch/clamp shapes ("Optimizer locked in infinite loop")
+
+Confirmed on a function with two structurally-identical "clamp to a bound + apply a
+follow-up side effect" blocks (a 16-bit value compared against a computed bound,
+clamped, and a small shared multi-line side-effect duplicated verbatim in both the
+top-clamp and bottom-clamp branches — e.g. a filter-cutoff modulation routine with a
+"clamp to ceiling" and "clamp to floor" branch, each recomputing the same
+bounce/negate byte). Oscar64's `-O2` peephole pass (`NativeCodeGenerator.cpp`'s
+per-function optimize loop, capped at `cnt>200` iterations) failed to reach a fixed
+point and emitted:
+```
+warning 2007: Optimizer locked in infinite loop 'function_name'
+```
+followed by repeated internal `Oops N` diagnostic lines (harmless — just the
+optimizer's own iteration-count printout, `cnt>190`). The build still completes and
+produces a `.prg`, but a non-converging optimizer pass on a function like this is not
+something to just ignore. Neither `__noinline` on the function nor restructuring the
+early-return control flow around a single reused local made the warning go away.
+
+**Fix that worked**: factor the *duplicated* side-effect code (the identical block
+appearing in both branches) out into its own small `static` helper function, called
+from both places instead of inlined twice. Once the duplication was removed, the
+warning disappeared completely and the function optimized normally. Isolating just
+this function in a tiny standalone `.c` file did **not** reproduce the warning —
+Oscar64 optimizes as one whole program, so the bug only showed up in the full build,
+not in a minimal repro; don't trust a clean isolated-file test as proof a shape like
+this is safe in-repo.
+
+**Takeaway**: if `-O2` warns "Optimizer locked in infinite loop" on a function with
+duplicated multi-statement logic across sibling branches, de-duplicate that logic
+into a helper first — don't reach for `__noinline` or manual control-flow rewrites as
+the first fix.
 
 ### Native-mode preprocessor and expression gotchas
 

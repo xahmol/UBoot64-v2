@@ -55,7 +55,7 @@ void uii_disable_drive_b(void);                      // Power off Ultimate emula
 void uii_get_drive_a_power(void);                    // Read drive A power state into uii_data
 void uii_get_drive_b_power(void);                    // Read drive B power state into uii_data
 
-// Additions: remaining commands of released firmware (see UCILIBMANUAL.md)
+// Additions: remaining commands of released firmware (see docs/UCILIB_MANUAL.md)
 #ifndef UII_MAX_DRIVES
 #define UII_MAX_DRIVES      5       // Storage devices tracked by uii_scan_media
 #endif

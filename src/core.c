@@ -52,6 +52,7 @@
 #include <c64/vic.h>
 #include <c64/types.h>
 #include <c64/kernalio.h>
+#include <c64/reu.h>
 #include <petscii.h>
 #include <stdio.h>
 #include <string.h>
@@ -324,22 +325,24 @@ char CheckActiveIECdevices()
   // Check IDs 8 to 30
   for (x = 0; x < 23; x++)
   {
-    iec_device = (x == 22) ? 4 : x + 8;
-    check = (CheckIfUltimateOnID(iec_device));
+    iecdevice = (x == 22) ? 4 : x + 8;
+    check = (CheckIfUltimateOnID(iecdevice));
     if (check)
     {
       if (check > 1)
       {
         iec_devices[x] = check;
-        anyactive = (check == 3) ? 1 : 0; // Set anyactive if not UCI controllable and powered
+        if (check == 3)
+          anyactive = 1; // Set anyactive if not UCI controllable and powered
       }
     }
     else
     {
-      if (iec_present(iec_device))
+      if (iec_present(iecdevice))
       {
         iec_devices[x] = 1;
-        anyactive = (x == 0) ? 0 : 1; // Set on one if not ID 8
+        if (x)
+          anyactive = 1; // Set on one if not ID 8
       }
     }
   }
@@ -760,3 +763,25 @@ signed textInput(char xpos, char ypos, char width, char *str, char size, char va
 
 #pragma code(code)
 #pragma data(data)
+
+// REU transfers for data the caller reads or writes right after the DMA
+// (slots, directory list). Never inline these: with an inlined reu_load,
+// Oscar64 -O2 may move reads of the loaded data before the DMA (seen in
+// DMBoot v5, GitHub issue #18, docs/OSCAR64_MANUAL.md). The REU size probe in
+// main.c keeps the inline library calls (register-parameter bug in loops).
+// __noinline alone is not enough: Oscar64 still sees that the body only
+// writes REU registers and moved a write to the destination struct before
+// the load (dir_read() insert-in-between, seen in the .asm). The barrier
+// accesses make the DMA's memory access visible to the optimizer.
+__noinline void uboot_reu_load(unsigned long raddr, volatile char *dp, unsigned length)
+{
+  reu_load(raddr, dp, length);
+  dp[0] = dp[0]; // Barrier: tells the optimizer this call writes *dp
+}
+
+__noinline void uboot_reu_store(unsigned long raddr, const volatile char *sp, unsigned length)
+{
+  volatile char barrier = sp[0]; // Barrier: tells the optimizer this call reads *sp
+
+  reu_store(raddr, sp, length);
+}

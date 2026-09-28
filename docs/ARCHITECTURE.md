@@ -348,7 +348,7 @@ The UCI is the hardware interface exposed by the Ultimate II+/U64 cartridge at m
 
 **Source:** firmware lives in [GideonZ/1541ultimate](https://github.com/GideonZ/1541ultimate). The C libraries in `include/ultimate_*` are adapted from [xlar54/ultimateii-dos-lib](https://github.com/xlar54/ultimateii-dos-lib).
 
-**Coverage (2026-09-25):** the library now wraps every command of released firmware 3.15a that works on an Ultimate II+ except the new HTTP target (deferred), including the SoftIEC target functions in `include/ultimate_softiec_lib.c/h`. UBoot64 itself uses only the subset below; Oscar64 drops the uncalled functions, so bank usage is unchanged. See `UCILIBMANUAL.md` §17 for the full command coverage table.
+**Coverage (2026-09-25):** the library now wraps every command of released firmware 3.15a that works on an Ultimate II+ except the new HTTP target (deferred), including the SoftIEC target functions in `include/ultimate_softiec_lib.c/h`. UBoot64 itself uses only the subset below; Oscar64 drops the uncalled functions, so bank usage is unchanged. See `docs/UCILIB_MANUAL.md` §17 for the full command coverage table.
 
 ### Registers
 
@@ -435,7 +435,7 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 | `file` | char[51] | 51 | Boot filename |
 | `cmd` | char[81] | 81 | Optional BASIC command to execute before boot |
 | `reu_image` | char[51] | 51 | REU image filename to preload |
-| `reu_path` | char[256] | 256 | USB path to the REU image |
+| `reu_path` | char[256] | 256 | USB path to the REU image. Stored since v3.1.0; before that the REU was loaded from `image_a_path`. Slots with an empty `reu_path` fall back to `image_a_path` at boot and are written back with the path filled in; `uboot_upd12`/`uboot_upd23` fill it during migration |
 | `reusize` | char | 1 | REU size index (0–7, maps into `reusizelist`) |
 | `runboot` | char | 1 | Bitmask of `EXEC_*` flags for boot mode |
 | `device` | char | 1 | IEC device ID for boot (8–30) |
@@ -515,7 +515,7 @@ disk-image mounts on hardware: the firmware special-cases disk images
 across multiple generic file-query commands in ways that don't align with
 simple existence checks (`uii_open_file()` → documented
 `"89,NOT A DISK IMAGE"`; `uii_file_stat()` → undocumented `"92"`, see
-`UCILIBMANUAL.md`). Since the real operation is side-effect-free on
+`docs/UCILIB_MANUAL.md`). Since the real operation is side-effect-free on
 failure (nothing mounts/opens unless the right file was actually found),
 using it as its own probe is both simpler and reliable. For
 `mountimage()`, `uii_mount_disk()`'s own status distinguishes a port
@@ -600,9 +600,9 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `type` | Entry type: `CBM_T_PRG`, `CBM_T_DIR`, `CBM_T_FREE`, etc. |
 | `length` | Filename length in bytes (including null) |
 | `select` | Selection flag: 0=unselected, 1=selected |
-| `size` | Size in 256-byte blocks (IEC only) |
-| `access` | Access flags: `CBM_A_RO`=1, `CBM_A_RW`=3 |
-| `stub[5]` | Reserved |
+| `size` | Size in 256-byte blocks (IEC only), `unsigned` (16 bit; a `char` before v3.1.0 showed sizes modulo 256). For a partition-list entry: the partition number |
+| `access` | Access flags: `CBM_A_RO`=1 (locked file, `<` after the type), `CBM_A_RW`=3 |
+| `stub[4]` | Reserved (one byte went to `size`, so the record stays 16 bytes) |
 
 **`DirElement`** — one directory entry:
 
@@ -1003,6 +1003,8 @@ reu_store(previous, (volatile char *)&present, sizeof(present));
 This suppresses the optimisation and forces the compiler to re-read or re-write the pointed-to memory around every DMA call.
 
 **Location:** `src/filebrowse.c`, all `reu_load` / `reu_store` call sites (~12 occurrences).
+
+**Since v3.1.0 (GitHub issue #18): slot and directory transfers go through `uboot_reu_load()` / `uboot_reu_store()`** (`src/core.c`, bank 0), `__noinline` wrappers with a barrier access. `volatile` alone did not stop the optimiser from moving reads of loaded data before an inlined DMA (seen in DMBoot v5). `__noinline` alone was not enough either: Oscar64 analyses the wrapper body, sees only REU register writes, and in `dir_read()`'s insert-in-between branch moved the write of `bufferdir.meta.next` byte 0 *before* the `uboot_reu_load()` of that struct, so the DMA overwrote it. The barrier (`dp[0] = dp[0];` after the load, a volatile read of `sp[0]` before the store) tells the optimiser the call writes/reads the buffer; verified in the `.asm`. The REU size probes (`main.c` and both upgraders) keep the inline library calls: with register parameters, a loop calling the same function with a multi-byte address can skip setting a parameter byte (DMBoot v5, see `docs/OSCAR64_MANUAL.md`).
 
 ---
 

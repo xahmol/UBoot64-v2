@@ -211,7 +211,6 @@ extern char verbosecounter;
 // Import from cartridge back to BASIC code
 extern char execute_commands[200];
 extern char execute_keys[10];
-extern char iec_device;
 
 // Main screen window
 extern CharWin cw;

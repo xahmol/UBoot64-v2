@@ -349,6 +349,12 @@ void convert_slot_data()
         Slot.device = OldSlot.device;
         Slot.command = OldSlot.command;
         strncpy(Slot.image_a_path, OldSlot.image_a_path, MAXPATHLEN - 1);
+        // v1 loaded the REU image from image_a_path: give it its own field
+        // (GitHub issue #6)
+        if (Slot.command & COMMAND_REU)
+        {
+            strncpy(Slot.reu_path, OldSlot.image_a_path, MAXPATHLEN - 1);
+        }
         strncpy(Slot.image_a_file, OldSlot.image_a_file, MAXFILENAME - 1);
         Slot.image_a_id = OldSlot.image_a_id;
         strncpy(Slot.image_b_path, OldSlot.image_b_path, MAXPATHLEN - 1);

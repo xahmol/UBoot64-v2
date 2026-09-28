@@ -102,18 +102,22 @@ char CheckStatusTime()
     return 0;
 }
 
-char *UNIX_epoch_to_UII_time(time_t epoch)
+void UNIX_epoch_to_UII_time(time_t epoch, char *settime)
 {
-    // Convert UNIX time epoch to UII readable time format
+    // Convert UNIX time epoch to UII readable time format into settime[6]
+    // (caller's buffer: the old version returned a pointer to a local array).
+    // month_days lives in cartridge ROM (bank 1), so it is read-only here:
+    // February's leap day comes from leap_year_ind instead of patching it
+    // (the old code wrote 29 into the ROM copy, which never took effect).
+    // The date is counted year by year and month by month from 1970: the
+    // old estimate-and-correct year calculation was a day off in late
+    // December of leap years.
 
-    static char month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    static const char month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-    char ntp_hour, ntp_minute, ntp_second, ntp_day, ntp_month;
-    char leap_days = 0;
-    char leap_year_ind = 0;
-    unsigned temp_days, i;
-    unsigned ntp_year, days_since_epoch, day_of_year;
-    char settime[6];
+    char ntp_hour, ntp_minute, ntp_second, ntp_month;
+    char leap_year_ind;
+    unsigned ntp_year, days, year_days, month_length;
 
     // Adjust for timezone
     epoch += cfg.secondsfromutc;
@@ -126,54 +130,39 @@ char *UNIX_epoch_to_UII_time(time_t epoch)
     ntp_hour = epoch % 24;
     epoch /= 24;
 
-    // Calculate date
-
-    // Number of days since epoch
-    days_since_epoch = epoch;
-    // ball parking year, may not be accurate!
-    ntp_year = 1970 + (days_since_epoch / 365);
-    // Calculating number of leap days since epoch/1970
-    for (i = 1972; i < ntp_year; i += 4)
+    // Calculate date: days since 1 January 1970
+    days = epoch;
+    ntp_year = 1970;
+    for (;;)
     {
-        if (((i % 4 == 0) && (i % 100 != 0)) || (i % 400 == 0))
-            leap_days++;
-    }
-    // Calculating accurate current year by (days_since_epoch - extra leap days)
-    ntp_year = 1970 + ((days_since_epoch - leap_days) / 365);
-    day_of_year = ((days_since_epoch - leap_days) % 365) + 1;
-
-    if (((ntp_year % 4 == 0) && (ntp_year % 100 != 0)) || (ntp_year % 400 == 0))
-    {
-        month_days[1] = 29; // February = 29 days for leap years
-        leap_year_ind = 1;  // if current year is leap, set indicator to 1
-    }
-    else
-    {
-        month_days[1] = 28;
-    } // February = 28 days for non-leap years
-
-    // Calculating current Month
-    temp_days = 0;
-    for (ntp_month = 0; ntp_month <= 11; ntp_month++)
-    {
-        if (day_of_year <= temp_days)
+        leap_year_ind = ((ntp_year & 3) == 0 && (ntp_year % 100 != 0 || ntp_year % 400 == 0)) ? 1 : 0;
+        year_days = 365 + leap_year_ind;
+        if (days < year_days)
             break;
-        temp_days = temp_days + month_days[ntp_month];
+        days -= year_days;
+        ntp_year++;
     }
 
-    // Calculating current Date
-    temp_days = temp_days - month_days[ntp_month - 1];
-    ntp_day = day_of_year - temp_days;
+    // Month (0-based here) and day of the month
+    ntp_month = 0;
+    for (;;)
+    {
+        month_length = month_days[ntp_month];
+        if (ntp_month == 1)
+            month_length += leap_year_ind;
+        if (days < month_length)
+            break;
+        days -= month_length;
+        ntp_month++;
+    }
 
     // Build UII time
     settime[0] = ntp_year - 1900;
-    settime[1] = ntp_month;
-    settime[2] = ntp_day;
+    settime[1] = ntp_month + 1;
+    settime[2] = days + 1;
     settime[3] = ntp_hour;
     settime[4] = ntp_minute;
     settime[5] = ntp_second;
-
-    return settime;
 }
 
 void get_ntp_time()
@@ -188,6 +177,7 @@ void get_ntp_time()
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     char socket = 0;
     time_t t;
+    char settime[6];
 
     if (cfg.verbose)
     {
@@ -291,7 +281,8 @@ void get_ntp_time()
     }
 
     // Set UII+ RTC clock
-    uii_set_time(UNIX_epoch_to_UII_time(t));
+    UNIX_epoch_to_UII_time(t, settime);
+    uii_set_time(settime);
 
     if (cfg.verbose)
     {
@@ -445,6 +436,7 @@ char editcolors()
     char x;
     char option = 1;
     char color;
+    struct ColorPalette original = cfg.colors; // For undo: other unsaved config changes are kept
     char setting[11][16] = {"Header line 1  ", "Header line 2  ", "Normal text    ", "Text input     ",
                            "Key text       ", "Dir item normal", "Dir item select", "Error text     ", "OK text        ",
                            "Background     ", "Border         "};
@@ -533,7 +525,9 @@ char editcolors()
             break;
 
         case CH_DEL:
-            readconfigfile();
+            cfg.colors = original;
+            vic.color_back = cfg.colors.background;
+            vic.color_border = cfg.colors.border;
             changesmade = 0;
             break;
 
@@ -641,7 +635,7 @@ void edittimeconfig()
             break;
 
         case CH_F6:
-            changesmade = editcolors();
+            changesmade |= editcolors();
             break;
 
         case CH_F8:

@@ -7,7 +7,7 @@
 typedef long time_t;
 
 char CheckStatusTime();
-char* UNIX_epoch_to_UII_time(time_t epoch);
+void UNIX_epoch_to_UII_time(time_t epoch, char *settime);
 void get_ntp_time();
 void time_main();
 void edittimeconfig();

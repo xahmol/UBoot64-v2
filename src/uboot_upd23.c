@@ -18,6 +18,9 @@
 // shorter old file -- see readconfigfile()'s zero-fill/min-copy pattern in
 // fileio.c -- but the shared CFGVERSION gate still needs bumping here).
 //
+// It also moves the REU image path of REU slots from image_a_path (where v2
+// loaded it from) into its own reu_path field (GitHub issue #6).
+//
 // The code can be used freely as long as you retain
 // a notice describing original source and author.
 //
@@ -310,6 +313,14 @@ void sanitize_slot_data()
 
         Slot.partition = 0;
         Slot.cfgvs = CFGVERSION;
+
+        // v2 never stored the REU image path in reu_path: the REU was loaded
+        // from image_a_path. Move it to its own field (GitHub issue #6).
+        if ((Slot.command & COMMAND_REU) && !Slot.reu_path[0])
+        {
+            strncpy(Slot.reu_path, Slot.image_a_path, MAXPATHLEN - 1);
+            Slot.reu_path[MAXPATHLEN - 1] = 0;
+        }
 
         reu_store(address, (char *)&Slot, sizeof(Slot));
     }

@@ -1,6 +1,6 @@
 /*****************************************************************
 Ultimate 64/II+ Command Library - SoftIEC target functions
-See ultimate_softiec_lib.h and UCILIBMANUAL.md.
+See ultimate_softiec_lib.h and docs/UCILIB_MANUAL.md.
 ******************************************************************/
 
 #include <string.h>

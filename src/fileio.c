@@ -233,7 +233,7 @@ void get_slot_from_reu(char number)
 
   address = number * sizeof(Slot) + SLOT_REU_START;
 
-  reu_load(address, (char *)&Slot, sizeof(Slot));
+  uboot_reu_load(address, (char *)&Slot, sizeof(Slot));
 }
 
 void save_slot_to_reu(char number)
@@ -249,7 +249,7 @@ void save_slot_to_reu(char number)
 
   address = number * sizeof(Slot) + SLOT_REU_START;
 
-  reu_store(address, (char *)&Slot, sizeof(Slot));
+  uboot_reu_store(address, (char *)&Slot, sizeof(Slot));
 }
 
 void write_slotsfile(char verbose)
@@ -289,7 +289,7 @@ void write_slotsfile(char verbose)
     {
       save_length = end - count;
     }
-    reu_load(count, save_buffer, save_length);
+    uboot_reu_load(count, save_buffer, save_length);
     uii_write_file(save_buffer, save_length);
     CheckStatus("writing slots");
     count += SAVE_BUF_SIZE;
@@ -373,7 +373,7 @@ void read_slotsfile(unsigned char verbose)
       bytesread = uii_readdata();
       uii_accept();
       CheckStatus("reading slots");
-      reu_store(count, uii_data, bytesread);
+      uboot_reu_store(count, uii_data, bytesread);
       count += bytesread;
       if (verbose)
       {

@@ -85,7 +85,7 @@
 #define UNLSN 0xFFAE
 #define LISTEN 0xFFB1
 
-#define X(a, b, c) linebuffer[len - 3] == a &&linebuffer[len - 2] == b &&linebuffer[len - 1] == c
+#define X(a, b, c) len >= 3 && linebuffer[len - 3] == a &&linebuffer[len - 2] == b &&linebuffer[len - 1] == c
 
 #define CBM_T_REG 0x10 /* Bit set for regular files */
 #define CBM_T_SEQ 0x10
@@ -128,9 +128,9 @@ struct DirMeta
   char type;          // Type
   char length;        // Filename length
   char select;        // Select: 0=not selected, 1=selected
-  char size;          // Size in blocks (256 bytes)
+  unsigned size;      // Size in blocks (256 bytes); 16 bit (was char: sizes showed modulo 256)
   char access;        // Accessed flag
-  char stub[5];       // Reserved / not used
+  char stub[4];       // Reserved / not used (one byte went to size)
 };
 
 // Structure for directory element
@@ -236,9 +236,9 @@ void dir_get_element(unsigned long address)
 // Input: address = address of element
 {
   unsigned long workaddress = address;
-  reu_load(workaddress, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
+  uboot_reu_load(workaddress, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
   workaddress += sizeof(presentdirelement.meta);
-  reu_load(workaddress, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
+  uboot_reu_load(workaddress, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
 }
 
 void dir_save_element(unsigned long address)
@@ -246,9 +246,9 @@ void dir_save_element(unsigned long address)
 // Input: address = address of element
 {
   unsigned long workaddress = address;
-  reu_store(workaddress, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
+  uboot_reu_store(workaddress, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
   workaddress += sizeof(presentdirelement.meta);
-  reu_store(workaddress, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
+  uboot_reu_store(workaddress, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
 }
 
 char dir_readentry_iec(struct DirElement *l_dirent)
@@ -257,7 +257,7 @@ char dir_readentry_iec(struct DirElement *l_dirent)
 //        l_dirent - pointer to directory entry struct to fill
 // Output: 0 on success, 1 on failure
 {
-  char b, len;
+  char b, len, header;
   char i = 0;
 
   // Read first link byte — zero means end of directory
@@ -272,7 +272,7 @@ char dir_readentry_iec(struct DirElement *l_dirent)
 
   // read file size
   l_dirent->meta.size = krnio_chrin();
-  l_dirent->meta.size |= (krnio_chrin()) << 8;
+  l_dirent->meta.size |= (unsigned)krnio_chrin() << 8;
 
   // read line into linebuffer
   memset(linebuffer, 0, sizeof(linebuffer));
@@ -319,25 +319,70 @@ char dir_readentry_iec(struct DirElement *l_dirent)
     len--;
   }
 
+  // Locked files end in "<" (e.g. "PRG<"): not part of the type
+  l_dirent->meta.access = CBM_A_RW;
+  if (len > 0 && linebuffer[len - 1] == 0x3C)
+  {
+    l_dirent->meta.access = CBM_A_RO;
+    len--;
+  }
+
   // parse file name
 
-  // skip until first "
-  for (i = 0; i < sizeof(linebuffer) && linebuffer[i] != '"'; ++i)
+  // skip until first "; a reverse-on ($12) before it marks the disk header
+  // line (1541, SD2IEC and SoftIEC all send it). Before, every line with an
+  // unknown type (and every locked file) was taken for the header.
+  // Adapted from DMBoot v5 (src/dirparse.c, dir_parse_line()).
+  header = 0;
+  for (i = 0; i < len && linebuffer[i] != '"'; ++i)
   {
-    // do nothing
+    if (linebuffer[i] == 0x12)
+    {
+      header = 1;
+    }
   }
 
   // copy filename, until " or max size (MAXFILENAME-1, leaving room for the
-  // null terminator -- was hardcoded to the classic 16-char 1541 disk-name
-  // limit, which silently truncated longer real SD-card folder/file names
-  // and broke exact-name matching such as the hidden_names[] filter below)
+  // null terminator)
   b = 0;
-  for (++i; i < MAXFILENAME && linebuffer[i] != '"' && b < MAXFILENAME - 1; ++i)
+  for (++i; i < len && linebuffer[i] != '"' && b < MAXFILENAME - 1; ++i)
   {
     l_dirent->name[b++] = linebuffer[i];
   }
   l_dirent->name[b] = 0;
   l_dirent->meta.length = b + 1;
+
+  if (header)
+  {
+    // parse header
+    l_dirent->meta.type = CBM_T_HEADER;
+
+    // strip disk name padding
+    while (b > 0 && (l_dirent->name[b - 1] == ' ' || l_dirent->name[b - 1] == 0xA0))
+    {
+      l_dirent->name[--b] = 0;
+    }
+    l_dirent->meta.length = b + 1;
+
+    // skip one character which should be "
+    if (i < len && linebuffer[i] == '"')
+    {
+      ++i;
+    }
+    // skip one character which should be space
+    if (i < len && linebuffer[i] == ' ')
+    {
+      ++i;
+    }
+
+    // copy disk ID
+    for (b = 0; b < DISK_ID_LEN; ++b)
+    {
+      disk_id_buf[b] = (i < len) ? linebuffer[i++] : ' ';
+    }
+    disk_id_buf[b] = 0;
+    return 0;
+  }
 
   // check file type
   if (X('p', 'r', 'g'))
@@ -378,46 +423,8 @@ char dir_readentry_iec(struct DirElement *l_dirent)
   }
   else
   {
-    // parse header
-    l_dirent->meta.type = CBM_T_HEADER;
-
-    // skip one character which should be "
-    if (linebuffer[i] == '"')
-    {
-      ++i;
-    }
-    // skip one character which should be space
-    if (linebuffer[i] == ' ')
-    {
-      ++i;
-    }
-
-    // copy disk ID
-    for (b = 0; b < DISK_ID_LEN; ++b)
-    {
-      if (linebuffer[i])
-      {
-        disk_id_buf[b] = linebuffer[i];
-      }
-      i++;
-    }
-    disk_id_buf[b] = 0;
-
-    // strip disk name
-    for (b = 1; b < 16; ++b)
-    {
-      if (l_dirent->name[16 - b] == 0 ||
-          l_dirent->name[16 - b] == ' ' ||
-          l_dirent->name[16 - b] == 0xA0)
-      {
-        l_dirent->name[16 - b] = 0;
-      }
-    }
-    return 0;
+    l_dirent->meta.type = CBM_T_OTHER;
   }
-
-  // parse read-only
-  l_dirent->meta.access = (linebuffer[i - 4] == 0x3C) ? CBM_A_RO : CBM_A_RW;
 
   return 0;
 }
@@ -430,7 +437,7 @@ char iec_read_partitions(char device, struct PartitionEntry *out, char maxcount)
 // buf[2]=='P' check, lowercase 'p' falls through to a normal, empty
 // directory listing instead of the partition stream. petscii.h's global
 // charmap (included project-wide) inverts letter case in string literals,
-// so this needs an identity-charmap override -- see oscar64manual.md's
+// so this needs an identity-charmap override -- see docs/OSCAR64_MANUAL.md's
 // "petscii.h charmap is global" section.
 // Each entry's quoted "filename" is the partition's root path on firmware
 // 3.15, but its configured Name on 3.15a+ (PR #878 switched
@@ -537,7 +544,7 @@ char dir_read_partition_list(char device)
 // iec_read_partitions()); selection below uses meta.size (the partition
 // number), never this string, so the version difference is cosmetic here.
 // (char is unsigned by default in Oscar64, so 254 fits -- see
-// oscar64manual.md's type table).
+// docs/OSCAR64_MANUAL.md's type table).
 // Input: device - device number
 // Output: 1 if the list was populated (even if empty), 0 if the partition
 //         listing itself could not be read
@@ -588,14 +595,14 @@ char dir_read_partition_list(char device)
     else
     {
       presentdirelement.meta.prev = previous;
-      reu_store(previous, (volatile char *)&present, sizeof(present));
+      uboot_reu_store(previous, (volatile char *)&present, sizeof(present));
       previous = present;
       presentdirelement.meta.next = 0;
     }
 
-    reu_store(presentdir.address, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
+    uboot_reu_store(presentdir.address, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
     presentdir.address += sizeof(presentdirelement.meta);
-    reu_store(presentdir.address, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
+    uboot_reu_store(presentdir.address, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
     presentdir.address += presentdirelement.meta.length;
     present = presentdir.address;
   }
@@ -648,7 +655,7 @@ char dir_readentry_uci(struct DirElement *l_dirent)
   l_dirent->name[MAXFILENAME - 1] = 0;
 
   // Convert to PETSCII
-  strcpy(linebuffer, AscToPet(linebuffer2));
+  AscToPet(linebuffer, linebuffer2, sizeof(linebuffer));
   len = strlen(linebuffer);
   l_dirent->meta.length = len + 1;
 
@@ -839,9 +846,9 @@ char dir_read(char sort)
         do
         {
           workaddress = element;
-          reu_load(workaddress, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
+          uboot_reu_load(workaddress, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
           workaddress += sizeof(bufferdir.meta);
-          reu_load(workaddress, (volatile char *)bufferdir.name, bufferdir.meta.length);
+          uboot_reu_load(workaddress, (volatile char *)bufferdir.name, bufferdir.meta.length);
 
           if (strcmp(bufferdir.name, presentdirelement.name) > 0)
           {
@@ -854,7 +861,7 @@ char dir_read(char sort)
               bufferdir.meta.prev = present;
               presentdir.firstelement = present;
               presentdir.firstprint = present;
-              reu_store(element, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
+              uboot_reu_store(element, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
             }
             else
             // Insert in between
@@ -862,10 +869,10 @@ char dir_read(char sort)
               presentdirelement.meta.prev = prevaddr;
               presentdirelement.meta.next = element;
               bufferdir.meta.prev = present;
-              reu_store(element, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
-              reu_load(prevaddr, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
+              uboot_reu_store(element, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
+              uboot_reu_load(prevaddr, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
               bufferdir.meta.next = present;
-              reu_store(prevaddr, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
+              uboot_reu_store(prevaddr, (volatile char *)&bufferdir.meta, sizeof(bufferdir.meta));
             }
             inserted = 1;
             break;
@@ -877,7 +884,7 @@ char dir_read(char sort)
         if (!inserted)
         {
           presentdirelement.meta.prev = previous;                          // Set prev in new entry
-          reu_store(previous, (volatile char *)&present, sizeof(present)); // Set next in previous entry
+          uboot_reu_store(previous, (volatile char *)&present, sizeof(present)); // Set next in previous entry
           previous = present;
           presentdirelement.meta.next = 0;
         }
@@ -885,7 +892,7 @@ char dir_read(char sort)
       else
       {
         presentdirelement.meta.prev = previous;                          // Set prev in new entry
-        reu_store(previous, (volatile char *)&present, sizeof(present)); // Set next in previous entry
+        uboot_reu_store(previous, (volatile char *)&present, sizeof(present)); // Set next in previous entry
         previous = present;
         presentdirelement.meta.next = 0;
       }
@@ -894,11 +901,11 @@ char dir_read(char sort)
     presentdirelement.meta.select = 0;
 
     // Set meta data
-    reu_store(presentdir.address, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
+    uboot_reu_store(presentdir.address, (volatile char *)&presentdirelement.meta, sizeof(presentdirelement.meta));
     presentdir.address += sizeof(presentdirelement.meta);
 
     // Set filename
-    reu_store(presentdir.address, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
+    uboot_reu_store(presentdir.address, (volatile char *)presentdirelement.name, presentdirelement.meta.length);
     presentdir.address += presentdirelement.meta.length;
 
     // Update present pointer
@@ -959,7 +966,10 @@ void CheckMounttype(char *dirname)
 
   mountflag = 0;
 
-  strcpy(linebuffer, (fb_uci_mode) ? AscToPet((char *)dirname) : dirname);
+  if (fb_uci_mode)
+    AscToPet(linebuffer, dirname, sizeof(linebuffer));
+  else
+    strcpy(linebuffer, dirname);
 
   if (linebuffer)
   {
@@ -1030,7 +1040,7 @@ void dir_print_id_and_path()
     if (fb_uci_mode)
     {
       uii_get_path();
-      strncpy(pathbuffer, AscToPet(uii_data), 255);
+      AscToPet(pathbuffer, uii_data, sizeof(pathbuffer));
     }
     else
     {
@@ -1063,8 +1073,7 @@ void dir_print_entry(char printpos)
 
   if (fb_uci_mode)
   {
-    strncpy(namebuffer, AscToPet(presentdirelement.name), 21);
-    namebuffer[21] = 0;
+    AscToPet(namebuffer, presentdirelement.name, sizeof(namebuffer));
     sprintf(linebuffer, "%-21s %s", namebuffer, fileTypeToStr(presentdirelement.meta.type));
   }
   else
@@ -1263,17 +1272,19 @@ char dir_changedir(char *dirname)
       reuflag = 1;
       strncpy(imagename, dirname, MAXFILENAME);
       imagename[MAXFILENAME - 1] = 0;
+      // REU image path, stored in Slot.reu_path (before, UCI mode put it
+      // PETSCII-converted in imagebpath and it was never stored)
       if (fb_uci_mode)
       {
         uii_get_path();
-        strncpy(imagebpath, AscToPet(uii_data), MAXPATHLEN);
-        imagebpath[MAXPATHLEN - 1] = 0; // Ensure null termination
+        strncpy(reufilepath, uii_data, MAXPATHLEN);
       }
       else
       {
-        strncpy(imageapath, pathconcat(), MAXPATHLEN);
-        imageapath[MAXPATHLEN - 1] = 0; // Ensure null termination
+        // Not an Ultimate path: see GitHub issue #14
+        strncpy(reufilepath, pathconcat(), MAXPATHLEN);
       }
+      reufilepath[MAXPATHLEN - 1] = 0; // Ensure null termination
     }
     if (fb_uci_mode && !inside_mount)
     {

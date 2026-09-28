@@ -36,8 +36,8 @@ UPD23 = uboot_upd23
 # ConfigStruct.iec_root_partition; see CFGVERSION in defines.h and the
 # uboot_upd23 migration tool).
 VERSION_MAJOR = 3
-VERSION_MINOR = 0
-VERSION_PATCH = 1
+VERSION_MINOR = 1
+VERSION_PATCH = 0
 VERSION_TIMESTAMP = $(shell date "+%Y%m%d-%H%M")
 VERSION = v$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)-$(VERSION_TIMESTAMP)
 

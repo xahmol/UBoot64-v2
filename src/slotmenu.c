@@ -406,6 +406,8 @@ void pickmenuslot()
 
                 strncpy(Slot.reu_image, imagename, MAXFILENAME - 1);
                 Slot.reu_image[MAXFILENAME - 1] = 0;
+                strncpy(Slot.reu_path, reufilepath, MAXPATHLEN - 1);
+                Slot.reu_path[MAXPATHLEN - 1] = 0;
                 Slot.command = Slot.command | COMMAND_REU; // Set REU bit in command flags
             }
             else
@@ -687,7 +689,18 @@ void runbootfrommenu(char select)
     if (Slot.command & COMMAND_REU) // REU image preload enabled in this slot
     {
         cwin_console_printf(&cw, cfg.colors.text, "REU file %s", Slot.reu_image);
-        load_reu_with_reroute(Slot.image_a_path, Slot.reu_image, Slot.reusize);
+        if (!Slot.reu_path[0] && Slot.image_a_path[0])
+        {
+            // Slot from before v3.1: the REU path was never stored in its own
+            // field and the REU was loaded from image_a_path. Take that and
+            // write it back in the new format. Save before the REU load: the
+            // slot data lives in the REU and the image overwrites it.
+            strncpy(Slot.reu_path, Slot.image_a_path, MAXPATHLEN - 1);
+            Slot.reu_path[MAXPATHLEN - 1] = 0;
+            save_slot_to_reu(select);
+            write_slotsfile(0);
+        }
+        load_reu_with_reroute(Slot.reu_path, Slot.reu_image, Slot.reusize);
         ErrorCheckMmounting();
     }
 
@@ -709,7 +722,7 @@ void runbootfrommenu(char select)
             if (Slot.partition)
             {
                 // UBoot64's own reserved root partition only lives in the
-                // Ultimate's live memory, not flash (see ARCHITECTURE.md's
+                // Ultimate's live memory, not flash (see docs/ARCHITECTURE.md's
                 // "not persistent" note) -- a slot referencing it can't
                 // assume F3's auto-provisioning already ran this power
                 // cycle, or that the user saved the partition table. Re-add
@@ -1225,23 +1238,23 @@ void editmenuoptions()
         switch (key)
         {
         case CH_F5:
-            changesmade = deletemenuslot();
+            changesmade |= deletemenuslot();
             break;
 
         case CH_F1:
-            changesmade = renamemenuslot();
+            changesmade |= renamemenuslot();
             break;
 
         case CH_F2:
-            changesmade = edituserdefinedcommand();
+            changesmade |= edituserdefinedcommand();
             break;
 
         case CH_F3:
-            changesmade = reordermenuslot();
+            changesmade |= reordermenuslot();
             break;
 
         case CH_F6:
-            changesmade = toggledefaultslot();
+            changesmade |= toggledefaultslot();
             break;
 
         default:
