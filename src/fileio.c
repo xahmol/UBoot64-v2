@@ -449,11 +449,11 @@ void readconfigfile()
     uii_accept();
 
     // Read variables from read data. Older config files may be shorter than
-    // the current struct (additive fields appended since); zero the struct
-    // first and copy only the bytes actually read, so newly added tail
-    // fields default to 0 instead of picking up stale bytes left over in
-    // uii_data from a previous UCI call.
-    memset(&cfg, 0, sizeof(cfg));
+    // the current struct (additive fields appended since); copy only the
+    // bytes actually read, so newly added tail fields keep the defaults
+    // mainloop() set before this call (e.g. the NTP servers 2 and 3) instead
+    // of picking up stale bytes left over in uii_data from a previous UCI
+    // call. Only called once at start-up, right after those defaults.
     memcpy(&cfg, uii_data, min((unsigned)sizeof(cfg), bytesread));
   }
 

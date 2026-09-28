@@ -165,10 +165,11 @@ void UNIX_epoch_to_UII_time(time_t epoch, char *settime)
     settime[5] = ntp_second;
 }
 
-void get_ntp_time()
+static char ntp_from_host(const char *host)
+// Get the time from one NTP server and set the Ultimate's clock with it.
+// Input:  host - NTP server hostname
+// Output: 1 when the server answered (the clock was set), 0 when it did not
 {
-    // Function to get time from NTP server and set UII+ time with this
-
     char attempt = 1;
     char clock;
     char fullcmd[] = {0x00, NET_CMD_SOCKET_WRITE, 0x00,
@@ -181,30 +182,18 @@ void get_ntp_time()
 
     if (cfg.verbose)
     {
-        cwin_console_printf(&cw, 7, "\nUpdating UII+ time from NTP Server.");
+        cwin_console_printf(&cw, 7, "\nConnecting to: %s", host);
     }
     else
     {
         spinning(25, 3, verbosecounter++);
     }
 
-    uii_get_time();
-
-    if (cfg.verbose)
-    {
-        cwin_console_printf(&cw, 7, "\nUltimate datetime: %s", uii_data);
-        cwin_console_printf(&cw, 7, "\nConnecting to: %s", cfg.host);
-    }
-    else
-    {
-        spinning(25, 3, verbosecounter++);
-    }
-
-    socket = uii_udpconnect(cfg.host, 123); // https://github.com/markusC64/1541ultimate2/blob/master/software/io/network/network_target.cc
+    socket = uii_udpconnect((char *)host, 123); // https://github.com/markusC64/1541ultimate2/blob/master/software/io/network/network_target.cc
     if (CheckStatusTime())
     {
         uii_socketclose(socket);
-        return;
+        return 0;
     }
 
     if (cfg.verbose)
@@ -224,7 +213,7 @@ void get_ntp_time()
     if (CheckStatusTime())
     {
         uii_socketclose(socket);
-        return;
+        return 0;
     }
 
     // Do maximum of 4 attempts at receiving data
@@ -260,7 +249,7 @@ void get_ntp_time()
     if (CheckStatusTime())
     {
         uii_socketclose(socket);
-        return;
+        return 0;
     }
 
     // Convert time received to UCI format
@@ -302,6 +291,48 @@ void get_ntp_time()
     else
     {
         spinning(25, 3, verbosecounter++);
+    }
+    return 1;
+}
+
+void get_ntp_time()
+// Get the time from the NTP servers in turn (empty ones are skipped) until
+// one answers, and set the Ultimate's clock. Three servers as in DMBoot v5.
+{
+    char *hosts[NTP_SERVERS];
+    char x;
+
+    hosts[0] = cfg.host;
+    hosts[1] = cfg.host2;
+    hosts[2] = cfg.host3;
+
+    if (cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nUpdating UII+ time from NTP Server.");
+    }
+    else
+    {
+        spinning(25, 3, verbosecounter++);
+    }
+
+    uii_get_time();
+
+    if (cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nUltimate datetime: %s", uii_data);
+    }
+
+    for (x = 0; x < NTP_SERVERS; x++)
+    {
+        if (hosts[x][0] && ntp_from_host(hosts[x]))
+        {
+            return;
+        }
+    }
+
+    if (cfg.verbose)
+    {
+        cwin_console_printf(&cw, 7, "\nNo time server answered.");
     }
 }
 
@@ -540,6 +571,8 @@ char editcolors()
     return changesmade;
 }
 
+static const char *const verbosenames[VERBOSE_OPTIONS] = {"Silent", "Show messages", "Show messages + wait"};
+
 void edittimeconfig()
 // Function to edit time and colour scheme configuration
 {
@@ -547,6 +580,14 @@ void edittimeconfig()
     char key;
     char offsetinput[12]; // "%ld" of a long: up to 11 characters plus terminator
     char *ptrend;
+    char hostbuf[38];
+    char hostedit[MAXHOSTLENGTH];
+    char *hosts[NTP_SERVERS];
+    char x;
+
+    hosts[0] = cfg.host;
+    hosts[1] = cfg.host2;
+    hosts[2] = cfg.host3;
 
     do
     {
@@ -558,13 +599,16 @@ void edittimeconfig()
         cwin_console_printf(&cw, cfg.colors.text, "NTP time update settings:\n");
         cwin_console_printf(&cw, cfg.colors.text, "- Update on boot toggle: %s\n", (cfg.timeon == 0) ? "Off" : "On");
         cwin_console_printf(&cw, cfg.colors.text, "- Offset to UTC in seconds: %ld\n", cfg.secondsfromutc);
+        cwin_console_printf(&cw, cfg.colors.text, "- NTP servers (empty = off):\n");
+        for (x = 0; x < NTP_SERVERS; x++)
         {
-          char hostbuf[41];
-          strncpy(hostbuf, cfg.host, 40);
-          hostbuf[40] = 0;
-          cwin_console_printf(&cw, cfg.colors.text, "- NTP server hostname:\n%s\n", hostbuf);
+          // 2 + 37 characters: a full 40-character line would wrap and push
+          // the rest of the screen down
+          strncpy(hostbuf, hosts[x], 37);
+          hostbuf[37] = 0;
+          cwin_console_printf(&cw, cfg.colors.text, "%u %s\n", x + 1, hostbuf[0] ? hostbuf : "-");
         }
-        cwin_console_printf(&cw, cfg.colors.text, "\nVerbose or silent startup: %s\n", (cfg.verbose == 0) ? "Silent" : "Verbose");
+        cwin_console_printf(&cw, cfg.colors.text, "Start-up: %s\n", verbosenames[(cfg.verbose < VERBOSE_OPTIONS) ? cfg.verbose : VERBOSE_ON]);
         cwin_console_printf(&cw, cfg.colors.text, "Auto-boot timeout: %s\n", timeoutlist[cfg.timeoutidx]);
         cwin_console_printf(&cw, cfg.colors.text, "SoftIEC root partition (fw 3.15+): %s\n", (cfg.iec_root_partition == 0) ? "Off" : "On");
 
@@ -574,7 +618,7 @@ void edittimeconfig()
         cwin_putat_string(&cw, 5, 16, "Toggle time synch on/off", cfg.colors.text);
 
         cwin_putat_string_reverse(&cw, 0, 17, " F2 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 17, "Verbose startup on/off", cfg.colors.text);
+        cwin_putat_string(&cw, 5, 17, "Cycle start-up messages", cfg.colors.text);
 
         cwin_putat_string_reverse(&cw, 0, 18, " F3 ", cfg.colors.key);
         cwin_putat_string(&cw, 5, 18, "Edit time offset to UTC", cfg.colors.text);
@@ -583,7 +627,7 @@ void edittimeconfig()
         cwin_putat_string(&cw, 5, 19, "Cycle auto-boot timeout", cfg.colors.text);
 
         cwin_putat_string_reverse(&cw, 0, 20, " F5 ", cfg.colors.key);
-        cwin_putat_string(&cw, 5, 20, "Edit NTP server host", cfg.colors.text);
+        cwin_putat_string(&cw, 5, 20, "Edit NTP servers", cfg.colors.text);
 
         cwin_putat_string_reverse(&cw, 0, 21, " F6 ", cfg.colors.key);
         cwin_putat_string(&cw, 5, 21, "Edit colour scheme", cfg.colors.text);
@@ -607,7 +651,8 @@ void edittimeconfig()
             break;
 
         case CH_F2:
-            cfg.verbose = (cfg.verbose == 0) ? 1 : 0;
+            // Silent, messages, messages + wait (as in DMBoot v5)
+            cfg.verbose = (cfg.verbose + 1 < VERBOSE_OPTIONS) ? cfg.verbose + 1 : VERBOSE_SILENT;
             changesmade = 1;
             break;
 
@@ -629,9 +674,20 @@ void edittimeconfig()
             break;
 
         case CH_F5:
-            cwin_putat_string(&cw, 0, 23, "Input NTP server hostname:", cfg.colors.text);
-            textInput(0, 24, 40, cfg.host, sizeof(cfg.host), 0);
-            changesmade = 1;
+            // The three servers in turn; STOP keeps a server as it was
+            for (x = 0; x < NTP_SERVERS; x++)
+            {
+                cwin_fill_rect_raw(&cw, 0, 23, 40, 2, SC_SPACE, cfg.colors.text);
+                sprintf(linebuffer, "Server %u, empty = off, STOP = keep:", x + 1);
+                cwin_putat_string(&cw, 0, 23, linebuffer, cfg.colors.text);
+                // Edit a copy: textInput() edits in place, also when aborted
+                strcpy(hostedit, hosts[x]);
+                if (textInput(0, 24, 40, hostedit, sizeof(hostedit), 0) >= 0)
+                {
+                    strcpy(hosts[x], hostedit);
+                    changesmade = 1;
+                }
+            }
             break;
 
         case CH_F6:

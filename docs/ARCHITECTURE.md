@@ -534,12 +534,13 @@ failure there is treated uniformly as "keep hunting."
 |-------|------|---------|
 | `version` | char | Config file version — must equal `CFGVERSION` (0x03) |
 | `timeon` | char | NTP sync enabled: 0=off, 1=on |
-| `host` | char[81] | NTP server hostname |
+| `host` | char[81] | First NTP server hostname |
 | `secondsfromutc` | long | UTC offset in seconds (e.g. 3600 = UTC+1) |
-| `verbose` | char | Verbose startup: 0=silent (spinner), 1=verbose |
+| `verbose` | char | Start-up feedback: `VERBOSE_SILENT` 0 (spinner), `VERBOSE_ON` 1 (messages), `VERBOSE_WAIT` 2 (messages, then wait for a key); as in DMBoot v5 |
 | `colors` | ColorPalette | Embedded UI colour palette |
 | `timeoutidx` | char | Index into `timeoutlist[]`/`timeoutseconds[]` (`src/main.c`); 0 = auto-boot timeout off |
 | `iec_root_partition` | char | Firmware 3.15+: 0=off (default), 1=auto-create/select `RESERVED_ROOT_PARTITION` (254, root path `/`) whenever entering IEC mode on a SoftIEC device, so browsing sees the whole filesystem without the user having to configure a partition themselves first. Never overwrites a partition the user already configured at that index (see `src/filebrowse.c`'s `CH_F3` conflict check). Toggled via **F8** in `edittimeconfig()`; appended at the end of `ConfigStruct`, so old config files (shorter than `sizeof(cfg)`) load with this `== 0`, same zero-fill mechanism as `timeoutidx` above — no version bump needed for this field specifically |
+| `host2`, `host3` | char[81] each | Second and third NTP server (v3.1.0, appended). `get_ntp_time()` tries `host`, `host2`, `host3` in order, skipping empty ones, until one answers (as in DMBoot v5). Old config files keep the defaults set in `mainloop()` (`time.windows.com`, `pool.ntp.org`) |
 
 **Auto-boot timeout:** when `cfg.timeoutidx != 0` and one slot has
 `isdefault == 1`, `mainmenu()` (`src/slotmenu.c`) calls `autobootcountdown()`
@@ -567,9 +568,11 @@ countdown forever — confirmed on hardware, fixed by calling
 default slot is set/cleared via **F6** (`toggledefaultslot()`) in
 `editmenuoptions()` (`src/slotmenu.c`). Config files written before this
 field existed are shorter than `sizeof(cfg)`; `readconfigfile()`
-(`src/fileio.c`) zeroes `cfg` before copying only the bytes actually read
-(`uii_readdata()`'s return count), so old files load with `timeoutidx == 0`
-(off) with no version bump or upgrade tool required.
+(`src/fileio.c`) copies only the bytes actually read (`uii_readdata()`'s
+return count) over the defaults `mainloop()` set just before, so old files
+load with `timeoutidx == 0` (off) with no version bump or upgrade tool
+required. (Until v3.1.0 it zeroed `cfg` first; since then the tail fields
+keep their defaults, which the NTP servers 2 and 3 need.)
 
 ### `ColorPalette` — UI colour scheme (nested in `ConfigStruct`)
 
@@ -753,7 +756,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `char getcolor(char option)` | Return the current colour value for colour scheme element `option` (1–11) |
 | `void pushcolor(char option, char color)` | Set colour scheme element `option` to `color` in `cfg.colors` |
 | `char editcolors()` | Interactive colour scheme editor; returns 1 if changes made |
-| `void edittimeconfig()` | Top-level configuration menu (F1 NTP toggle, F2 verbose, F3 offset, F4 auto-boot timeout, F5 host, F6 colours, F8 SoftIEC root partition toggle) |
+| `void edittimeconfig()` | Top-level configuration menu (F1 NTP toggle, F2 start-up messages (3 options), F3 offset, F4 auto-boot timeout, F5 the three NTP servers, F6 colours, F8 SoftIEC root partition toggle) |
 
 #### `src/splash.c` — Startup splash screen
 

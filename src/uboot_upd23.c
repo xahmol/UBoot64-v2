@@ -224,8 +224,9 @@ void writeconfigfile()
 void read_old_configfile()
 // Read a v2 config file directly into the current ConfigStruct shape (v2
 // and v3 share the same layout aside from one appended trailing field) and
-// bump it to v3. Mirrors fileio.c's readconfigfile() zero-fill/min-copy
-// pattern, since the v2 file is one byte shorter than sizeof(cfg).
+// bump it to v3. Mirrors fileio.c's readconfigfile() min-copy pattern: the
+// v2 file is shorter than sizeof(cfg), and the fields it lacks (SoftIEC root
+// partition, NTP servers 2 and 3) keep the defaults main() set first.
 {
     unsigned bytesread;
 
@@ -236,7 +237,6 @@ void read_old_configfile()
         error("\nNo config file found.");
     }
 
-    memset(&cfg, 0, sizeof(cfg));
     uii_read_file(sizeof(cfg));
     CheckStatus("reading config");
     bytesread = uii_readdata();
@@ -381,7 +381,7 @@ int main(void)
 {
     // Set config default values, in case a fresh one needs writing
     cfg.version = CFGVERSION;
-    cfg.timeon = 1;
+    cfg.timeon = 0; // Firmware of the U64 Elite II and C64U (3.14d+) sets the time itself
     cfg.secondsfromutc = 7200;
     cfg.verbose = 1;
     cfg.timeoutidx = 0;
@@ -396,7 +396,9 @@ int main(void)
     cfg.colors.diritem_select = VCOL_CYAN;
     cfg.colors.error = VCOL_RED;
     cfg.colors.ok = VCOL_GREEN;
-    strcpy(cfg.host, "pool.ntp.org");
+    strcpy(cfg.host, "time.google.com");
+    strcpy(cfg.host2, "time.windows.com");
+    strcpy(cfg.host3, "pool.ntp.org");
 
     // Init VIC
     vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);

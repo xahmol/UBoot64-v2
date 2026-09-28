@@ -102,6 +102,13 @@
 #define MAXPATHLEN 256
 #define MAXFILENAME 51
 #define MAXHOSTLENGTH 81
+#define NTP_SERVERS 3
+
+// Start-up feedback (ConfigStruct.verbose), as in DMBoot v5
+#define VERBOSE_SILENT 0 // Spinner only
+#define VERBOSE_ON 1     // Messages
+#define VERBOSE_WAIT 2   // Messages, then wait for a key
+#define VERBOSE_OPTIONS 3
 #define MAXMENUNAME 31
 #define MAXCOMMAND 81
 
@@ -181,6 +188,9 @@ struct ConfigStruct
                               // root (see RESERVED_ROOT_PARTITION). 0 = off (default). Appended field:
                               // safe for old config files, which read this back as 0 via readconfigfile()'s
                               // memset+min-copy load.
+    char host2[MAXHOSTLENGTH]; // Second NTP server, tried when the first fails; empty = off.
+    char host3[MAXHOSTLENGTH]; // Third NTP server. Both appended in v3.1.0: an older, shorter config
+                               // file keeps the defaults set in mainloop() (see readconfigfile()).
 };
 extern struct ConfigStruct cfg;
 extern char imagename[MAXFILENAME];

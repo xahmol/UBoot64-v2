@@ -425,7 +425,7 @@ int main(void)
 {
     // Set config defauklt values
 	cfg.version = CFGVERSION;
-	cfg.timeon = 1;
+	cfg.timeon = 0; // Firmware of the U64 Elite II and C64U (3.14d+) sets the time itself
 	cfg.secondsfromutc = 7200;
 	cfg.verbose = 1;
 	cfg.timeoutidx = 0;
@@ -440,7 +440,9 @@ int main(void)
 	cfg.colors.diritem_select = VCOL_CYAN;
 	cfg.colors.error = VCOL_RED;
 	cfg.colors.ok = VCOL_GREEN;
-	strcpy(cfg.host, "pool.ntp.org");
+	strcpy(cfg.host, "time.google.com");
+	strcpy(cfg.host2, "time.windows.com");
+	strcpy(cfg.host3, "pool.ntp.org");
 
     // Init VIC
     vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);

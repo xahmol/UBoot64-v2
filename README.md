@@ -60,6 +60,8 @@ Version 3.1.0 - (in development):
 - Slot editor: an earlier change is no longer lost when a later action in the same session changes nothing.
 - Configuration: changes are no longer lost when the colour editor is left without changes; **DEL** (undo) in the colour editor now only undoes the colour changes, not other unsaved configuration changes.
 - NTP time sync: the date is now correct in leap years from March on (February always had 28 days).
+- NTP time sync: three NTP servers, tried in order until one answers (as in DMBoot 128 v5). NTP sync is now off by default for new configurations, since current Ultimate firmware sets the clock itself; existing configurations keep their setting.
+- Start-up messages: a third option, **Show messages + wait**, keeps the start-up feedback on screen until a key is pressed.
 - "IDs needing manual power switching" now reports "Yes" when any such device is on the bus, not only when it is the last one checked.
 - REU preload: the path of the REU image is now stored in the slot. Before, a slot loaded the REU file from the directory of its drive A image. Existing slots are converted automatically: by the upgrade tools, or at the first boot of the slot.
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
@@ -490,15 +492,15 @@ After pressing **F5**:
 
 The screen shows current settings and allows editing:
 
-* **F1** — Toggle NTP time sync on or off. Default: enabled.
+* **F1** — Toggle NTP time sync on or off. Default: off, since the firmware of the Ultimate 64 Elite II and the C64 Ultimate (3.14d and later) sets the clock itself. Switch it on for older firmware or devices without their own time sync.
 
-* **F2** — Toggle verbose or silent startup. Verbose shows detailed feedback during startup; silent shows only a progress indicator. Default: verbose.
+* **F2** — Cycle the start-up messages: **Silent** (only a progress indicator), **Show messages** (detailed feedback during startup), or **Show messages + wait** (the same, then waits for a key so you can read them). Default: Show messages.
 
-* **F3** — Edit the time offset to UTC in seconds. Automated daylight saving adjustment is not provided; adjust manually when needed. Examples: CET = 3600, CEST = 7200. See <https://www.timeanddate.com/time/zones/> for all offsets (multiply hours by 3600). Default: 0 (UTC).
+* **F3** — Edit the time offset to UTC in seconds. Automated daylight saving adjustment is not provided; adjust manually when needed. Examples: CET = 3600, CEST = 7200. See <https://www.timeanddate.com/time/zones/> for all offsets (multiply hours by 3600). Default: 7200 (CEST).
 
 * **F4** — Cycle the auto-boot timeout: Off, 1, 3, 5, or 10 seconds. Default: Off. See [Default boot slot and auto-boot timeout](#default-boot-slot-and-auto-boot-timeout).
 
-* **F5** — Edit the NTP server hostname. Default: `pool.ntp.org`.
+* **F5** — Edit the three NTP servers, one after the other. They are tried in order until one answers; an empty server is skipped. **RUN/STOP** keeps a server as it was. Defaults: `time.google.com`, `time.windows.com`, `pool.ntp.org`. An existing configuration keeps its server as server 1 and gets the last two defaults as servers 2 and 3.
 
 * **F6** — Edit the UI colour scheme. Use **CURSOR UP** / **DOWN** to select a colour element, **CURSOR LEFT** / **RIGHT** to change its colour value (0–15). **DEL** reverts to the saved colours. **F7** returns to the configuration menu. Changes are saved when you exit the configuration menu.
 
