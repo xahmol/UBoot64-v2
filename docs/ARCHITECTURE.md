@@ -313,16 +313,21 @@ to:
 - **Config file:** `<device>/dmbcfg.cfg` — serialized `ConfigStruct`
 - **Slots file:** `<device>/dmbslt.cfg` — serialized 18 × `SlotStruct`
 
-**Device resolution:** `resolve_storage_path()` checks four fixed candidates
-in `storagepaths[4][8]` (`src/main.c`), in priority order **SD, USB0, USB1,
-USB2** (`/sd/`, `/usb0/`, `/usb1/`, `/usb2/` — device directory names as
-exposed at the UCI root, confirmed against `UltimateDemo2026`'s
-`uii_scan_media()`). For each candidate it `uii_change_dir()`s in and, if
-that succeeds, tries to open the config file: the first candidate where the
-file actually exists wins (`configpath` is set to it, return value `2`). If
-no candidate has an existing config, the first candidate that was simply
-*present* (mountable) is used instead, so a fresh install creates files
-there (return value `1`). Return value `0` means no device was found at all.
+**Device resolution:** `resolve_storage_path()` gets the storage devices
+present from one listing of the UCI root directory, `uii_scan_media()` from
+the UCI library (every directory whose name starts with "sd" or "usb", as
+lower case ASCII paths such as `/sd/`, `/usb0/`). It tries the SD card
+first, then the USB devices in listing order. For each device it
+`uii_change_dir()`s in and tries to open the config file: the first device
+where the file actually exists wins (`configpath` is set to it, return
+value `2`). If no device has an existing config, the first device present
+is used instead, so a fresh install creates files there (return value `1`).
+Return value `0` means no device was found at all. `configpath` holds ASCII,
+so it is converted to PETSCII (`asc2pet_path()`) before it is shown. Until
+v3.1.0 the function tried the fixed list `storagepaths[]` (`/sd/`, `/usb0/`,
+`/usb1/`, `/usb2/`) with one `uii_change_dir()` each; `storagepaths[]` is
+still used by the USB reroute in `mountimage()` and
+`load_reu_with_reroute()`.
 `mainloop()` (`src/main.c`) retries the whole scan for up to 5 seconds
 before giving up (USB/SD enumeration may still be in progress at cold boot),
 matching the retry pattern already used for UCI/REU detection earlier in
@@ -331,9 +336,9 @@ the same function.
 `read_slotsfile()`, `write_slotsfile()`, and `readconfigfile()` themselves
 are unchanged — they always `uii_change_dir(configpath)` before their own
 I/O, so once `configpath` is resolved at startup they transparently operate
-on whichever device was found. `src/uboot_upd12.c` (the standalone v1→v2
-upgrade tool) carries its own duplicate copy of `storagepaths[]`/
-`resolve_storage_path()`, since it's compiled independently — it must
+on whichever device was found. The upgrade tools (`src/uboot_upd12.c`,
+`src/uboot_upd23.c`) carry their own copy of `resolve_storage_path()`,
+since they're compiled independently — it must
 resolve to the same device the main cartridge will use, or an upgrade could
 land on a device the cartridge never looks at.
 
@@ -699,7 +704,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | Function | Description |
 |----------|-------------|
 | `void CheckStatus(const char *message)` | Check UCI status; call `errorexit()` on failure |
-| `char resolve_storage_path(void)` | Scan `storagepaths[]` (SD, USB0, USB1, USB2) for an existing config, or the first present device as a creation fallback; sets `configpath` |
+| `char resolve_storage_path(void)` | Scan the storage devices from `uii_scan_media()` (SD first, then USB) for an existing config, or the first present device as a creation fallback; sets `configpath` (ASCII) |
 | `void load_reu_with_reroute(char *path, char *reu_image, char reusize)` | Preload a REU image, retrying the real `uii_open_file()` call across USB ports (including the `/usb*/` wildcard prefix) if the stored path has moved; on success calls `uii_load_reu()`/`uii_close_file()`. Any open failure is treated as "keep hunting" (no disk-image-type concern for `.REU` files). Prompts to insert the stick and retry, or F7 to abort to BASIC, if unreachable everywhere |
 | `void get_slot_from_reu(char number)` | DMA load slot `n` from REU into `Slot` global |
 | `void save_slot_to_reu(char number)` | DMA store `Slot` global to slot `n` in REU |

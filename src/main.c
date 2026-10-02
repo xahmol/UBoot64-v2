@@ -324,7 +324,8 @@ __noinline void mainloop(void)
 	if (cfg.verbose)
 	{
 		cwin_put_string(&cw, "Storage found: ", cfg.colors.text);
-		cwin_put_string(&cw, configpath, cfg.colors.text);
+		asc2pet_path(linebuffer, configpath, sizeof(linebuffer)); // uii_scan_media() paths are ASCII
+		cwin_put_string(&cw, linebuffer, cfg.colors.text);
 		cwin_cursor_newline(&cw);
 	}
 	else

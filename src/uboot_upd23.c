@@ -51,7 +51,6 @@
 struct SlotStruct Slot;
 struct ConfigStruct cfg;
 char configpath[8] = "";
-char storagepaths[4][8] = {"/sd/", "/usb0/", "/usb1/", "/usb2/"};
 char configfilename[11] = "dmbcfg.cfg";
 char slotfilename[11] = "dmbslt.cfg";
 int reudetected;
@@ -134,41 +133,60 @@ void CheckStatus(const char *message)
 }
 
 char resolve_storage_path(void)
-// Scan storagepaths[] in priority order (SD, USB0, USB1, USB2).
-// Sets configpath to the first candidate where the config file already
-// exists, or -- if none has it -- the first candidate that is simply
-// present/mountable, so callers can create fresh files there.
+// Find the storage device of the config and slot files, the same way as
+// the cartridge (src/fileio.c): the devices present come from one listing
+// of the Ultimate's root directory (uii_scan_media(), lower case ASCII
+// paths such as "/usb0/"), tried SD first, then the USB devices in
+// listing order. Sets configpath to the first device where the config
+// file exists, or -- if none has it -- the first device present.
 // Output: 2 = existing config found, 1 = no config found but a device is
 //         present (configpath set to it), 0 = no device present at all.
 {
+    char drives[UII_MAX_DRIVES][UII_DRIVE_PATH_LEN];
+    char count;
+    char pass;
     char x;
+    char issd;
     char firstpresent = 0xFF;
 
-    for (x = 0; x < 4; x++)
+    if (!uii_scan_media(drives, &count))
     {
-        uii_change_dir(storagepaths[x]);
-        if (!UII_SUCCESS)
+        return 0;
+    }
+
+    // Pass 0 tries the SD card, pass 1 the rest. Raw ASCII bytes, since
+    // the petscii.h charmap would change 's' and 'd' in a char literal.
+    for (pass = 0; pass < 2; pass++)
+    {
+        for (x = 0; x < count; x++)
         {
-            continue;
-        }
-        if (firstpresent == 0xFF)
-        {
-            firstpresent = x;
-        }
-        uii_open_file(0x01, configfilename);
-        if (strcmp((const char *)uii_status, "00,ok") == 0)
-        {
-            uii_close_file();
-            strncpy(configpath, storagepaths[x], 7);
-            configpath[7] = 0;
-            return 2;
+            issd = drives[x][1] == 0x73 && drives[x][2] == 0x64; // "/sd"
+            if (issd != (pass == 0) || strlen(drives[x]) > 7) // must fit configpath
+            {
+                continue;
+            }
+            uii_change_dir(drives[x]);
+            if (!UII_SUCCESS)
+            {
+                continue;
+            }
+            if (firstpresent == 0xFF)
+            {
+                firstpresent = x;
+            }
+            uii_open_file(0x01, configfilename);
+            if (strcmp((const char *)uii_status, "00,ok") == 0)
+            {
+                uii_close_file();
+                strcpy(configpath, drives[x]);
+                return 2;
+            }
         }
     }
 
     if (firstpresent != 0xFF)
     {
-        strncpy(configpath, storagepaths[firstpresent], 7);
-        configpath[7] = 0;
+        strcpy(configpath, drives[firstpresent]);
         return 1;
     }
     return 0;
@@ -458,7 +476,18 @@ int main(void)
         {
             error("No USB or SD storage found.");
         }
-        cwin_console_printf(&cw, VCOL_YELLOW, "\nStorage found: %s\n", configpath);
+        {
+            // configpath is ASCII (uii_scan_media()): a-z to PETSCII for display
+            char shown[8];
+            char x;
+
+            for (x = 0; configpath[x]; x++)
+            {
+                shown[x] = (configpath[x] >= 0x61 && configpath[x] <= 0x7a) ? configpath[x] - 0x20 : configpath[x];
+            }
+            shown[x] = 0;
+            cwin_console_printf(&cw, VCOL_YELLOW, "\nStorage found: %s\n", shown);
+        }
     }
 
     // Read old config file and bump to v3.
