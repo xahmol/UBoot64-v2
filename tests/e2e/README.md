@@ -45,7 +45,8 @@ ASCII character map to U+2500 + code), `[reverse]` (`#` = reverse video)
 and `[colour]` (colour RAM, one hex digit; `.` for a blank cell, whose
 colour isn't visible and depends on the screen before). Dynamic fields are masked as
 `~`: the clock in the header (row 1, columns 20-39) on every screen, and
-the version on the info screen.
+the version and hardware lines on the info screen. The hardware line is
+checked against the product name from the REST API instead.
 
 ## Steps
 

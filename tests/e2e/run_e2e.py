@@ -226,7 +226,11 @@ class DeviceRun:
         time.sleep(1.0)
         s = self.keys(["space"], "Press a key to continue.")
         version_row = next(y for y in range(25) if s.row(y).startswith("Version: "))
-        self.capture("info", s, [CLOCK, (version_row, 9, 40)])
+        hardware_row = next(y for y in range(25) if s.row(y).startswith("Hardware: "))
+        product = s.row(hardware_row)[10:].rstrip()
+        if product.lower() != self.product.lower():
+            self.fail("info: hardware %r, the REST API says %r" % (product, self.product))
+        self.capture("info", s, [CLOCK, (version_row, 9, 40), (hardware_row, 10, 40)])
         self.keys(["space"], "Make your choice.", row=24)
 
         # F3 with no slots, and back without changes.
@@ -265,6 +269,7 @@ class DeviceRun:
 
     def run(self):
         info = self.u.info()
+        self.product = info.get("product", "")
         self.log("%s, firmware %s" % (info.get("product"), info.get("firmware_version")))
         if self.args.restore:
             self.restore()

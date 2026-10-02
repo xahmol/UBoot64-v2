@@ -1329,6 +1329,20 @@ void information()
 
     cwin_console_printf(&cw, cfg.colors.text, "\nUBoot64: Boot menu for Ultimate devices\n\n");
     cwin_console_printf(&cw, cfg.colors.text, "Version: %s\n", VERSION);
+
+    // Product name from the firmware (CTRL_CMD_GET_HWINFO, in firmware
+    // since at least 3.10). Older firmware answers with an error status,
+    // or with no data: then the line says "unknown".
+    uii_get_hwinfo(0);
+    if (UII_SUCCESS && uii_data[0])
+    {
+        asc2pet_path(linebuffer, uii_data, 30); // ASCII; 30 keeps the line within 39 columns
+    }
+    else
+    {
+        strcpy(linebuffer, "unknown");
+    }
+    cwin_console_printf(&cw, cfg.colors.text, "Hardware: %s\n", linebuffer);
     cwin_console_printf(&cw, cfg.colors.text, "Written 2023 (v1), 2026 by Xander Mol.\n\n");
     cwin_console_printf(&cw, cfg.colors.text, "Inspired by/code used of DraBrowse:\n");
     cwin_console_printf(&cw, cfg.colors.text, "DraBrowse is a simple file browser.\n");
