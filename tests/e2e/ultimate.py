@@ -76,6 +76,11 @@ class Ultimate:
         self._json("POST", "/v1/runners:run_crt", body=crt,
                    content_type="application/octet-stream")
 
+    def run_prg(self, prg):
+        """Upload a PRG, reset the machine and start it."""
+        self._json("POST", "/v1/runners:run_prg", body=prg,
+                   content_type="application/octet-stream")
+
     def read_memory(self, address, length):
         return self._request("GET", "/v1/machine:readmem",
                              {"address": "%04X" % address, "length": length})
@@ -124,6 +129,30 @@ class Ultimate:
     def write_file(self, path, data):
         with self._ftp() as ftp:
             ftp.storbinary("STOR " + path, io.BytesIO(data))
+
+    def make_dir(self, path):
+        with self._ftp() as ftp:
+            ftp.mkd(path)
+
+    def remove_dir(self, path):
+        with self._ftp() as ftp:
+            ftp.rmd(path)
+
+    def drives(self):
+        """{"a": {...}, "b": {...}} from GET /v1/drives (floppy drives only)."""
+        out = {}
+        for entry in self._json("GET", "/v1/drives").get("drives", []):
+            out.update({k: v for k, v in entry.items() if k in ("a", "b")})
+        return out
+
+    def drive_mount(self, drive, image):
+        self._json("PUT", "/v1/drives/%s:mount" % drive, {"image": image})
+
+    def drive_remove(self, drive):
+        self._json("PUT", "/v1/drives/%s:remove" % drive)
+
+    def drive_set_mode(self, drive, mode):
+        self._json("PUT", "/v1/drives/%s:set_mode" % drive, {"mode": mode})
 
     def delete_file(self, path):
         with self._ftp() as ftp:

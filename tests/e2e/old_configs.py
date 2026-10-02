@@ -120,6 +120,34 @@ def v2_files():
     return bytes(cfg), bytes(slots)
 
 
+def v3_slots(slots):
+    """A current-format (v3) slot file from a list of field dicts, as
+    UBoot64 writes it: cfgvs 3, partition 0, "uboot64 x mol" filler."""
+    out = bytearray(V3_SLOT * SLOTS)
+    for i in range(SLOTS):
+        s = bytearray(V3_SLOT)
+        s[0] = CFGVERSION
+        s[1349:1360] = b"UBOOT64 X M"
+        for k, v in (slots[i].items() if i < len(slots) else ()):
+            _put(s, SLOT, k, v)
+        out[i * V3_SLOT:(i + 1) * V3_SLOT] = s
+    return bytes(out)
+
+
+def converted_test_slots():
+    """TEST_SLOTS as the conversion leaves them (REU slot with reu_path)."""
+    slots = [dict(f) for f in TEST_SLOTS]
+    for f in slots:
+        if f.get("command", 0) & COMMAND_REU:
+            f["reu_path"] = f["image_a_path"]
+    return v3_slots(slots)
+
+
+def slot_field(slots, index, name):
+    """One field of slot `index` in a v3 slot file."""
+    return _get(slots[index * V3_SLOT:(index + 1) * V3_SLOT], SLOT, name)
+
+
 def check_converted(version, cfg, slots):
     """Problems found in converted v3 files, as a list of strings."""
     problems = []

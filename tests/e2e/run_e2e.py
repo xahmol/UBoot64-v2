@@ -28,6 +28,7 @@ import shutil
 import sys
 import time
 
+import d64
 import old_configs
 from screen import Screen, diff
 from ultimate import Ultimate, UltimateError
@@ -47,6 +48,8 @@ CFG_TIMEOUTIDX = 99
 
 # Header row 1, columns 20-39: the clock (or version) on every screen.
 CLOCK = (1, 20, 40)
+
+EXEC_MOUNT = 0x01  # SlotStruct.runboot: run from the mounted image
 
 F2 = ["left_shift", "f1"]  # shifted function keys are chords
 F4 = ["left_shift", "f3"]
@@ -279,8 +282,151 @@ class DeviceRun:
                 self.log("ok convert v%d: files and backups checked" % version)
             for _, n in self.config_files(CONVERT_BACKUPS):
                 self.u.delete_file("/%s/%s" % (st, n))
-        for _, n in self.config_files():
+
+        # The converted v2 set is in place now: edit its slots, then boot
+        self.slot_edit_steps(st)
+        self.boot_steps(st)
+        self.interrupted_convert_step(st, put)
+        self.upgrader_steps(st, put)
+
+        for _, n in self.config_files() + self.config_files(CONVERT_BACKUPS):
             self.u.delete_file("/%s/%s" % (st, n))
+
+    def slot_file(self, st):
+        return self.u.read_file("/%s/DMBSLT.CFG" % st)
+
+    def slot_edit_steps(self, st):
+        """F3 on the converted test slots: rename slot 0, make slot 1 the
+        default, delete slot 2; F7 saves. Checked in the slot file."""
+        before = self.slot_file(st)
+        self.keys(["f3"], "Edit/Re-order/Delete", row=1)
+
+        self.keys(["f1"], "Choose menu slot to be renamed.")
+        self.keys(["0"], "Are you sure? Y/N")
+        self.keys_until(["y"], lambda s: s.contains("Choose name for slot:"), "the name input", stable=False)
+        self.u.tap_keys(["inst_del"] * 14 + ["r", "e", "n", "a", "m", "e", "d"])
+        time.sleep(1.0)
+        s = self.wait_text("renamed", row=24, timeout=10.0)
+        self.u.tap_keys(["return"])
+        self.wait_for(lambda s: s.contains("Edit/Re-order/Delete", 1) and s.contains("renamed", 3),
+                      "the renamed slot", timeout=10.0)
+
+        self.keys([["left_shift", "f5"]], "Pick a slot for default")
+        self.keys(["1"], "reu slot [D]", timeout=10.0)
+
+        self.keys(["f5"], "Choose menu slot to be deleted.")
+        self.keys(["2"], "Are you sure? Y/N")
+        s = self.keys_until(["y"], lambda s: s.contains("Edit/Re-order/Delete", 1) and s.row(5)[5:12] == "<EMPTY>",
+                            "slot 2 deleted", timeout=10.0)
+        self.capture("edit-after-changes", s)
+
+        s = self.keys(["f7"], "Make your choice.", row=24, timeout=20.0)
+        self.capture("menu-after-edit", s)
+
+        after = self.slot_file(st)
+        f = old_configs.slot_field
+        problems = []
+        if f(after, 0, "menu") != b"RENAMED":
+            problems.append("slot 0 name %r" % f(after, 0, "menu"))
+        for k in ("path", "file", "device"):
+            if f(after, 0, k) != f(before, 0, k):
+                problems.append("slot 0 %s changed" % k)
+        if f(after, 1, "isdefault") != 1 or f(before, 1, "isdefault") != 0:
+            problems.append("slot 1 default flag %d" % f(after, 1, "isdefault"))
+        if any(after[2 * old_configs.V3_SLOT:3 * old_configs.V3_SLOT]):
+            problems.append("slot 2 not cleared")
+        if problems:
+            self.fail("slot edit: " + "; ".join(problems))
+        else:
+            self.log("ok slot edit: rename, default, delete saved")
+
+    def boot_steps(self, st):
+        """Boot a mount-and-run slot: a D64 with 10 PRINT"E2E BOOT OK" on
+        drive A. Drive A's state is restored afterwards."""
+        drive = self.u.drives().get("a", {})
+        folder = "/%s/E2ETEST" % st
+        # (NLST of a missing folder returns an empty list, not an error)
+        if any(n.upper() == "E2ETEST" for n in self.u.list_dir("/" + st) or []):
+            raise StepFailed("%s already exists; not touching it" % folder)
+        self.u.make_dir(folder)
+        try:
+            self.u.write_file(folder + "/E2E.D64", d64.build("E2E", d64.basic_print_prg("E2E BOOT OK")))
+            slots = old_configs.v3_slots([{
+                "menu": b"E2E BOOT", "file": b"E2E", "device": 8,
+                "runboot": EXEC_MOUNT, "command": old_configs.COMMAND_IMGA,
+                "image_a_path": ("/%s/E2ETEST/" % st.lower()).encode(),
+                "image_a_file": b"E2E.D64", "image_a_id": 8}])
+            self.u.delete_file("/%s/DMBSLT.CFG" % st)
+            self.u.write_file("/%s/DMBSLT.CFG" % st, slots)
+            s = self.start()
+            if not s.contains("e2e boot", 3):
+                self.fail("boot: slot 0 not in the menu")
+                return
+            self.keys_until(["0"], lambda s: not s.contains("Make your choice.", 24), "the boot", stable=False)
+            self.wait_for(lambda s: s.contains("e2e boot ok"), "the program's output", timeout=30.0, stable=False)
+            self.log("ok boot: mount slot ran its program")
+        finally:
+            for name in ("E2E.D64",):
+                try:
+                    self.u.delete_file(folder + "/" + name)
+                except Exception:
+                    pass
+            try:
+                self.u.remove_dir(folder)
+            except Exception as e:
+                self.fail("could not remove %s: %s" % (folder, e))
+            self.restore_drive("a", drive)
+
+    def restore_drive(self, name, state):
+        try:
+            if state.get("type"):
+                self.u.drive_set_mode(name, state["type"])
+            if state.get("image_file"):
+                self.u.drive_mount(name, state["image_path"].rstrip("/") + "/" + state["image_file"])
+            else:
+                self.u.drive_remove(name)
+        except UltimateError as e:
+            self.fail("restoring drive %s (%s): %s" % (name, state, e))
+
+    def interrupted_convert_step(self, st, put):
+        """A conversion interrupted after the slot file was written: v1
+        config plus an already converted slot file. The slots must be kept
+        as they are and not backed up again."""
+        cfg, _ = old_configs.v1_files()
+        slots = old_configs.converted_test_slots()
+        put(cfg, slots)
+        self.start(until="Convert? Y/N", row=None)
+        self.keys_until(["y"], lambda s: s.contains("Convert? Y/N y") or s.contains("Converting."),
+                        "the answer Y", timeout=3.0, stable=False)
+        self.wait_text("Press a key to continue.", timeout=60.0)
+        problems = old_configs.check_converted(1, self.u.read_file("/%s/DMBCFG.CFG" % st), self.slot_file(st))
+        names = [n.upper() for _, n in self.config_files(CONVERT_BACKUPS)]
+        if "DMBSLT.V1" in names:
+            problems.append("the converted slot file was backed up again")
+        if "DMBCFG.V1" not in names:
+            problems.append("no config backup")
+        if problems:
+            self.fail("interrupted convert: " + "; ".join(problems))
+        else:
+            self.log("ok interrupted convert: slots kept, config converted")
+        self.u.tap_keys(["space"])
+        for _, n in self.config_files(CONVERT_BACKUPS):
+            self.u.delete_file("/%s/%s" % (st, n))
+
+    def upgrader_steps(self, st, put):
+        """The standalone upgraders on the same test sets."""
+        for version, files, prg in ((1, old_configs.v1_files(), "uboot_upd12.prg"),
+                                    (2, old_configs.v2_files(), "uboot_upd23.prg")):
+            put(*files)
+            self.u.write_memory(0x0400, b"\x20" * 1000)
+            with open(os.path.join(REPO, "build", prg), "rb") as f:
+                self.u.run_prg(f.read())
+            self.wait_text("Update completed.", timeout=60.0, stable=False)
+            problems = old_configs.check_converted(version, self.u.read_file("/%s/DMBCFG.CFG" % st), self.slot_file(st))
+            if problems:
+                self.fail("%s: %s" % (prg, "; ".join(problems)))
+            else:
+                self.log("ok %s: files checked" % prg)
 
     def run_steps(self):
         # First start: no config or slot files, so defaults are written.
