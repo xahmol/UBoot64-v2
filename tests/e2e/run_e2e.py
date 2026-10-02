@@ -100,8 +100,8 @@ class DeviceRun:
             time.sleep(0.3)
         raise StepFailed("timed out waiting for %s; screen:\n%s" % (what, self.screen().text()))
 
-    def wait_text(self, text, row=None, timeout=15.0):
-        return self.wait_for(lambda s: s.contains(text, row), repr(text), timeout)
+    def wait_text(self, text, row=None, timeout=15.0, stable=True):
+        return self.wait_for(lambda s: s.contains(text, row), repr(text), timeout, stable)
 
     def keys(self, keys, text, row=None, timeout=5.0, retry=True, stable=True):
         """Tap keys, then wait for text on the screen."""
@@ -483,6 +483,10 @@ class DeviceRun:
 
         self.convert_steps()
 
+        # The conversion steps end in an upgrader: start UBoot64 again
+        # (no files on the device now, so with defaults)
+        self.start()
+
         # F7 on the main menu quits to BASIC (fc3_exit(): BASIC start
         # screen). The kernal's upper case PETSCII letters are screen
         # codes 1-26, shown as a-z by screen.py.
@@ -501,6 +505,8 @@ class DeviceRun:
             self.run_steps()
         except (StepFailed, UltimateError) as e:
             self.fail(str(e))
+        except Exception as e:  # a bug in a step: report it, still restore
+            self.fail("%s: %s" % (type(e).__name__, e))
         finally:
             try:
                 self.restore()
