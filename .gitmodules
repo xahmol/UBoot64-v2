@@ -1,0 +1,3 @@
+[submodule "lib/ultimate-uci-oscar64"]
+	path = lib/ultimate-uci-oscar64
+	url = https://github.com/xahmol/ultimate-uci-oscar64.git

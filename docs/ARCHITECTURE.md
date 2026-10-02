@@ -346,9 +346,9 @@ Because the UCI data queue is limited to 512 bytes per transfer, large structure
 
 The UCI is the hardware interface exposed by the Ultimate II+/U64 cartridge at memory-mapped I/O registers `$DF1C–$DF1F`. All file, network, and control operations go through it.
 
-**Source:** firmware lives in [GideonZ/1541ultimate](https://github.com/GideonZ/1541ultimate). The C libraries in `include/ultimate_*` are adapted from [xlar54/ultimateii-dos-lib](https://github.com/xlar54/ultimateii-dos-lib).
+**Source:** firmware lives in [GideonZ/1541ultimate](https://github.com/GideonZ/1541ultimate). The C library is [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64), included as a git submodule in `lib/ultimate-uci-oscar64` (pinned to a release tag, v1.2.0 since 2026-10-02), originally adapted from [xlar54/ultimateii-dos-lib](https://github.com/xlar54/ultimateii-dos-lib). Its manual is `lib/ultimate-uci-oscar64/docs/UCILIB_MANUAL.md`. Fixes go to that repository, never into the submodule. All of it compiles into the bank 0 `code`/`data` sections; until v1.2.0 UBoot64's own copy put `uii_set_time()`/`uii_udpconnect()` in bank 1 and `uii_open_dir()`/`uii_get_dir()` in bank 2, which a submodule can't do. Bank 0 had room for them (about $400 bytes still free afterwards).
 
-**Coverage (2026-09-25):** the library now wraps every command of released firmware 3.15a that works on an Ultimate II+ except the new HTTP target (deferred), including the SoftIEC target functions in `include/ultimate_softiec_lib.c/h`. UBoot64 itself uses only the subset below; Oscar64 drops the uncalled functions, so bank usage is unchanged. See `docs/UCILIB_MANUAL.md` §17 for the full command coverage table.
+**Coverage (2026-09-25):** the library now wraps every command of released firmware 3.15a that works on an Ultimate II+ except the new HTTP target (deferred), including the SoftIEC target functions in `ultimate_softiec_lib.c/h`. UBoot64 itself uses only the subset below; Oscar64 drops the uncalled functions, so bank usage is unchanged. See `lib/ultimate-uci-oscar64/docs/UCILIB_MANUAL.md` §17 for the full command coverage table.
 
 ### Registers
 
@@ -515,7 +515,7 @@ disk-image mounts on hardware: the firmware special-cases disk images
 across multiple generic file-query commands in ways that don't align with
 simple existence checks (`uii_open_file()` → documented
 `"89,NOT A DISK IMAGE"`; `uii_file_stat()` → undocumented `"92"`, see
-`docs/UCILIB_MANUAL.md`). Since the real operation is side-effect-free on
+`lib/ultimate-uci-oscar64/docs/UCILIB_MANUAL.md`). Since the real operation is side-effect-free on
 failure (nothing mounts/opens unless the right file was actually found),
 using it as its own probe is both simpler and reliable. For
 `mountimage()`, `uii_mount_disk()`'s own status distinguishes a port
@@ -628,7 +628,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `free` | Free blocks on device (IEC only) |
 | `address` | Next available REU write address |
 
-### UCI Hardware Structs (`include/ultimate_common_lib.h`)
+### UCI Hardware Structs (`lib/ultimate-uci-oscar64/include/ultimate_common_lib.h`)
 
 **`UII_READ`** — read registers at `$DF1C`:
 
@@ -919,7 +919,7 @@ Ported from DMBoot v5 (`src/browse.c`), GitHub #14-#17, verified on an Ultimate 
 - **Image tracking** (#15): entering a disk image on the SoftIEC drive in IEC mode records its directory (host path) and file name before the `cd`, sets `iec_inimage`, and `imageaid` = drive A; **M** on a file inside it then makes a slot that mounts the image on drive A and runs the file, without the dirtrace. Leaving the image (DEL up to its depth, root, partition or device change) clears it.
 - **REU images in IEC mode** (#14): the REU path is the host path, not a `cd` command.
 - **`"$=P"` check** (#17): an entry with a file type means the drive does not support partitions (a 1581 image on drive A was tested: "No partitions on this drive"); partition 0 is skipped; numbers above 255 are rejected.
-- **Status check**: the SoftIEC target answers with a binary status byte, see `UII_SOFTIEC_OK` and `docs/UCILIB_MANUAL.md` §14. The first port used `UII_SUCCESS` (as DMBoot does) and every check failed on 3.15a.
+- **Status check**: the SoftIEC target answers with a binary status byte, see `UII_SOFTIEC_OK` and `lib/ultimate-uci-oscar64/docs/UCILIB_MANUAL.md` §14. The first port used `UII_SUCCESS` (as DMBoot does) and every check failed on 3.15a.
 - File names: `GET_FATNAME` with a file name returns a constructed name with a type extension on 3.15a, not the existing file (see the manual), so `iec_fatpath()` uses the `"$"` directory plus the IEC name converted to ASCII.
 
 ### REU as a Pointer-Based Heap
@@ -1049,7 +1049,7 @@ The bank-switching register at `$DFFF` (the `fc3` macro in `include/fc3.h`) is l
 #define fc3 (*(volatile char *)0xdfff)
 ```
 
-**Location:** `include/ultimate_common_lib.h` (UCI registers), `include/fc3.h` (banking register).
+**Location:** `lib/ultimate-uci-oscar64/include/ultimate_common_lib.h` (UCI registers), `include/fc3.h` (banking register).
 
 ---
 

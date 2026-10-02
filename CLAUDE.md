@@ -51,7 +51,7 @@ There is no automated test suite; testing is on the real U64 through c64bridge (
 | `src/splash.c` | 1 | Startup splash screen |
 | `src/filebrowse.c` | 2 | File browser, REU-backed directory listing |
 | `src/uboot_upd12.c` | — | Standalone v1→v2 config upgrade utility |
-| `include/ultimate_*.c/h` | 0 | UCI protocol implementation |
+| `lib/ultimate-uci-oscar64/` | 0 | UCI library (git submodule, never edit here; manual in its `docs/UCILIB_MANUAL.md`) |
 | `include/fc3.c/h` | 0 | FC3 cartridge banking control |
 | `include/defines.h` | — | All constants, structs, extern globals |
 

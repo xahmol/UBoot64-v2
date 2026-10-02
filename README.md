@@ -145,6 +145,18 @@ Version 0.91 - 20230922:
 | `curl` | Reachability check before deploy | `sudo apt install curl` |
 | `pandoc` | Regenerates `README.pdf` from `README.md` (optional — `make all` warns and skips if absent) | `sudo apt install pandoc` `texlive-xetex` |
 
+### Getting the source
+
+The Ultimate Command Interface library is a git submodule
+([ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64), in
+`lib/ultimate-uci-oscar64`), so clone with `--recursive`:
+
+```
+git clone --recursive https://github.com/xahmol/UBoot64-v2.git
+```
+
+or run `git submodule update --init` after a plain clone.
+
 ### Deployment configuration
 
 `make deploy` uploads the built cartridge and upgrade tool straight to your Ultimate device over FTP. The device IP is kept out of git in a local `.env` file:

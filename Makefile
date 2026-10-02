@@ -41,13 +41,14 @@ VERSION_PATCH = 0
 VERSION_TIMESTAMP = $(shell date "+%Y%m%d-%H%M")
 VERSION = v$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)-$(VERSION_TIMESTAMP)
 
+# Ultimate Command Interface library (git submodule, pinned to a release
+# tag): https://github.com/xahmol/ultimate-uci-oscar64. Never edit it here.
+UCILIB = lib/ultimate-uci-oscar64
+UCILIB_SRCS = $(wildcard $(UCILIB)/include/*.c $(UCILIB)/include/*.h)
+
 # Common compile flags
-# -dUBOOT64_BANKED marks the banked uboot64.crt build, distinct from the
-# plain-.prg uboot_upd12 build below: files shared between both (e.g.
-# include/ultimate_time_lib.c) must guard any bank1/bank2 #pragma code/data
-# relocation with #ifdef UBOOT64_BANKED, since uboot_upd12.prg has no bank
-# regions defined at all and errors ("Section not defined") otherwise.
 CFLAGS  = -i=include \
+          -i=$(UCILIB)/include \
           -tm=$(SYS) \
           -tf=crt16 \
           -cid=3 \
@@ -56,10 +57,10 @@ CFLAGS  = -i=include \
           -O2 \
           -dNOFLOAT \
           -dHEAPCHECK \
-          -dUBOOT64_BANKED \
           -dVERSION="\"$(VERSION)\""
 
 CFLAGSUPD = -i=include \
+            -i=$(UCILIB)/include \
             -tm=$(SYS) \
             -O2 \
             -dNOFLOAT \
@@ -80,22 +81,15 @@ MAIN_SRCS = src/main.c \
             src/time.c src/u-time.h \
             include/defines.h \
             include/fc3.c include/fc3.h \
-            include/ultimate_common_lib.c include/ultimate_common_lib.h \
-            include/ultimate_dos_lib.c include/ultimate_dos_lib.h \
-            include/ultimate_network_lib.c include/ultimate_network_lib.h \
-            include/ultimate_time_lib.c include/ultimate_time_lib.h
+            $(UCILIB_SRCS)
 
 UPD12_SRCS = src/uboot_upd12.c \
              include/defines.h \
-             include/ultimate_common_lib.c include/ultimate_common_lib.h \
-             include/ultimate_dos_lib.c include/ultimate_dos_lib.h \
-             include/ultimate_time_lib.c include/ultimate_time_lib.h
+             $(UCILIB_SRCS)
 
 UPD23_SRCS = src/uboot_upd23.c \
              include/defines.h \
-             include/ultimate_common_lib.c include/ultimate_common_lib.h \
-             include/ultimate_dos_lib.c include/ultimate_dos_lib.h \
-             include/ultimate_time_lib.c include/ultimate_time_lib.h
+             $(UCILIB_SRCS)
 
 # Ultimate II+ deployment target. Store only the IP in .env (gitignored,
 # never committed); everything else is derived here.

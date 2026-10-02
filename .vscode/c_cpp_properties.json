@@ -5,7 +5,8 @@
             "includePath": [
                 "${default}",
                 "/home/xahmol/oscar64/include/",
-                "${workspaceFolder}/include/"
+                "${workspaceFolder}/include/",
+                "${workspaceFolder}/lib/ultimate-uci-oscar64/include/"
             ],
             "defines": [],
             "cStandard": "c17",
