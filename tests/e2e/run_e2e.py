@@ -59,6 +59,12 @@ class StepFailed(Exception):
     pass
 
 
+def _same_screen(a, b):
+    """Same text and colours, apart from the header clock row."""
+    return (a.codes[:40] + a.codes[80:] == b.codes[:40] + b.codes[80:]
+            and a.colours[:40] + a.colours[80:] == b.colours[:40] + b.colours[80:])
+
+
 class DeviceRun:
     def __init__(self, host, args):
         self.u = Ultimate(host, args.password)
@@ -108,9 +114,15 @@ class DeviceRun:
         return self.keys_until(keys, lambda s: s.contains(text, row), repr(text), timeout, retry, stable)
 
     def keys_until(self, keys, check, what, timeout=5.0, retry=True, stable=True):
-        """Tap keys, then wait until check(screen) holds. A tap can be
-        lost; when retry is set (only for keys that are harmless to repeat while
-        they had no effect), the taps are sent once more."""
+        """Tap keys, then wait until check(screen) holds.
+
+        A tap can be lost. When retry is set and, after timeout, the screen
+        is still exactly as before the tap (the clock row aside), the taps
+        are sent once more. If the screen changed, the key did arrive and
+        the screen is just slow: then it waits longer instead, since
+        repeating the key would act twice (seen on the Ultimate 64 Elite).
+        """
+        before = self.screen()
         self.u.tap_keys(keys)
         time.sleep(0.5)
         try:
@@ -118,6 +130,9 @@ class DeviceRun:
         except StepFailed:
             if not retry:
                 raise
+            if not _same_screen(before, self.screen()):
+                self.log("slow reaction to %s, waiting longer" % (keys,))
+                return self.wait_for(check, what, 20.0, stable)
             self.log("no effect from %s, tapping again" % (keys,))
             self.u.tap_keys(keys)
             time.sleep(0.5)
@@ -382,7 +397,12 @@ class DeviceRun:
             if state.get("type"):
                 self.u.drive_set_mode(name, state["type"])
             if state.get("image_file"):
-                self.u.drive_mount(name, state["image_path"].rstrip("/") + "/" + state["image_file"])
+                # The REST API reports either path + name, or the full path
+                # in image_file with an empty image_path
+                image = state["image_file"]
+                if state.get("image_path"):
+                    image = state["image_path"].rstrip("/") + "/" + image
+                self.u.drive_mount(name, image)
             else:
                 self.u.drive_remove(name)
         except UltimateError as e:

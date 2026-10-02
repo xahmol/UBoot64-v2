@@ -46,6 +46,14 @@ to the storage UBoot64 uses (SD first) and remove them, and the
 `.V1`/`.V2` backups, afterwards. If backups with those names already
 exist, the steps refuse to run instead of touching them.
 
+## Lost and slow key taps
+
+A tapped key can be lost. Each key step waits for its expected screen;
+if it doesn't come and the screen is still exactly as before the tap
+(clock row aside), the tap is sent once more. If the screen did change,
+the key arrived and the machine is just slow (seen on the Ultimate 64
+Elite), so the step waits longer instead of pressing the key twice.
+
 ## Golden format
 
 `screen.py`: three 25-line blocks of 40 characters: `[text]` (the
@@ -70,4 +78,8 @@ checked against the product name from the REST API instead.
 | `convert-v2-prompt` | (start with a v2 set), N | Built-in conversion (#23) declined: exits to BASIC, files and no backups written |
 | `convert-v1-prompt`, `convert-v1-done`, `menu-converted-v1` | (start with a v1 set), Y, SPACE | v1 set converted; every converted field and the backups `DMBCFG.V1`/`DMBSLT.V1` checked byte for byte |
 | `convert-v2-done`, `menu-converted-v2` | (start with a v2 set), Y, SPACE | The same for v2, including the colours (the v2 test config has light blue text on purpose) |
+| `edit-after-changes`, `menu-after-edit` | F3: F1 0 Y (DEL…, "renamed", RETURN), F6 1, F5 2 Y, F7 | Slot editing on the converted slots: rename, default, delete; checked in the saved slot file |
+| | (slot file with a mount-and-run slot), 0 | Boots a generated D64 (`d64.py`, `10 PRINT"E2E BOOT OK"`) from `/<storage>/E2ETEST/` on drive A; expects the program's output. Drive A's mode and image are restored afterwards |
+| | (v1 config + already converted slots), Y | An interrupted conversion: config converted, slots kept and not backed up again |
+| | `uboot_upd12.prg`, `uboot_upd23.prg` | The standalone upgraders on the same v1/v2 sets, same field checks |
 | | F7 | Quit to BASIC (BASIC start screen) |
