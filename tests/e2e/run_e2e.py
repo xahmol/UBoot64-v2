@@ -28,6 +28,7 @@ import shutil
 import sys
 import time
 
+import old_configs
 from screen import Screen, diff
 from ultimate import Ultimate, UltimateError
 
@@ -37,6 +38,8 @@ GOLDEN = os.path.join(HERE, "golden")
 OUT = os.path.join(REPO, "build", "e2e")
 
 CONFIG_FILES = ("dmbcfg.cfg", "dmbslt.cfg")
+# Backups the built-in conversion writes (src/convert.c)
+CONVERT_BACKUPS = ("dmbcfg.v1", "dmbslt.v1", "dmbcfg.v2", "dmbslt.v2")
 STORAGES = ("sd", "usb0", "usb1", "usb2", "usb3")
 
 # ConfigStruct offsets (include/defines.h)
@@ -59,6 +62,7 @@ class DeviceRun:
         self.host = host
         self.args = args
         self.failures = []
+        self.made_backups = False
         self.backup_dir = os.path.join(OUT, "backup", host)
         self.capture_dir = os.path.join(OUT, host)
 
@@ -144,14 +148,20 @@ class DeviceRun:
         names = self.u.list_dir("/") or []
         return [n for n in names if n.lower() in STORAGES]
 
-    def config_files(self):
+    def config_files(self, names=CONFIG_FILES):
         """[(storage, file name as listed)] of UBoot64's files on the device."""
         found = []
         for st in self.storages():
             for name in self.u.list_dir("/" + st) or []:
-                if name.lower() in CONFIG_FILES:
+                if name.lower() in names:
                     found.append((st, name))
         return found
+
+    def first_storage(self):
+        """The storage UBoot64 creates its files on: SD first, then USB."""
+        st = self.storages()
+        sd = [n for n in st if n.lower() == "sd"]
+        return (sd or st)[0]
 
     def backup(self):
         manifest = os.path.join(self.backup_dir, "manifest.json")
@@ -177,7 +187,8 @@ class DeviceRun:
             return
         with open(manifest) as f:
             files = [tuple(x) for x in json.load(f)]
-        for st, name in self.config_files():
+        created = self.config_files(CONVERT_BACKUPS) if self.made_backups else []
+        for st, name in self.config_files() + created:
             self.u.delete_file("/%s/%s" % (st, name))
         for st, name in files:
             with open(os.path.join(self.backup_dir, "%s_%s" % (st, name)), "rb") as f:
@@ -197,16 +208,79 @@ class DeviceRun:
 
     # --- Steps ----------------------------------------------------------
 
-    def start(self):
+    def start(self, until="Make your choice.", row=24):
+        # Blank the screen first: run_crt returns before the machine has
+        # reset, and text still on screen from the previous start (a menu,
+        # a prompt) would be taken for the new one, with keys going to the
+        # old instance.
+        self.u.write_memory(0x0400, b"\x20" * 1000)
         with open(self.args.crt, "rb") as f:
             self.u.run_crt(f.read())
-        # run_crt returns before the machine has reset: wait for the
-        # start-up screen first, or a menu that is still on screen from
-        # the previous start would be taken for the new one (and keys
-        # would go to the old instance).
-        self.wait_for(lambda s: not s.contains("Make your choice.", 24), "the reset",
-                      timeout=10.0, stable=False)
-        return self.wait_text("Make your choice.", row=24, timeout=40.0)
+        return self.wait_text(until, row=row, timeout=40.0)
+
+    def convert_steps(self):
+        """Built-in conversion of old config/slot files (GitHub #23):
+        declined for v2 (files untouched), then accepted for v1 and v2."""
+        st = self.first_storage()
+        if self.config_files(CONVERT_BACKUPS):
+            raise StepFailed("backup files %s already exist; not touching them"
+                             % self.config_files(CONVERT_BACKUPS))
+        self.made_backups = True  # from here on the restore may remove them
+
+        def put(cfg, slots):
+            for _, n in self.config_files():
+                self.u.delete_file("/%s/%s" % (st, n))
+            self.u.write_file("/%s/DMBCFG.CFG" % st, cfg)
+            self.u.write_file("/%s/DMBSLT.CFG" % st, slots)
+
+        def prompt_masks(s):
+            # The storage path shifts the rest of its line
+            row = next(y for y in range(25) if "have the old format" in s.row(y))
+            return [CLOCK, (row, 0, 40)]
+
+        # Declined: exits to BASIC, nothing written
+        # (The v2 test config has light blue text, to check that colours
+        # carry over: see old_configs.py)
+        cfg, slots = old_configs.v2_files()
+        put(cfg, slots)
+        s = self.start(until="Convert? Y/N", row=None)
+        self.capture("convert-v2-prompt", s, prompt_masks(s))
+        self.keys_until(["n"], lambda s: s.contains("Not converted."), "'Not converted.'", stable=False)
+        if (self.u.read_file("/%s/DMBCFG.CFG" % st) != cfg or self.u.read_file("/%s/DMBSLT.CFG" % st) != slots
+                or self.config_files(CONVERT_BACKUPS)):
+            self.fail("convert declined: the files were changed")
+        else:
+            self.log("ok convert declined, files untouched")
+
+        for version, files in ((1, old_configs.v1_files()), (2, old_configs.v2_files())):
+            cfg, slots = files
+            put(cfg, slots)
+            s = self.start(until="Convert? Y/N", row=None)
+            if version == 1:
+                self.capture("convert-v1-prompt", s, prompt_masks(s))
+            # Wait for the echoed answer first (PETSCII 'Y' shows as "y" in
+            # the lower case character set): until then a lost tap is
+            # harmless to repeat
+            self.keys_until(["y"], lambda s: s.contains("Convert? Y/N y") or s.contains("Converting."),
+                            "the answer Y", timeout=3.0, stable=False)
+            s = self.wait_text("Press a key to continue.", timeout=60.0)
+            self.capture("convert-v%d-done" % version, s, prompt_masks(s))
+            s = self.keys(["space"], "Make your choice.", row=24, timeout=30.0)
+            self.capture("menu-converted-v%d" % version, s)
+            new_cfg = self.u.read_file("/%s/DMBCFG.CFG" % st)
+            new_slots = self.u.read_file("/%s/DMBSLT.CFG" % st)
+            problems = old_configs.check_converted(version, new_cfg, new_slots)
+            for name, original in (("DMBCFG.V%d" % version, cfg), ("DMBSLT.V%d" % version, slots)):
+                if self.u.read_file("/%s/%s" % (st, name)) != original:
+                    problems.append("backup %s differs from the original" % name)
+            if problems:
+                self.fail("convert v%d:\n  %s" % (version, "\n  ".join(problems)))
+            else:
+                self.log("ok convert v%d: files and backups checked" % version)
+            for _, n in self.config_files(CONVERT_BACKUPS):
+                self.u.delete_file("/%s/%s" % (st, n))
+        for _, n in self.config_files():
+            self.u.delete_file("/%s/%s" % (st, n))
 
     def run_steps(self):
         # First start: no config or slot files, so defaults are written.
@@ -260,6 +334,8 @@ class DeviceRun:
         s = self.keys(["f5"], "Back to main menu")
         self.capture("config-timeout", s)
         self.keys(["f7"], "Make your choice.", row=24)
+
+        self.convert_steps()
 
         # F7 on the main menu quits to BASIC (fc3_exit(): BASIC start
         # screen). The kernal's upper case PETSCII letters are screen

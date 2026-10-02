@@ -37,6 +37,15 @@ tests/e2e/run_e2e.py --device 192.168.1.148
 Every capture is written to `build/e2e/<host>/<name>.txt`. On a
 mismatch the run prints the rows that differ.
 
+## Test data for the conversion
+
+`old_configs.py` generates synthetic v1 and v2 config/slot sets (a
+program slot, a REU slot and a mount slot), so no personal slot data is
+in the repository, and checks the converted files. The steps write them
+to the storage UBoot64 uses (SD first) and remove them, and the
+`.V1`/`.V2` backups, afterwards. If backups with those names already
+exist, the steps refuse to run instead of touching them.
+
 ## Golden format
 
 `screen.py`: three 25-line blocks of 40 characters: `[text]` (the
@@ -58,4 +67,7 @@ checked against the product name from the REST API instead.
 | `config-defaults` | F5 | Configuration screen with the defaults |
 | `config-timeout` | F4 | Auto-boot timeout cycled; F7 saves, the file is checked (`timeoutidx` = 1) |
 | `config-timeout` | (restart), F5 | The saved config is read back on the next start |
+| `convert-v2-prompt` | (start with a v2 set), N | Built-in conversion (#23) declined: exits to BASIC, files and no backups written |
+| `convert-v1-prompt`, `convert-v1-done`, `menu-converted-v1` | (start with a v1 set), Y, SPACE | v1 set converted; every converted field and the backups `DMBCFG.V1`/`DMBSLT.V1` checked byte for byte |
+| `convert-v2-done`, `menu-converted-v2` | (start with a v2 set), Y, SPACE | The same for v2, including the colours (the v2 test config has light blue text on purpose) |
 | | F7 | Quit to BASIC (BASIC start screen) |

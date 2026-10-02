@@ -68,6 +68,7 @@
 #include "u-time.h"
 #include "slotmenu.h"
 #include "filebrowse.h"
+#include "convert.h"
 
 // Ram area for copied common routines code and common data, plus bss/heap/stack
 // Common routine code and data will be copied on startup from ROM bank 0
@@ -363,6 +364,13 @@ __noinline void mainloop(void)
 	else
 	{
 		errorexit("No REU detected.");
+	}
+
+	// Config/slot files of an older format: convert them first (asks the
+	// user; exits to BASIC when declined or on an error). GitHub issue #23.
+	if (cfg.version != CFGVERSION)
+	{
+		fc3_call(3, convert_old_files);
 	}
 
 	// Read slots file

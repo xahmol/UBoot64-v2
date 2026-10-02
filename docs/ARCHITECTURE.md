@@ -825,6 +825,23 @@ Compiled separately as `uboot_upd12.prg`. A standalone C64 PRG (not a cartridge)
 
 ---
 
+### Bank 3 — Conversion of old files (`bcode3`/`bdata3`)
+
+`src/convert.c` (GitHub issue #23). `convert_old_files()` runs once at start-up when the config file's first byte (`ConfigStruct.version`) is not `CFGVERSION`; `readconfigfile()` no longer exits on an old version. It:
+
+1. rejects version 0 and versions newer than `CFGVERSION` (exits to BASIC with a message);
+2. asks "Convert? Y/N" (N exits to BASIC, nothing written);
+3. reads both old files into the REU above the slot area (old slots at `$6000`, old config at `$C000`; sizes checked: v1 86/8784 bytes, v2 100/24480);
+4. writes `dmbcfg.v<n>`/`dmbslt.v<n>` and verifies them by reading them back into the REU at `$10000` (hence a 128 KB REU minimum) and comparing;
+5. converts: v1 config parsed field by field (big-endian time offset, 80-byte host), v1 slots field by field from the 488-byte `OldSlotStruct` layout; v2 config copied over the defaults (same layout, shorter), v2 slots copied with `partition` zeroed and `reu_path` filled for REU slots — the rules of `uboot_upd12`/`uboot_upd23`;
+6. writes the slot file first and the config file last. An interrupted run therefore still finds the old config next time; it recognises an already converted slot file (first byte `CFGVERSION`, current size) and doesn't back it up or convert it again.
+
+`Slot` (1360 bytes) serves as the I/O buffer, so the module needs no RAM of its own beyond small locals. It uses `#include <petscii.h>` like the other modules: without it the string literals would show case-inverted. Size on 2026-10-02: $F53 bytes of the 16 KB bank.
+
+The E2E suite (`tests/e2e`, `old_configs.py`) converts synthetic v1 and v2 sets and checks every converted field and the backups byte for byte, plus the declined path.
+
+---
+
 ## 10. Startup Flow
 ([Back to contents](#contents))
 
@@ -841,6 +858,9 @@ main()  [startcode, bank 0 ROM $8060]
         │  readconfigfile()                  [bank 0]
         │  Apply colour scheme, set verbose mode
         │  uii_identify(), print firmware info
+        │  REU detection
+        │  if cfg.version != CFGVERSION:
+        │    fc3_call(3, convert_old_files)  [bank 3] — asks, backs up, converts v1/v2
         │  read_slotsfile()                  [bank 0]
         │  uii_parse_deviceinfo() — detect drives
         │  fc3_call(1, time_main)            [bank 1] — NTP sync if enabled

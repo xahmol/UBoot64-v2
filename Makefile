@@ -79,6 +79,7 @@ MAIN_SRCS = src/main.c \
             src/splash.c src/splash.h \
             src/slotmenu.c src/slotmenu.h \
             src/time.c src/u-time.h \
+            src/convert.c src/convert.h \
             include/defines.h \
             include/fc3.c include/fc3.h \
             $(UCILIB_SRCS)

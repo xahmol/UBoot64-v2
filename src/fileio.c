@@ -479,14 +479,8 @@ void readconfigfile()
     memcpy(&cfg, uii_data, min((unsigned)sizeof(cfg), bytesread));
   }
 
-  // Exit if config file version is too old
-  if (cfg.version < CFGVERSION)
-  {
-    cwin_console_printf(&cw, cfg.colors.text, "\nOld configuration file format.");
-    cwin_console_printf(&cw, cfg.colors.text, "\nRun uboot_upd12.prg (v1) or");
-    cwin_console_printf(&cw, cfg.colors.text, "\nuboot_upd23.prg (v2) first.");
-    errorexit("");
-  }
-
+  // An old (or unknown) format is converted later in mainloop(), after
+  // REU detection: convert_old_files() (src/convert.c, bank 3) needs the
+  // REU, and re-reads the old file itself.
   uii_close_file();
 }

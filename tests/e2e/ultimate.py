@@ -6,7 +6,7 @@ stream is left out (UBoot64's screens are text, read from C64 memory),
 run_crt and FTP file access added.
 
 Python 3 standard library only. Covers what the end-to-end test needs:
-read the product name, start a cartridge image, read C64 memory, press
+read the product name, start a cartridge image, read and write C64 memory, press
 keys on the keyboard matrix, and read, write and delete files on the
 device's storage (for the config and slot files).
 """
@@ -79,6 +79,10 @@ class Ultimate:
     def read_memory(self, address, length):
         return self._request("GET", "/v1/machine:readmem",
                              {"address": "%04X" % address, "length": length})
+
+    def write_memory(self, address, data):
+        self._json("POST", "/v1/machine:writemem", {"address": "%04X" % address},
+                   body=bytes(data), content_type="application/octet-stream", retry=True)
 
     def tap_keys(self, keys):
         """Tap each key in turn on the keyboard matrix.

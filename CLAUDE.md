@@ -14,7 +14,7 @@ make deploy   # Deploy to the U64 via FTP (ULTIP1 in the gitignored .env)
 **Compiler:** Oscar64 at `/home/xahmol/oscar64/bin/oscar64` — single-pass, no linker.
 Oscar64 pulls in all source files transitively via `#pragma compile("file.c")` in headers.
 
-**Outputs:** `build/uboot64.crt` (main cartridge), `build/uboot_upd12.prg` (v1→v3) and `build/uboot_upd23.prg` (v2→v3) upgrade tools.
+**Outputs:** `build/uboot64.crt` (main cartridge), `build/uboot_upd12.prg` (v1→v3) and `build/uboot_upd23.prg` (v2→v3) upgrade tools (the cartridge converts old files itself since v3.1.0, `src/convert.c`; keep both in step with it).
 
 There is no automated test suite; testing is on the real U64 through c64bridge (below).
 
@@ -51,6 +51,7 @@ There is no automated test suite; testing is on the real U64 through c64bridge (
 | `src/time.c` | 1 | NTP sync, colour editor, config UI |
 | `src/splash.c` | 1 | Startup splash screen |
 | `src/filebrowse.c` | 2 | File browser, REU-backed directory listing |
+| `src/convert.c` | 3 | Built-in conversion of v1/v2 config and slot files at start-up (#23) |
 | `src/uboot_upd12.c` | — | Standalone v1→v2 config upgrade utility |
 | `lib/ultimate-uci-oscar64/` | 0 | UCI library (git submodule, never edit here; manual in its `docs/UCILIB_MANUAL.md`) |
 | `include/fc3.c/h` | 0 | FC3 cartridge banking control |

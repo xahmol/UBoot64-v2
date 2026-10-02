@@ -16,9 +16,7 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 - [Installation](#installation)
 
-- [Upgrading from v1](#upgrading-from-v1)
-
-- [Upgrading from v2](#upgrading-from-v2)
+- [Upgrading from v1 or v2](#upgrading-from-v1-or-v2)
 
 - [First run](#first-run)
 
@@ -74,6 +72,7 @@ Version 3.1.0 - (in development):
 - The file browser's side menu shows **M** (run mount) in IEC mode inside a disk image.
 - Messages in the file browser no longer leave the last letter of the file type column on screen.
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
+- Old configuration and slot files (v1 and v2) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`). The separate upgrade tools are no longer needed (they still come with this release).
 - Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
 - **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
 - Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.2.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
@@ -92,7 +91,7 @@ Version 3.0.0 - 20260907:
 
 - Compatibility with Ultimate firmware 3.15+: UCI now auto-enables itself from the cartridge (no need to turn it on in the Ultimate menu beforehand), and the classic-IEC "go up one directory" command adapts to the rewritten SoftIEC DOS parser automatically, with no change in behaviour on older firmware.
 - SoftIEC partition support (firmware 3.15+ adds CMD-HD-style partitions to SoftIEC, and this works the same way on any IEC device that supports partitions, e.g. CMD-HD or SD2IEC): press **F4** while browsing in IEC mode to show a list of the device's partitions; select one to browse into it. Pressing **DEL** at a partition's own root returns to this list rather than trying to leave the device entirely. An opt-in "SoftIEC root partition" toggle (config menu, **F8**) auto-creates a partition exposing the whole filesystem at root the next time you switch to IEC mode (**F3**), without ever touching a partition you've configured yourself — turning it back off offers to remove that partition from the device too. This partition lives only in the Ultimate's memory until you save it via the Ultimate's own UI — see [F5: Configuration](#f5-configuration) for details. Menu slots can now record and restore a specific partition at boot.
-- Slot/config file format changed to add partition support — see [Upgrading from v2](#upgrading-from-v2). Major version bumped to 3.0.0 to reflect this.
+- Slot/config file format changed to add partition support — see [Upgrading from v1 or v2](#upgrading-from-v1-or-v2). Major version bumped to 3.0.0 to reflect this.
 
 Version 2.2.0 - 20260816:
 
@@ -231,29 +230,28 @@ ULTIP2 = 192.168.1.yy
 
 * Stop autostarting by deselecting the cartridge via the same procedure and choosing **None** or another image.
 
-### Upgrading from v1
+### Upgrading from v1 or v2
 ([Back to contents](#contents))
 
-If you have an existing v1 configuration (slot and config files), you must run the upgrade tool before using v2 for the first time. The slot file format changed between v1 and v2.
+From v3.1.0 UBoot64 converts the configuration and slot files of v1 and v2 itself. When it finds files in an older format at start-up, it asks:
 
-* Transfer `uboot_upd12.prg` to your USB storage.
-* Run `uboot_upd12.prg` from the Ultimate UI or a BASIC prompt before starting UBoot64 v2.
-* The tool reads your existing v1 configuration files and rewrites them in the v2 format.
-* After the upgrade tool completes successfully, start UBoot64 v2 normally.
+```
+The configuration and slot files on
+/usb0/ have the old format v2.
 
-**If you do not run the upgrade tool**, UBoot64 v2 will detect the old format and exit with an error asking you to run the upgrade tool first.
+Convert them to the current format v3?
+The old files are kept as
+dmbcfg.v2 and dmbslt.v2.
 
-### Upgrading from v2
-([Back to contents](#contents))
+Convert? Y/N
+```
 
-If you have an existing v2 configuration (slot and config files), you must run the upgrade tool before using v3 for the first time. The slot file format changed between v2 and v3 (added SoftIEC partition support for Ultimate firmware 3.15+).
+* **Y** first copies the old files to `dmbcfg.v1`/`dmbslt.v1` (or `.v2`) next to them and checks the copies, then writes the files in the new format and continues the start. Your slots, NTP server and time offset are kept; for v2 also the colours and other settings. REU preload slots get their REU image path in its own field.
+* **N** changes nothing and exits to BASIC; you are asked again at the next start.
+* If a step fails, UBoot64 says which one. Before the new files are written your files are unchanged; after that, the copies hold the old files.
+* A REU of at least 128 KB is needed for the conversion (UBoot64 needs a REU anyway).
 
-* Transfer `uboot_upd23.prg` to your USB storage.
-* Run `uboot_upd23.prg` from the Ultimate UI or a BASIC prompt before starting UBoot64 v3.
-* The tool reads your existing v2 configuration files and rewrites them in the v3 format. It also moves the REU image path of REU preload slots to its own field (from v3.1.0).
-* After the upgrade tool completes successfully, start UBoot64 v3 normally.
-
-**If you do not run the upgrade tool**, UBoot64 v3 will detect the old format and exit with an error asking you to run the upgrade tool first.
+The separate upgrade tools still work, for this release: `uboot_upd12.prg` (v1) and `uboot_upd23.prg` (v2) do the same conversion, without keeping copies. Run them from the Ultimate UI or a BASIC prompt before starting UBoot64.
 
 ### First run
 ([Back to contents](#contents))
