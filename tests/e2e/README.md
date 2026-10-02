@@ -54,6 +54,13 @@ if it doesn't come and the screen is still exactly as before the tap
 the key arrived and the machine is just slow (seen on the Ultimate 64
 Elite), so the step waits longer instead of pressing the key twice.
 
+## Timeouts
+
+When an expected screen doesn't come, the failure message says whether
+the C64 still runs interrupts (jiffy clock at `$A0`), and gives the Kernal
+status (`$90`) and the IEC lines (`$DD00`); zero page and stack are saved
+as `build/e2e/<host>/timeout-<time>.bin`.
+
 ## Golden format
 
 `screen.py`: three 25-line blocks of 40 characters: `[text]` (the
@@ -80,6 +87,7 @@ checked against the product name from the REST API instead.
 | `convert-v2-done`, `menu-converted-v2` | (start with a v2 set), Y, SPACE | The same for v2, including the colours (the v2 test config has light blue text on purpose) |
 | `edit-after-changes`, `menu-after-edit` | F3: F1 0 Y (DEL…, "renamed", RETURN), F6 1, F5 2 Y, F7 | Slot editing on the converted slots: rename, default, delete; checked in the saved slot file |
 | | (slot file with a mount-and-run slot), 0 | Boots a generated D64 (`d64.py`, `10 PRINT"E2E BOOT OK"`) from `/<storage>/E2ETEST/` on drive A; expects the program's output. Drive A's mode and image are restored afterwards |
+| `browse-d64` | F1, cursor down to `E2ETEST`, RETURN, RETURN, F7 | File browser (UCI mode): enter a folder and a D64 (listed by the firmware), back to the menu |
 | | (v1 config + already converted slots), Y | An interrupted conversion: config converted, slots kept and not backed up again |
 | | `uboot_upd12.prg`, `uboot_upd23.prg` | The standalone upgraders on the same v1/v2 sets, same field checks |
 | | F7 | Quit to BASIC (BASIC start screen) |

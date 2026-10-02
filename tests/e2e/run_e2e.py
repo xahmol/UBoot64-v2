@@ -104,7 +104,27 @@ class DeviceRun:
             else:
                 last = None
             time.sleep(0.3)
-        raise StepFailed("timed out waiting for %s; screen:\n%s" % (what, self.screen().text()))
+        raise StepFailed("timed out waiting for %s; %s; screen:\n%s"
+                         % (what, self.diagnose(), self.screen().text()))
+
+    def diagnose(self):
+        """Machine state after a timeout, to tell a hang from a slow screen:
+        whether the jiffy clock runs (IRQ), Kernal status $90, the IEC
+        lines in $DD00. Zero page and stack go to build/e2e/<host>/."""
+        try:
+            j1 = self.u.read_memory(0xA0, 3)
+            time.sleep(1.0)
+            j2 = self.u.read_memory(0xA0, 3)
+            zp = self.u.read_memory(0x0000, 0x200)
+            dd00 = self.u.read_memory(0xDD00, 1)[0]
+            os.makedirs(self.capture_dir, exist_ok=True)
+            name = os.path.join(self.capture_dir, "timeout-%s.bin" % time.strftime("%Y%m%d-%H%M%S"))
+            with open(name, "wb") as f:
+                f.write(zp)
+            return "IRQ %s, $90=%02x, $DD00=%02x, $0000-$01FF in %s" % (
+                "running" if j1 != j2 else "STOPPED", zp[0x90], dd00, os.path.relpath(name, REPO))
+        except UltimateError as e:
+            return "no diagnosis: %s" % e
 
     def wait_text(self, text, row=None, timeout=15.0, stable=True):
         return self.wait_for(lambda s: s.contains(text, row), repr(text), timeout, stable)
@@ -374,6 +394,7 @@ class DeviceRun:
             self.u.delete_file("/%s/DMBSLT.CFG" % st)
             self.u.write_file("/%s/DMBSLT.CFG" % st, slots)
             s = self.start()
+            self.browse_step()
             if not s.contains("e2e boot", 3):
                 self.fail("boot: slot 0 not in the menu")
                 return
@@ -391,6 +412,32 @@ class DeviceRun:
             except Exception as e:
                 self.fail("could not remove %s: %s" % (folder, e))
             self.restore_drive("a", drive)
+
+    def browse_step(self):
+        """F1 file browser, UCI mode: walk to E2ETEST, enter it, enter the
+        D64 (the firmware lists its directory), F7 back to the menu."""
+        def selected(s):
+            rows = [y for y in range(5, 25) if s.codes[y * 40 + 2] & 0x80]
+            return s.row(rows[0])[:22].rstrip() if rows else ""
+
+        s = self.keys(["f1"], "Filebrowser", row=1, timeout=15.0)
+        s = self.wait_text("[UCI file system]", row=3, timeout=10.0)
+        for _ in range(80):
+            if selected(s) == "E2ETEST":
+                break
+            before = selected(s)
+            self.u.tap_keys(["cursor_up_down"])
+            time.sleep(0.4)
+            s = self.wait_for(lambda t: selected(t) != before, "the selection to move", 5.0, stable=False)
+        else:
+            raise StepFailed("browser: E2ETEST not found")
+        self.keys(["return"], "E2E.D64", timeout=10.0)
+        s = self.keys(["return"], "E2E.D64/", row=4, timeout=10.0)
+        if not s.row(6).startswith("E2E "):
+            self.fail("browser: D64 listing %r" % s.row(6))
+        self.capture("browse-d64", s, [CLOCK, (4, 0, 27)])
+        self.keys(["f7"], "Make your choice.", row=24, timeout=15.0)
+        self.log("ok browser: folder and D64 entered")
 
     def restore_drive(self, name, state):
         try:
