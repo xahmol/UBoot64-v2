@@ -74,6 +74,8 @@ Version 3.1.0 - (in development):
 - The file browser's side menu shows **M** (run mount) in IEC mode inside a disk image.
 - Messages in the file browser no longer leave the last letter of the file type column on screen.
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
+- Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
+- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.2.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
 
 Version 3.0.1 - 20260913:
 
@@ -159,18 +161,16 @@ or run `git submodule update --init` after a plain clone.
 
 ### Deployment configuration
 
-`make deploy` uploads the built cartridge and upgrade tool straight to your Ultimate device over FTP. The device IP is kept out of git in a local `.env` file:
+`make deploy` uploads the built cartridge and upgrade tools straight to your Ultimate devices over FTP, into `<storage>/Dev/build/`. The device IPs are kept out of git in a local `.env` file. `ULTIP2` is optional; the storage defaults to `usb0`:
 
 ```
 # .env  (gitignored, never committed)
 ULTIP1 = 192.168.1.xx
+ULTUSB1 = sd
+ULTIP2 = 192.168.1.yy
 ```
 
-Optionally override the USB slot (defaults to `usb0`):
-
-```
-ULTUSB = usb1
-```
+`make e2e` runs the end-to-end test on the same devices (or on `E2E_DEVICES`, if set); see [`tests/e2e/README.md`](tests/e2e/README.md).
 
 ### Make targets
 
@@ -180,7 +180,8 @@ ULTUSB = usb1
 | `make clean` | Removes everything in `build/` |
 | `make docs` | Regenerates `README.pdf` only |
 | `make check-deploy` | Pings the configured Ultimate device without deploying |
-| `make deploy` | Rebuilds if needed, then uploads `uboot64.crt` and `uboot_upd12.prg` via FTP (requires `.env`) |
+| `make deploy` | Rebuilds if needed, then uploads `uboot64.crt` and both upgrade tools via FTP to every configured device (requires `.env`) |
+| `make e2e` | End-to-end test on real hardware against golden screen dumps; backs up and restores your config (`make e2e-update` writes new goldens, `make e2e-restore` repairs an interrupted run) |
 
 ## Instructions
 

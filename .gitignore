@@ -62,3 +62,4 @@ build/
 
 # Release ZIPs in project root
 uboot64_v*.zip
+__pycache__/

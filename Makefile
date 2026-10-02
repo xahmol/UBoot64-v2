@@ -91,13 +91,19 @@ UPD23_SRCS = src/uboot_upd23.c \
              include/defines.h \
              $(UCILIB_SRCS)
 
-# Ultimate II+ deployment target. Store only the IP in .env (gitignored,
-# never committed); everything else is derived here.
+# Ultimate deployment targets. Store only the IPs (and storage, when not
+# usb0) in .env (gitignored, never committed); everything else is derived
+# here. ULTIP2 is optional: make deploy uploads to every device that is set.
+#   ULTIP1 = 192.168.1.148
+#   ULTUSB1 = sd
+#   ULTIP2 = 192.168.1.195
 -include .env
 ULTIP1  ?= <set_ULTIP1_in_.env>
-ULTUSB  ?= usb0
-ULTPATH  = /$(ULTUSB)/Dev/
-ULTFTP1  = ftp://$(ULTIP1)$(ULTPATH)
+ULTUSB1 ?= $(or $(ULTUSB),usb0)
+ULTUSB2 ?= usb0
+ULTFTP1  = ftp://$(ULTIP1)/$(ULTUSB1)/Dev/
+ULTFTP2  = $(if $(ULTIP2),ftp://$(ULTIP2)/$(ULTUSB2)/Dev/)
+ULTFTPS  = $(ULTFTP1) $(ULTFTP2)
 
 # ZIP file contents
 ZIP = build/$(MAIN)_$(VERSION).zip
@@ -106,7 +112,7 @@ README = README.pdf
 ########################################
 
 .SUFFIXES:
-.PHONY: all clean deploy check-deploy docs
+.PHONY: all clean deploy check-deploy docs e2e e2e-update e2e-restore
 all: $(MAIN).crt $(UPD12).prg $(UPD23).prg $(README) $(ZIP)
 
 $(MAIN).crt: $(MAIN_SRCS)
@@ -145,10 +151,32 @@ clean:
 
 # Safety check before deploy: make sure the U2+/U64 is actually reachable
 check-deploy:
-	@curl -s --connect-timeout 3 $(ULTFTP1)/ >/dev/null 2>&1 || \
-		(echo "ERROR: Cannot reach Ultimate device at $(ULTIP1) -- check ULTIP1 in .env" && false)
+	@for u in $(ULTFTPS); do \
+		curl -s --connect-timeout 3 $$u >/dev/null 2>&1 || \
+		{ echo "ERROR: Cannot reach $$u -- check ULTIP1/ULTIP2 and ULTUSB1/ULTUSB2 in .env"; exit 1; }; \
+	done
 
-# To deploy software to UII+ enter make deploy. Obviously the C64 needs to be
-# powered on with UII+ and USB drive connected.
+# make deploy uploads to every configured Ultimate (wput keeps the build/
+# prefix, so the files land in <storage>/Dev/build/).
 deploy: check-deploy $(MAIN).crt $(UPD12).prg $(UPD23).prg
-	wput -u build/$(MAIN).crt build/$(UPD12).prg build/$(UPD23).prg $(ULTFTP1)
+	@for u in $(ULTFTPS); do \
+		wput -u build/$(MAIN).crt build/$(UPD12).prg build/$(UPD23).prg $$u || exit 1; \
+	done
+
+# End-to-end test on real Ultimate hardware (tests/e2e/README.md). Runs on
+# ULTIP1 and ULTIP2 unless E2E_DEVICES (space separated) is set in .env.
+# The run backs up and restores UBoot64's config/slot files on each device.
+E2E_DEVICES ?= $(filter-out <set_ULTIP1_in_.env>,$(ULTIP1) $(ULTIP2))
+E2E_ARGS = $(foreach d,$(E2E_DEVICES),--device $(d))
+
+e2e: $(MAIN).crt
+	@test -n "$(E2E_DEVICES)" || (echo "ERROR: set E2E_DEVICES in .env" && false)
+	python3 tests/e2e/run_e2e.py $(E2E_ARGS)
+
+e2e-update: $(MAIN).crt
+	@test -n "$(E2E_DEVICES)" || (echo "ERROR: set E2E_DEVICES in .env" && false)
+	python3 tests/e2e/run_e2e.py $(E2E_ARGS) --update
+
+e2e-restore:
+	@test -n "$(E2E_DEVICES)" || (echo "ERROR: set E2E_DEVICES in .env" && false)
+	python3 tests/e2e/run_e2e.py $(E2E_ARGS) --restore
