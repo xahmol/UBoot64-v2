@@ -595,7 +595,7 @@ void edittimeconfig()
         headertext("Configuration tool.", 1);
 
         cwin_cursor_move(&cw, 0, 2);
-        cwin_console_printf(&cw, cfg.colors.text, "\nCurrent configuration settings:\n\n");
+        cwin_console_printf(&cw, cfg.colors.text, "\nCurrent configuration settings:\n");
         cwin_console_printf(&cw, cfg.colors.text, "NTP time update settings:\n");
         cwin_console_printf(&cw, cfg.colors.text, "- Update on boot toggle: %s\n", (cfg.timeon == 0) ? "Off" : "On");
         cwin_console_printf(&cw, cfg.colors.text, "- Offset to UTC in seconds: %ld\n", cfg.secondsfromutc);
@@ -611,6 +611,7 @@ void edittimeconfig()
         cwin_console_printf(&cw, cfg.colors.text, "Start-up: %s\n", verbosenames[(cfg.verbose < VERBOSE_OPTIONS) ? cfg.verbose : VERBOSE_ON]);
         cwin_console_printf(&cw, cfg.colors.text, "Auto-boot timeout: %s\n", timeoutlist[cfg.timeoutidx]);
         cwin_console_printf(&cw, cfg.colors.text, "SoftIEC root partition (fw 3.15+): %s\n", (cfg.iec_root_partition == 0) ? "Off" : "On");
+        cwin_console_printf(&cw, cfg.colors.text, "Program .cfg files (fw 3.15+): %s\n", (cfg.apply_cfg == 0) ? "Off" : "On");
 
         cwin_putat_string(&cw, 0, 15, "Make your choice:", cfg.colors.text);
 
@@ -638,10 +639,14 @@ void edittimeconfig()
         cwin_putat_string_reverse(&cw, 0, 23, " F7 ", cfg.colors.key);
         cwin_putat_string(&cw, 5, 23, "Back to main menu", cfg.colors.text);
 
+        // All F keys are taken: C toggles the program settings files
+        cwin_putat_string_reverse(&cw, 0, 24, "  C ", cfg.colors.key);
+        cwin_putat_string(&cw, 5, 24, "Toggle program .cfg files", cfg.colors.text);
+
         do
         {
             key = cwin_getch();
-        } while (key != CH_F1 && key != CH_F2 && key != CH_F3 && key != CH_F4 && key != CH_F5 && key != CH_F6 && key != CH_F7 && key != CH_F8);
+        } while (key != CH_F1 && key != CH_F2 && key != CH_F3 && key != CH_F4 && key != CH_F5 && key != CH_F6 && key != CH_F7 && key != CH_F8 && key != 67);
 
         switch (key)
         {
@@ -658,6 +663,7 @@ void edittimeconfig()
 
         case CH_F3:
             sprintf(offsetinput, "%ld", cfg.secondsfromutc);
+            cwin_fill_rect_raw(&cw, 0, 23, 40, 2, SC_SPACE, cfg.colors.text);
             cwin_putat_string(&cw, 0, 23, "Input time offset to UTC:", cfg.colors.text);
             textInput(0, 24, 11, offsetinput, sizeof(offsetinput), 0);
             cfg.secondsfromutc = strtol(offsetinput, &ptrend, 10);
@@ -692,6 +698,12 @@ void edittimeconfig()
 
         case CH_F6:
             changesmade |= editcolors();
+            break;
+
+        case 67: // C
+            // Apply <program>.cfg/.usr when booting a slot (GitHub #22)
+            cfg.apply_cfg = (cfg.apply_cfg == 0) ? 1 : 0;
+            changesmade = 1;
             break;
 
         case CH_F8:

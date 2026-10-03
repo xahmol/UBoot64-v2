@@ -34,6 +34,8 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 - [F5: Configuration](#f5-configuration)
 
+- [Program settings files](#program-settings-files)
+
 - [F7: Quit to BASIC](#f7-quit-to-basic)
 
 [Credits](#credits)
@@ -74,6 +76,7 @@ Version 3.1.0 - (in development):
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
 - Old configuration and slot files (v1 and v2) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`). The separate upgrade tools are no longer needed (they still come with this release).
 - Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
+- Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+). Switch it off with **C** in **F5**. See [Program settings files](#program-settings-files).
 - **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
 - Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.2.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
 
@@ -530,7 +533,28 @@ The screen shows current settings and allows editing:
 
   **This partition is temporary regardless.** UBoot64 creates it in the Ultimate's live, in-memory partition table — there's no way for a cartridge to make that permanent, only the Ultimate's own on-screen UI can save the partition table to flash (its "Save Partitions" action, which writes `iec_partitions.ipr`). Without that one-time manual save, the partition is gone after a power cycle either way, so there's nothing to actively clean up: if you want it gone, a power cycle (without a manual save) removes it, same as it always would have.
 
+* **C** — Toggle "Program .cfg files" (firmware 3.15+): apply a program's own Ultimate settings file when its slot boots. Default: on. See [Program settings files](#program-settings-files).
+
 * **F7** — Return to main menu. Changes are saved.
+
+### Program settings files
+([Back to contents](#contents))
+
+The Ultimate can save its settings to a `.cfg` file ("Save Settings" in its menu). The file only needs the lines that matter, so a short file can, for example, set a drive type or switch off turbo for one game:
+
+```
+[Drive A Settings]
+Drive Type=1581
+```
+
+With firmware 3.15 or later the Ultimate applies `<program>.cfg` by itself when you start a program from its own file browser. A program started from a UBoot64 slot doesn't pass through that browser, so UBoot64 looks for the file itself when it boots a slot (unless **C** in **F5** has switched this off):
+
+* a slot that mounts a disk image on drive A: `<image name>.cfg` next to the image, e.g. `gdos64.cfg` next to `gdos64.d81`;
+* a slot on the Ultimate's SoftIEC drive (made with the SoftIEC root partition, see **F8**): `<program>.cfg` next to the program.
+
+If there is no `.cfg`, UBoot64 tries `<name>.usr`, as the Ultimate does. The settings are applied first, before the disk images are mounted, so they can change drive types. The boot screen shows "Settings from <file>." If the file has a line the Ultimate can't apply, UBoot64 shows the Ultimate's message for 3 seconds and boots anyway. No file, or older firmware without this function: nothing happens.
+
+The settings are not saved: they last until the Ultimate is switched off, or until something changes them again, like the settings applied by the Ultimate's own browser. Slots on a real drive, or on drive emulation without an image, have no Ultimate path, so no settings file is looked for.
 
 ### F7: Quit to BASIC
 ([Back to contents](#contents))

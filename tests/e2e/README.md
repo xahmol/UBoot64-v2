@@ -82,7 +82,7 @@ checked against the product name from the REST API instead.
 | `info` | F2, SPACE | Splash screen, then the info screen |
 | `edit-empty` | F3 | Edit/re-order/delete with no slots; F7 back |
 | `config-defaults` | F5 | Configuration screen with the defaults |
-| `config-timeout` | F4 | Auto-boot timeout cycled; F7 saves, the file is checked (`timeoutidx` = 1) |
+| `config-timeout` | F4, C | Auto-boot timeout cycled and program settings files switched off; F7 saves, the file is checked (`timeoutidx` = 1, `apply_cfg` = 0) |
 | `config-timeout` | (restart), F5 | The saved config is read back on the next start |
 | `convert-v2-prompt` | (start with a v2 set), N | Built-in conversion (#23) declined: exits to BASIC, files and no backups written |
 | `convert-v1-prompt`, `convert-v1-done`, `menu-converted-v1` | (start with a v1 set), Y, SPACE | v1 set converted; every converted field and the backups `DMBCFG.V1`/`DMBSLT.V1` checked byte for byte |
@@ -90,6 +90,7 @@ checked against the product name from the REST API instead.
 | `edit-after-changes`, `menu-after-edit` | F3: F1 0 Y (DEL…, "renamed", RETURN), F6 1, F5 2 Y, F7 | Slot editing on the converted slots: rename, default, delete; checked in the saved slot file |
 | | (slot file with a mount-and-run slot), 0 | Boots a generated D64 (`d64.py`, `10 PRINT"E2E BOOT OK"`) from `/<storage>/E2ETEST/` on drive A; expects the program's output. Drive A's mode and image are restored afterwards |
 | `browse-d64` | F1, cursor down to `E2ETEST`, RETURN, RETURN, F7 | File browser (UCI mode): enter a folder and a D64 (listed by the firmware), back to the menu |
+| | (`E2E.CFG`, `E2E.USR` next to the test D64), 0 | Program settings files (#22): `.cfg` applied, `.usr` fallback, an invalid value shows "Errors in" and changes nothing. The setting is the unused printer's ink density, read back over REST and restored |
 | | (v1 config + already converted slots), Y | An interrupted conversion: config converted, slots kept and not backed up again |
 | | `uboot_upd12.prg`, `uboot_upd23.prg` | The standalone upgraders on the same v1/v2 sets, same field checks |
 | | F7 | Quit to BASIC (BASIC start screen) |

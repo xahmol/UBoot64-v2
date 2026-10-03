@@ -573,6 +573,7 @@ void mountimage(char device, char *path, char *image)
     char origport;
     char x;
     char found = 0;
+    char waits = 0;
 
     for (;;)
     {
@@ -583,6 +584,16 @@ void mountimage(char device, char *path, char *image)
             if (UII_SUCCESS)
             {
                 found = 1;
+            }
+            else if (strncmp((const char *)uii_status, "90,", 3) == 0 && waits < 5)
+            {
+                // "90,DRIVE NOT PRESENT" while the drive restarts: applying
+                // a settings file (apply_program_settings()) re-applies every
+                // changed settings store, which can restart the drive
+                // emulation for a moment (GitHub #22). Wait and try again.
+                delay(1);
+                waits++;
+                continue;
             }
             else if (strncmp((const char *)uii_status, "82,", 3) != 0)
             {
@@ -703,6 +714,139 @@ void ToggleDrivePower(char ab, char on)
     }
 }
 
+// Program settings files (GitHub #22): the full Ultimate path of the
+// .cfg/.usr file to try. Plain RAM (bss), not the bank 0 data segment.
+static char settingspath[MAXPATHLEN];
+
+static void pet2asc_copy(char *dst, const char *src, unsigned size)
+// Copy a PETSCII path or name from a slot as ASCII for the Ultimate: the
+// inverse of asc2pet_path() (PETSCII $41-$5A -> a-z, $C1-$DA -> A-Z).
+// dst is always terminated.
+// Input: dst  - destination
+//        src  - PETSCII string
+//        size - size of dst
+{
+    unsigned x = 0;
+    char c;
+
+    while (x + 1 < size && src[x])
+    {
+        c = src[x];
+        if (c >= 0x41 && c <= 0x5a)
+        {
+            c += 0x20;
+        }
+        else if (c >= 0xc1 && c <= 0xda)
+        {
+            c -= 0x80;
+        }
+        dst[x++] = c;
+    }
+    dst[x] = 0;
+}
+
+static void apply_program_settings(void)
+// Apply the slot's program settings file, as the Ultimate's own file
+// browser does when it starts a program (firmware 3.15+,
+// ConfigIO::S_load_associated_config): <name>.cfg, else <name>.usr, next
+// to the program, through CTRL_CMD_LOAD_CONFIG (uii_load_config()). The
+// firmware doesn't do this itself here, since UBoot64 starts programs from
+// BASIC. Only items in the file change; they last until power-off.
+// Where the file is looked for (GitHub #22, step 1):
+// - a slot that mounts an image on drive A: <image name>.cfg next to it;
+// - a SoftIEC slot on UBoot64's root partition: <program>.cfg in the
+//   drive's host path (Slot.path is "cd:/" + that path, see pathconcat()).
+// Other slots (real drives, drive emulation without an image) have no
+// Ultimate path. Status: 00 applied (shown), 88 no such file (silent,
+// tries .usr), 89 the file had errors (the firmware's log is shown);
+// anything else, such as firmware without the command, is skipped.
+{
+    // ".cfg" and ".usr" as ASCII bytes: the petscii.h charmap would change
+    // the letters of a string literal
+    static const char ext_cfg[] = {0x2e, 0x63, 0x66, 0x67, 0x00};
+    static const char ext_usr[] = {0x2e, 0x75, 0x73, 0x72, 0x00};
+    unsigned len;
+    unsigned name;
+    unsigned x;
+    char tries;
+
+    if (!cfg.apply_cfg)
+    {
+        return;
+    }
+
+    if (Slot.command & COMMAND_IMGA)
+    {
+        if (strlen(Slot.image_a_path) + strlen(Slot.image_a_file) + 5 > MAXPATHLEN)
+        {
+            return;
+        }
+        strcpy(settingspath, Slot.image_a_path);
+        name = strlen(settingspath);
+        strcat(settingspath, Slot.image_a_file);
+    }
+    else if (Slot.partition == RESERVED_ROOT_PARTITION && Slot.file[0] &&
+             Slot.path[0] == 0x43 && Slot.path[1] == 0x44 && Slot.path[2] == 0x3a && Slot.path[3] == 0x2f) // "cd:/"
+    {
+        pet2asc_copy(settingspath, Slot.path + 4, MAXPATHLEN);
+        name = strlen(settingspath);
+        if (name + strlen(Slot.file) + 5 > MAXPATHLEN)
+        {
+            return;
+        }
+        pet2asc_copy(settingspath + name, Slot.file, MAXPATHLEN - name);
+    }
+    else
+    {
+        return;
+    }
+
+    // Replace the extension of the file name, if it has one
+    len = strlen(settingspath);
+    for (x = len; x > name; x--)
+    {
+        if (settingspath[x - 1] == 0x2e) // '.'
+        {
+            len = x - 1;
+            break;
+        }
+    }
+
+    for (tries = 0; tries < 2; tries++)
+    {
+        strcpy(settingspath + len, tries ? ext_usr : ext_cfg);
+        uii_load_config(settingspath);
+        if (uii_status[0] == '0' && uii_status[1] == '0')
+        {
+            asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
+            cwin_console_printf(&cw, cfg.colors.text, "Settings from %s.\n", linebuffer);
+            return;
+        }
+        if (uii_status[0] == '8' && uii_status[1] == '9')
+        {
+            // The reply is the firmware's log of the lines it couldn't
+            // apply: show its first 2 screen lines, newlines as spaces
+            asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
+            cwin_console_printf(&cw, cfg.colors.error, "Errors in %s:\n", linebuffer);
+            asc2pet_path(linebuffer, uii_data, 80);
+            for (x = 0; linebuffer[x]; x++)
+            {
+                if (linebuffer[x] < 0x20)
+                {
+                    linebuffer[x] = 0x20;
+                }
+            }
+            cwin_console_printf(&cw, cfg.colors.text, "%s\n", linebuffer);
+            delay(3);
+            return;
+        }
+        if (uii_status[0] != '8' || uii_status[1] != '8')
+        {
+            return; // Not 88 (no such file): firmware without the command, or another error
+        }
+    }
+}
+
 void runbootfrommenu(char select)
 // Function to execute selected boot option choice slot 0-9
 // Input: select: chosen menuslot 0-9
@@ -711,6 +855,9 @@ void runbootfrommenu(char select)
 
     cwin_clear(&cw);
     cwin_cursor_move(&cw, 0, 0);
+
+    // Settings first: they can change drive types before the mounts below
+    apply_program_settings();
 
     if (Slot.command & COMMAND_IMGA) // Disk image A enabled in this slot
     {

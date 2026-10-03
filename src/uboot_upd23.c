@@ -417,6 +417,7 @@ int main(void)
     strcpy(cfg.host, "time.google.com");
     strcpy(cfg.host2, "time.windows.com");
     strcpy(cfg.host3, "pool.ntp.org");
+    cfg.apply_cfg = 1; // Apply program settings files (GitHub #22)
 
     // Init VIC
     vic_setmode(VICM_TEXT, (char *)0x0400, (char *)0x1800);

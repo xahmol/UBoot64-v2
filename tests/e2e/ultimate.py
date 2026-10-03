@@ -71,6 +71,15 @@ class Ultimate:
     def info(self):
         return self._json("GET", "/v1/info")
 
+    def get_config(self, category, item):
+        """Current value of a setting."""
+        path = "/v1/configs/%s/%s" % (urllib.parse.quote(category), urllib.parse.quote(item))
+        return self._json("GET", path)[category][item]["current"]
+
+    def set_config(self, category, item, value):
+        path = "/v1/configs/%s/%s" % (urllib.parse.quote(category), urllib.parse.quote(item))
+        self._json("PUT", path, {"value": value})
+
     def reset(self):
         self._json("PUT", "/v1/machine:reset")
 

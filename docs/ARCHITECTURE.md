@@ -825,6 +825,18 @@ Compiled separately as `uboot_upd12.prg`. A standalone C64 PRG (not a cartridge)
 
 ---
 
+### Program settings files (bank 1, GitHub #22)
+
+`apply_program_settings()` in `src/slotmenu.c`, called at the start of `runbootfrommenu()` before any mount, applies the slot's program settings file through `uii_load_config()` (`CTRL_CMD_LOAD_CONFIG`, firmware 3.15+), as the firmware's own browser does with `ConfigIO::S_load_associated_config()` when it starts a PRG/CRT. UBoot64 starts programs from BASIC, so the firmware never does this for it.
+
+- **Which file:** a slot with `COMMAND_IMGA` uses `<image_a_file without extension>.cfg` in `image_a_path`; a SoftIEC slot on the root partition (`Slot.partition == RESERVED_ROOT_PARTITION`, `Slot.path` = `"cd:/" + host path`) uses `<Slot.file>.cfg` in the host path, converted from PETSCII to ASCII (`pet2asc_copy()`, inverse of `asc2pet_path()`). Other slots have no Ultimate path. `.usr` is tried after `.cfg` (status 88).
+- **Status:** `00` applied ("Settings from …"), `88` no such file (silent), `89` errors (the reply data is the firmware's parse log; shown for 3 s), anything else (e.g. no such command on older firmware) skipped.
+- **Switch:** `ConfigStruct.apply_cfg` (offset 263, appended in v3.1.0, default 1), **C** in F5.
+- **Side effect handled:** the firmware re-applies ("effectuates") every settings store with pending changes after loading the file. If the drive store is among them, the drive emulation restarts and a mount right after answers `90,DRIVE NOT PRESENT`; `mountimage()` therefore waits up to 5 × 1 s on status 90 before giving up.
+- The path buffer `settingspath[MAXPATHLEN]` is a static in plain RAM (bss), not the bank 0 data segment.
+
+Tested by the E2E boot step: `.cfg` applied, `.usr` fallback, an invalid value (error shown, nothing changed), no file (silent), checked over REST with the printer's ink density.
+
 ### Bank 3 — Conversion of old files (`bcode3`/`bdata3`)
 
 `src/convert.c` (GitHub issue #23). `convert_old_files()` runs once at start-up when the config file's first byte (`ConfigStruct.version`) is not `CFGVERSION`; `readconfigfile()` no longer exits on an old version. It:

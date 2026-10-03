@@ -191,6 +191,8 @@ struct ConfigStruct
     char host2[MAXHOSTLENGTH]; // Second NTP server, tried when the first fails; empty = off.
     char host3[MAXHOSTLENGTH]; // Third NTP server. Both appended in v3.1.0: an older, shorter config
                                // file keeps the defaults set in mainloop() (see readconfigfile()).
+    char apply_cfg;            // 1 = apply <program>.cfg/.usr when booting a slot (GitHub #22, firmware
+                               // 3.15+). Appended in v3.1.0; default 1, kept for older, shorter files.
 };
 extern struct ConfigStruct cfg;
 extern char imagename[MAXFILENAME];

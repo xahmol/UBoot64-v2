@@ -25,7 +25,7 @@ COMMAND_IMGB = 0x08
 
 V1_SLOT = 488
 V3_SLOT = 1360
-V3_CONFIG = 263
+V3_CONFIG = 264  # 263 + apply_cfg (v3.1.0, GitHub #22)
 
 # Field offsets of today's SlotStruct (include/defines.h)
 SLOT = {

@@ -45,6 +45,7 @@ STORAGES = ("sd", "usb0", "usb1", "usb2", "usb3")
 
 # ConfigStruct offsets (include/defines.h)
 CFG_TIMEOUTIDX = 99
+CFG_APPLY_CFG = 263
 
 # Header row 1, columns 20-39: the clock (or version) on every screen.
 CLOCK = (1, 20, 40)
@@ -401,11 +402,11 @@ class DeviceRun:
             if not s.contains("e2e boot", 3):
                 self.fail("boot: slot 0 not in the menu")
                 return
-            self.keys_until(["0"], lambda s: not s.contains("Make your choice.", 24), "the boot", stable=False)
-            self.wait_for(lambda s: s.contains("e2e boot ok"), "the program's output", timeout=30.0, stable=False)
+            self.boot_slot0()
             self.log("ok boot: mount slot ran its program")
+            self.settings_steps(folder)
         finally:
-            for name in ("E2E.D64",):
+            for name in ("E2E.D64", "E2E.CFG", "E2E.USR"):
                 try:
                     self.u.delete_file(folder + "/" + name)
                 except Exception:
@@ -441,6 +442,54 @@ class DeviceRun:
         self.capture("browse-d64", s, [CLOCK, (4, 0, 27)])
         self.keys(["f7"], "Make your choice.", row=24, timeout=15.0)
         self.log("ok browser: folder and D64 entered")
+
+    def boot_slot0(self, watch=None):
+        """Boot slot 0 from the menu and wait for its program's output.
+        watch: text expected on the boot screen on the way (returns
+        whether it was seen)."""
+        seen = [False]
+
+        def check(s):
+            if watch and s.contains(watch):
+                seen[0] = True
+            return s.contains("e2e boot ok")
+
+        self.keys_until(["0"], lambda s: not s.contains("Make your choice.", 24), "the boot", stable=False)
+        self.wait_for(check, "the program's output", timeout=30.0, stable=False)
+        return seen[0]
+
+    def settings_steps(self, folder):
+        """Program settings files (GitHub #22): E2E.CFG next to the slot's
+        drive A image is applied at boot, E2E.USR when there is no .cfg, and
+        a file with an invalid value shows the firmware's error log. The
+        test setting is the (unused) printer's ink density, read back over
+        REST and restored afterwards."""
+        cat, item = "Printer Settings", "Ink density"
+        original = self.u.get_config(cat, item)
+        try:
+            cases = (
+                ("E2E.CFG", b"[Printer Settings]\nInk density=High\n", "High", None),
+                ("E2E.USR", b"[Printer Settings]\nInk density=Low\n", "Low", None),
+                ("E2E.CFG", b"[Printer Settings]\nInk density=Nonsense\n", "Low", "Errors in"),
+            )
+            for name, content, expect, watch in cases:
+                for old in ("E2E.CFG", "E2E.USR"):
+                    try:
+                        self.u.delete_file("%s/%s" % (folder, old))
+                    except Exception:
+                        pass
+                self.u.write_file("%s/%s" % (folder, name), content)
+                self.start()
+                seen = self.boot_slot0(watch)
+                value = self.u.get_config(cat, item)
+                if value != expect:
+                    self.fail("settings %s: %s is %r, expected %r" % (name, item, value, expect))
+                elif watch and not seen:
+                    self.fail("settings %s: %r not shown at boot" % (name, watch))
+                else:
+                    self.log("ok settings %s: %s" % (name, "error shown, nothing changed" if watch else "applied (%s)" % value))
+        finally:
+            self.u.set_config(cat, item, original)
 
     def restore_drive(self, name, state):
         try:
@@ -536,14 +585,18 @@ class DeviceRun:
         before = self.read_config()
         s = self.keys([F4], "Auto-boot timeout: ", retry=False)
         s = self.wait_for(lambda s: not s.contains("Auto-boot timeout: Off"), "a changed timeout", 5.0)
+        # C switches the program settings files off (GitHub #22)
+        s = self.keys(["c"], "Program .cfg files (fw 3.15+): Off", retry=False)
         self.capture("config-timeout", s)
         self.keys(["f7"], "Make your choice.", row=24, timeout=15.0)
         after = self.read_config()
         if before[CFG_TIMEOUTIDX] != 0 or after[CFG_TIMEOUTIDX] != 1:
             self.fail("timeoutidx in the config file: %d before, %d after (expected 0, 1)"
                       % (before[CFG_TIMEOUTIDX], after[CFG_TIMEOUTIDX]))
+        elif len(after) <= CFG_APPLY_CFG or before[CFG_APPLY_CFG] != 1 or after[CFG_APPLY_CFG] != 0:
+            self.fail("apply_cfg in the config file: expected 1 before, 0 after")
         else:
-            self.log("ok config file saved (timeoutidx 1)")
+            self.log("ok config file saved (timeoutidx 1, apply_cfg 0)")
 
         # Second start reads the saved config: same configuration screen.
         self.start()
