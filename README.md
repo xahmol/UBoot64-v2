@@ -55,7 +55,9 @@ Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
 
-Version 4.0.0 - (in development):
+Video of version 4.0.0 (converting old settings, building a GEOS slot, REU preload, partitions, Mandelbrot Upic from a slot): [UBoot64 v4.0.0 on YouTube](https://youtu.be/SJ5f_IsWa9w)
+
+Version 4.0.0 - 2026-10-03:
 
 - Major version 4: the configuration and slot file format changed again (format v4, a settings file per slot). Version 4.0.0 converts the files of all earlier versions itself (see below).
 - Old configuration and slot files (v1, v2 and v3) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`, `.v3`). The file format is now v4 (a settings file per slot). The separate upgrade tools are no longer needed (they still come with this release, for v1 and v2).
