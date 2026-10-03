@@ -471,7 +471,7 @@ int main(void)
     // Prepare output window
     cwin_init(&cw, (char *)0x0400, 0, 0, 40, 25);
     cwin_clear(&cw);
-    headertext("Update config 1-3", 0);
+    headertext("Update config 1-4", 0);
     cwin_cursor_move(&cw, 0, 3);
 
     // Is Ultimate Command Interface detected? If no, abort. Sends the

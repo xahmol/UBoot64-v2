@@ -18,14 +18,15 @@ Each set has three slots that exercise the conversion rules:
 import struct
 
 SLOTS = 18
-CFGVERSION = 3
+CFGVERSION = 4
 COMMAND_REU = 0x02
 COMMAND_IMGA = 0x04
 COMMAND_IMGB = 0x08
 
 V1_SLOT = 488
-V3_SLOT = 1360
-V3_CONFIG = 264  # 263 + apply_cfg (v3.1.0, GitHub #22)
+OLD_SLOT = 1360  # v2 and v3 SlotStruct
+CUR_SLOT = 1616  # format v4: settings[256] added (GitHub #22)
+CUR_CONFIG = 264  # 263 + apply_cfg (v3.1.0, GitHub #22)
 
 # Field offsets of today's SlotStruct (include/defines.h)
 SLOT = {
@@ -35,7 +36,7 @@ SLOT = {
     "command": (730, 1), "image_a_path": (731, 256), "image_a_file": (987, 51),
     "image_a_id": (1038, 1), "image_b_path": (1039, 256),
     "image_b_file": (1295, 51), "image_b_id": (1346, 1), "isdefault": (1347, 1),
-    "partition": (1348, 1),
+    "partition": (1348, 1), "settings": (1349, 256),
 }
 
 # Field offsets of a v1 slot (OldSlotStruct in src/uboot_upd12.c)
@@ -108,30 +109,65 @@ def v2_files():
     cfg[87] = 1  # verbose
     cfg[88:99] = bytes([0, 0, 5, 13, V2_TEXT_COLOUR, 1, 3, 1, 3, 2, 5])
     cfg[99] = 0  # timeoutidx
-    slots = bytearray(V3_SLOT * SLOTS)
+    slots = bytearray(OLD_SLOT * SLOTS)
     for i in range(SLOTS):
-        s = bytearray(V3_SLOT)
+        s = bytearray(OLD_SLOT)
         s[0] = 2
         # v2 stamped "uboot64 x mol" over the padding, where partition is now
         s[1348:1360] = b"UBOOT64 X MO"
         for k, v in (TEST_SLOTS[i].items() if i < len(TEST_SLOTS) else ()):
             _put(s, SLOT, k, v)
-        slots[i * V3_SLOT:(i + 1) * V3_SLOT] = s
+        slots[i * OLD_SLOT:(i + 1) * OLD_SLOT] = s
     return bytes(cfg), bytes(slots)
 
 
-def v3_slots(slots):
-    """A current-format (v3) slot file from a list of field dicts, as
-    UBoot64 writes it: cfgvs 3, partition 0, "uboot64 x mol" filler."""
-    out = bytearray(V3_SLOT * SLOTS)
+def current_slots(slots):
+    """A current-format (v4) slot file from a list of field dicts, as
+    UBoot64 writes it: cfgvs 4, partition 0, "uboot64 x mol" filler."""
+    out = bytearray(CUR_SLOT * SLOTS)
     for i in range(SLOTS):
-        s = bytearray(V3_SLOT)
+        s = bytearray(CUR_SLOT)
         s[0] = CFGVERSION
-        s[1349:1360] = b"UBOOT64 X M"
+        s[1605:1616] = b"UBOOT64 X M"
         for k, v in (slots[i].items() if i < len(slots) else ()):
             _put(s, SLOT, k, v)
-        out[i * V3_SLOT:(i + 1) * V3_SLOT] = s
+        out[i * CUR_SLOT:(i + 1) * CUR_SLOT] = s
     return bytes(out)
+
+
+V3_HOST = b"V3.NTP.TEST"
+
+
+def v3_files():
+    """(config, slots) of a v3 set (v3.0.x and v3.1.0 development builds):
+    264 and 24480 bytes. The slots carry a SoftIEC partition, which v3
+    keeps (v2 zeroes it)."""
+    cfg = bytearray(264)
+    cfg[0] = 3
+    cfg[2:2 + len(V3_HOST)] = V3_HOST
+    cfg[83:87] = struct.pack("<l", UTC_OFFSET)
+    cfg[87] = 1
+    cfg[88:99] = bytes([0, 0, 5, 13, 7, 1, 3, 1, 3, 2, 5])
+    for off, host in ((101, b"TIME.WINDOWS.COM"), (182, b"POOL.NTP.ORG")):
+        cfg[off:off + len(host)] = host
+    cfg[263] = 1  # apply_cfg
+    slots = bytearray(OLD_SLOT * SLOTS)
+    for i in range(SLOTS):
+        s = bytearray(OLD_SLOT)
+        s[0] = 3
+        s[1349:1360] = b"UBOOT64 X M"
+        fields = dict(TEST_SLOTS[i]) if i < len(TEST_SLOTS) else {}
+        if fields.get("command", 0) & COMMAND_REU:
+            fields["reu_path"] = fields["image_a_path"]
+        if i == 0:
+            fields["partition"] = V3_PARTITION
+        for k, v in fields.items():
+            _put(s, SLOT, k, v)
+        slots[i * OLD_SLOT:(i + 1) * OLD_SLOT] = s
+    return bytes(cfg), bytes(slots)
+
+
+V3_PARTITION = 254
 
 
 def converted_test_slots():
@@ -140,22 +176,22 @@ def converted_test_slots():
     for f in slots:
         if f.get("command", 0) & COMMAND_REU:
             f["reu_path"] = f["image_a_path"]
-    return v3_slots(slots)
+    return current_slots(slots)
 
 
 def slot_field(slots, index, name):
     """One field of slot `index` in a v3 slot file."""
-    return _get(slots[index * V3_SLOT:(index + 1) * V3_SLOT], SLOT, name)
+    return _get(slots[index * CUR_SLOT:(index + 1) * CUR_SLOT], SLOT, name)
 
 
 def check_converted(version, cfg, slots):
     """Problems found in converted v3 files, as a list of strings."""
     problems = []
-    if len(cfg) != V3_CONFIG or cfg[0] != CFGVERSION:
+    if len(cfg) != CUR_CONFIG or cfg[0] != CFGVERSION:
         problems.append("config: %d bytes, version %d" % (len(cfg), cfg[0] if cfg else -1))
         return problems
     host = bytes(cfg[2:83]).split(b"\0", 1)[0]
-    want = V1_HOST if version == 1 else V2_HOST
+    want = {1: V1_HOST, 2: V2_HOST, 3: V3_HOST}[version]
     if host != want:
         problems.append("config host %r, expected %r" % (host, want))
     if struct.unpack_from("<l", cfg, 83)[0] != UTC_OFFSET:
@@ -165,15 +201,18 @@ def check_converted(version, cfg, slots):
     for off, name in ((101, "host2"), (182, "host3")):
         if not cfg[off]:
             problems.append("config %s empty (default expected)" % name)
-    if len(slots) != V3_SLOT * SLOTS:
+    if len(slots) != CUR_SLOT * SLOTS:
         problems.append("slots: %d bytes" % len(slots))
         return problems
     for i in range(SLOTS):
-        s = slots[i * V3_SLOT:(i + 1) * V3_SLOT]
+        s = slots[i * CUR_SLOT:(i + 1) * CUR_SLOT]
         if s[0] != CFGVERSION:
             problems.append("slot %d: cfgvs %d" % (i, s[0]))
-        if s[SLOT["partition"][0]] != 0:
-            problems.append("slot %d: partition %d" % (i, s[SLOT["partition"][0]]))
+        want_part = V3_PARTITION if (version == 3 and i == 0) else 0
+        if s[SLOT["partition"][0]] != want_part:
+            problems.append("slot %d: partition %d, expected %d" % (i, s[SLOT["partition"][0]], want_part))
+        if any(s[1349:1605]):
+            problems.append("slot %d: settings not empty" % i)
         fields = TEST_SLOTS[i] if i < len(TEST_SLOTS) else {}
         for k, v in fields.items():
             got = _get(s, SLOT, k)
@@ -186,5 +225,5 @@ def check_converted(version, cfg, slots):
 
 
 if __name__ == "__main__":
-    for v, (c, s) in ((1, v1_files()), (2, v2_files())):
+    for v, (c, s) in ((1, v1_files()), (2, v2_files()), (3, v3_files())):
         print("v%d: config %d bytes, slots %d bytes" % (v, len(c), len(s)))

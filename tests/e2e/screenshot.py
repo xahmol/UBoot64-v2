@@ -13,9 +13,13 @@ Usage:
 
 Shots:
     info     F2 information screen (with the Hardware line)
+    config   F5 configuration screen ("NTP menu")
+    browser  F1 file browser, UCI mode ("filebrowser")
     convert  the built-in conversion (#23) of a synthetic v1 set: the
-             prompt and the result. Backs up and restores the user's
-             config and slot files, like the E2E test.
+             prompt and the result
+
+The user's config and slot files are backed up first and restored
+afterwards, like in the E2E test, so the shots show fresh defaults.
 """
 
 import argparse
@@ -67,14 +71,31 @@ def shot_info(run):
     run.keys(["space"], "Make your choice.", row=24)
 
 
+def shot_config(run):
+    """F5 configuration screen (with the C line), saved as 'NTP menu'."""
+    run.start()
+    run.keys(["f5"], "Back to main menu")
+    time.sleep(1.0)
+    grab(run, "NTP menu")
+    run.keys(["f7"], "Make your choice.", row=24)
+
+
+def shot_browser(run):
+    """F1 file browser in UCI mode (side panel with S), saved as 'filebrowser'."""
+    run.start()
+    run.keys(["f1"], "Filebrowser", row=1, timeout=15.0)
+    run.wait_text("[UCI file system]", row=3, timeout=10.0)
+    time.sleep(1.5)
+    grab(run, "filebrowser")
+    run.keys(["f7"], "Make your choice.", row=24, timeout=15.0)
+
+
 def shot_convert(run):
-    run.backup()
-    try:
+    if True:
         st = run.first_storage()
         cfg, slots = old_configs.v1_files()
         run.u.write_file("/%s/DMBCFG.CFG" % st, cfg)
         run.u.write_file("/%s/DMBSLT.CFG" % st, slots)
-        run.made_backups = True
         run.start(until="Convert? Y/N", row=None)
         time.sleep(1.0)
         grab(run, "Convert prompt")
@@ -84,8 +105,8 @@ def shot_convert(run):
         time.sleep(1.0)
         grab(run, "Convert done")
         run.keys(["space"], "Make your choice.", row=24, timeout=30.0)
-    finally:
-        run.restore()
+        for _, n in run.config_files() + run.config_files(("dmbcfg.v1", "dmbslt.v1")):
+            run.u.delete_file("/%s/%s" % (st, n))
 
 
 def main():
@@ -93,15 +114,21 @@ def main():
     p.add_argument("--device", required=True)
     p.add_argument("--crt", default=os.path.join(REPO, "build", "uboot64.crt"))
     p.add_argument("--password", default=os.environ.get("ULTIMATE_PASSWORD"))
-    p.add_argument("shots", nargs="+", choices=["info", "convert"])
+    p.add_argument("shots", nargs="+", choices=["info", "config", "browser", "convert"])
     args = p.parse_args()
     args.update = args.restore = False
     run = DeviceRun(args.device, args)
-    for shot in args.shots:
-        try:
-            {"info": shot_info, "convert": shot_convert}[shot](run)
-        except UltimateError as e:
-            run.fail(str(e))
+    # The user's config and slot files are backed up and restored, as in
+    # the E2E test: the shots run on fresh defaults
+    run.backup()
+    try:
+        for shot in args.shots:
+            {"info": shot_info, "config": shot_config, "browser": shot_browser,
+             "convert": shot_convert}[shot](run)
+    except Exception as e:
+        run.fail("%s: %s" % (type(e).__name__, e))
+    finally:
+        run.restore()
     return 1 if run.failures else 0
 
 

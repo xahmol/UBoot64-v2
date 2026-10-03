@@ -78,7 +78,12 @@
 // padding[] array), so cfgvs<3 must be sanitized by a migration tool
 // (uboot_upd23) rather than trusted as-is -- see project memory
 // project_uci315_compat.md.
-#define CFGVERSION 0x03
+// Bumped 3->4 (v3.1.0) for SlotStruct.settings (GitHub #22): the slot grew
+// from 1360 to 1616 bytes. The cartridge converts v1, v2 and v3 files at
+// start-up (src/convert.c).
+#define CFGVERSION 0x04
+#define V3_SLOT_SIZE 1360   // SlotStruct of format v2 and v3
+#define V3_SLOT_FIELDS 1349 // its bytes up to and including partition (the rest is padding)
 
 #define OK 0
 #define ERROR -1
@@ -157,7 +162,10 @@ struct SlotStruct
     char partition; // Firmware 3.15+ SoftIEC partition to select (via CP) before booting; 0 = none
                      // (pre-3.15 behavior). Consumes one byte of the padding below; old slot files
                      // read this back as 0 since that byte was always zero-filled padding before.
-    char padding[11]; // Padding to make structure size a multiple of 16, also room for future use
+    char settings[MAXPATHLEN]; // Format v4: full Ultimate path (ASCII) of the slot's own settings
+                               // file, chosen in the file browser (GitHub #22); empty = look for
+                               // <image or program>.cfg automatically
+    char padding[11]; // Padding to make structure size a multiple of 16 (1616), also room for future use
 };
 extern struct SlotStruct Slot;
 extern struct SlotStruct BufferSlot;

@@ -266,12 +266,15 @@ void read_old_configfile()
     cfg.version = CFGVERSION;
 }
 
+// The v2 slot file is read here, above the slot area, then converted slot
+// by slot (format v4 slots are longer: 1616 instead of 1360 bytes)
+#define OLDSLOT_BUFFER_START (SLOT_REU_START + (sizeof(Slot) * SLOTS))
+
 void read_old_slotsfile()
-// Read a v2-format slots file directly into the normal slot REU area -- no
-// remapping needed, since v2's SlotStruct is already today's shape.
+// Read a v2-format slots file into the REU above the slot area
 {
-    long count = SLOT_REU_START;
-    long end = SLOT_REU_START + (sizeof(Slot) * SLOTS);
+    long count = OLDSLOT_BUFFER_START;
+    long end = OLDSLOT_BUFFER_START + ((long)V3_SLOT_SIZE * SLOTS);
     unsigned bytesread;
     char ypos;
 
@@ -323,8 +326,12 @@ void sanitize_slot_data()
 
     for (x = 0; x < SLOTS; x++)
     {
+        // The v2 fields are today's up to partition; settings (format v4)
+        // starts empty
+        memset(&Slot, 0, sizeof(Slot));
+        reu_load(OLDSLOT_BUFFER_START + (long)x * V3_SLOT_SIZE, (char *)&Slot, V3_SLOT_FIELDS);
+        strncpy(Slot.padding, "uboot64 x mol", 11);
         address = (long)x * sizeof(Slot) + SLOT_REU_START;
-        reu_load(address, (char *)&Slot, sizeof(Slot));
 
         cwin_cursor_move(&cw, 0, ypos);
         cwin_console_printf(&cw, VCOL_YELLOW, "Sanitizing slot %u", x);
@@ -427,7 +434,7 @@ int main(void)
     // Prepare output window
     cwin_init(&cw, (char *)0x0400, 0, 0, 40, 25);
     cwin_clear(&cw);
-    headertext("Update config 2-3", 0);
+    headertext("Update config 2-4", 0);
     cwin_cursor_move(&cw, 0, 3);
 
     // Is Ultimate Command Interface detected? If no, abort. Sends the

@@ -40,7 +40,7 @@ OUT = os.path.join(REPO, "build", "e2e")
 
 CONFIG_FILES = ("dmbcfg.cfg", "dmbslt.cfg")
 # Backups the built-in conversion writes (src/convert.c)
-CONVERT_BACKUPS = ("dmbcfg.v1", "dmbslt.v1", "dmbcfg.v2", "dmbslt.v2")
+CONVERT_BACKUPS = ("dmbcfg.v1", "dmbslt.v1", "dmbcfg.v2", "dmbslt.v2", "dmbcfg.v3", "dmbslt.v3")
 STORAGES = ("sd", "usb0", "usb1", "usb2", "usb3")
 
 # ConfigStruct offsets (include/defines.h)
@@ -72,7 +72,6 @@ class DeviceRun:
         self.host = host
         self.args = args
         self.failures = []
-        self.made_backups = False
         self.backup_dir = os.path.join(OUT, "backup", host)
         self.capture_dir = os.path.join(OUT, host)
 
@@ -211,7 +210,9 @@ class DeviceRun:
             raise StepFailed("a backup from an interrupted run exists in %s; "
                              "run with --restore first" % self.backup_dir)
         os.makedirs(self.backup_dir, exist_ok=True)
-        files = self.config_files()
+        # Also the backups a conversion keeps (dmbcfg.v3, ...): the
+        # conversion steps create and delete files with these names
+        files = self.config_files(CONFIG_FILES + CONVERT_BACKUPS)
         for st, name in files:
             data = self.u.read_file("/%s/%s" % (st, name))
             with open(os.path.join(self.backup_dir, "%s_%s" % (st, name)), "wb") as f:
@@ -229,8 +230,7 @@ class DeviceRun:
             return
         with open(manifest) as f:
             files = [tuple(x) for x in json.load(f)]
-        created = self.config_files(CONVERT_BACKUPS) if self.made_backups else []
-        for st, name in self.config_files() + created:
+        for st, name in self.config_files(CONFIG_FILES + CONVERT_BACKUPS):
             self.u.delete_file("/%s/%s" % (st, name))
         for st, name in files:
             with open(os.path.join(self.backup_dir, "%s_%s" % (st, name)), "rb") as f:
@@ -264,10 +264,6 @@ class DeviceRun:
         """Built-in conversion of old config/slot files (GitHub #23):
         declined for v2 (files untouched), then accepted for v1 and v2."""
         st = self.first_storage()
-        if self.config_files(CONVERT_BACKUPS):
-            raise StepFailed("backup files %s already exist; not touching them"
-                             % self.config_files(CONVERT_BACKUPS))
-        self.made_backups = True  # from here on the restore may remove them
 
         def put(cfg, slots):
             for _, n in self.config_files():
@@ -294,7 +290,7 @@ class DeviceRun:
         else:
             self.log("ok convert declined, files untouched")
 
-        for version, files in ((1, old_configs.v1_files()), (2, old_configs.v2_files())):
+        for version, files in ((1, old_configs.v1_files()), (2, old_configs.v2_files()), (3, old_configs.v3_files())):
             cfg, slots = files
             put(cfg, slots)
             s = self.start(until="Convert? Y/N", row=None)
@@ -322,7 +318,7 @@ class DeviceRun:
             for _, n in self.config_files(CONVERT_BACKUPS):
                 self.u.delete_file("/%s/%s" % (st, n))
 
-        # The converted v2 set is in place now: edit its slots, then boot
+        # The converted v3 set is in place now: edit its slots, then boot
         self.slot_edit_steps(st)
         self.boot_steps(st)
         self.interrupted_convert_step(st, put)
@@ -372,7 +368,7 @@ class DeviceRun:
                 problems.append("slot 0 %s changed" % k)
         if f(after, 1, "isdefault") != 1 or f(before, 1, "isdefault") != 0:
             problems.append("slot 1 default flag %d" % f(after, 1, "isdefault"))
-        if any(after[2 * old_configs.V3_SLOT:3 * old_configs.V3_SLOT]):
+        if any(after[2 * old_configs.CUR_SLOT:3 * old_configs.CUR_SLOT]):
             problems.append("slot 2 not cleared")
         if problems:
             self.fail("slot edit: " + "; ".join(problems))
@@ -390,7 +386,7 @@ class DeviceRun:
         self.u.make_dir(folder)
         try:
             self.u.write_file(folder + "/E2E.D64", d64.build("E2E", d64.basic_print_prg("E2E BOOT OK")))
-            slots = old_configs.v3_slots([{
+            slots = old_configs.current_slots([{
                 "menu": b"E2E BOOT", "file": b"E2E", "device": 8,
                 "runboot": EXEC_MOUNT, "command": old_configs.COMMAND_IMGA,
                 "image_a_path": ("/%s/E2ETEST/" % st.lower()).encode(),
@@ -492,6 +488,8 @@ class DeviceRun:
                     self.fail("settings %s: %r not shown at boot" % (name, watch))
                 else:
                     self.log("ok settings %s: %s" % (name, "error shown, nothing changed" if watch else "applied (%s)" % value))
+            self.slot_settings_step(folder)
+
             # Baseline file uboot64/uboot64.cfg on the config's storage,
             # applied at every start (in a folder: the firmware can't load
             # a settings file from the root of a storage device)
@@ -517,6 +515,53 @@ class DeviceRun:
                         self.u.remove_dir(base)
         finally:
             self.u.set_config(cat, item, original)
+
+    def slot_settings_step(self, folder):
+        """The slot's own settings file (format v4, GitHub #22 step 3):
+        picked with S in the file browser for slot 0, then applied at boot
+        instead of the automatic E2E.CFG next to the image."""
+        cat, item = "Printer Settings", "Ink density"
+        self.u.write_file(folder + "/E2E.CFG", b"[Printer Settings]\nInk density=High\n")
+        self.u.write_file(folder + "/OWN.CFG", b"[Printer Settings]\nInk density=Squares\n")
+        try:
+            self.start()
+            self.keys(["f1"], "Filebrowser", row=1, timeout=15.0)
+            self.walk_browser("E2ETEST")
+            self.keys(["return"], "E2E.D64", timeout=10.0)
+            self.walk_browser("OWN.CFG")
+            self.keys(["s"], "Choose slot by pressing key:", timeout=10.0)
+            self.keys(["0"], "Edit? Y/N")
+            self.keys_until(["y"], lambda s: s.contains("Choose name for slot:"), "the name input", stable=False)
+            self.keys(["return"], "Make your choice.", row=24, timeout=20.0)
+            got = old_configs.slot_field(self.slot_file(folder.strip("/").split("/")[0]), 0, "settings")
+            if not got.lower().endswith(b"/e2etest/own.cfg"):
+                self.fail("slot settings: slot 0 has %r" % got)
+                return
+            self.boot_slot0()
+            value = self.u.get_config(cat, item)
+            if value != "Squares":
+                self.fail("slot settings: %s is %r, expected 'Squares' (OWN.CFG over E2E.CFG)" % (item, value))
+            else:
+                self.log("ok slot settings: picked with S, applied instead of E2E.CFG")
+        finally:
+            self.u.delete_file(folder + "/OWN.CFG")
+            self.u.delete_file(folder + "/E2E.CFG")
+
+    def walk_browser(self, name):
+        """Move the browser's selection down to the entry `name`."""
+        def selected(s):
+            rows = [y for y in range(5, 25) if s.codes[y * 40 + 2] & 0x80]
+            return s.row(rows[0])[:22].rstrip() if rows else ""
+
+        s = self.wait_for(lambda t: selected(t) != "", "the listing", 10.0, stable=False)
+        for _ in range(80):
+            if selected(s) == name:
+                return s
+            before = selected(s)
+            self.u.tap_keys(["cursor_up_down"])
+            time.sleep(0.4)
+            s = self.wait_for(lambda t: selected(t) != before, "the selection to move", 5.0, stable=False)
+        raise StepFailed("browser: %s not found" % name)
 
     def restore_drive(self, name, state):
         try:

@@ -329,7 +329,7 @@ static const char *slotdefaultname(void)
     {
         return imageaname;
     }
-    if (addmountflag == 2)
+    if (addmountflag >= 2) // drive B image or settings file
     {
         return imagebname;
     }
@@ -471,6 +471,16 @@ void pickmenuslot()
                     strncpy(Slot.image_a_file, imageaname, MAXFILENAME - 1);
                     Slot.image_a_file[MAXFILENAME - 1] = 0;
                     Slot.command = Slot.command | COMMAND_IMGA; // Set image A bit in command flags
+                }
+                else if (addmountflag == 3)
+                {
+                    // The slot's own settings file (GitHub #22): the browser
+                    // passes it in imagebpath/imagebname (ASCII)
+                    if (strlen(imagebpath) + strlen(imagebname) < MAXPATHLEN)
+                    {
+                        strcpy(Slot.settings, imagebpath);
+                        strcat(Slot.settings, imagebname);
+                    }
                 }
                 else
                 {
@@ -745,6 +755,58 @@ static void pet2asc_copy(char *dst, const char *src, unsigned size)
     dst[x] = 0;
 }
 
+static char load_settings_try(unsigned name, char quiet)
+// Apply settingspath with uii_load_config() and report the result.
+// Output: 1 = done (applied, or errors shown, or skipped); 0 = no such
+// file (status 88), so a caller can try another name.
+{
+    unsigned x;
+
+    uii_load_config(settingspath);
+    if (uii_status[0] == '0' && uii_status[1] == '0')
+    {
+        if (!quiet)
+        {
+            asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
+            cwin_console_printf(&cw, cfg.colors.text, "Settings from %s.\n", linebuffer);
+        }
+        return 1;
+    }
+    if (uii_status[0] == '8' && uii_status[1] == '9')
+    {
+        // The reply is the firmware's log of the lines it couldn't
+        // apply: show its first 2 screen lines, newlines as spaces
+        asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
+        cwin_console_printf(&cw, cfg.colors.error, "Errors in %s:\n", linebuffer);
+        asc2pet_path(linebuffer, uii_data, 80);
+        for (x = 0; linebuffer[x]; x++)
+        {
+            if (linebuffer[x] < 0x20)
+            {
+                linebuffer[x] = 0x20;
+            }
+        }
+        cwin_console_printf(&cw, cfg.colors.text, "%s\n", linebuffer);
+        delay(3);
+        return 1;
+    }
+    // 88 (no such file); anything else, such as firmware without the
+    // command, counts as done
+    return (uii_status[0] != '8' || uii_status[1] != '8');
+}
+
+static void load_settings_file_exact(unsigned name)
+// A settings file chosen for the slot: a missing one is reported (the user
+// picked it, so it should be there).
+{
+    if (!load_settings_try(name, 0) && uii_status[0] == '8')
+    {
+        asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
+        cwin_console_printf(&cw, cfg.colors.error, "Settings file %s not found.\n", linebuffer);
+        delay(2);
+    }
+}
+
 static void load_settings_file(unsigned len, unsigned name, char quiet)
 // Apply a settings file through CTRL_CMD_LOAD_CONFIG (uii_load_config(),
 // firmware 3.15+): settingspath[0..len) is the path without extension,
@@ -761,44 +823,12 @@ static void load_settings_file(unsigned len, unsigned name, char quiet)
     // the letters of a string literal
     static const char ext_cfg[] = {0x2e, 0x63, 0x66, 0x67, 0x00};
     static const char ext_usr[] = {0x2e, 0x75, 0x73, 0x72, 0x00};
-    unsigned x;
-    char tries;
 
-    for (tries = 0; tries < 2; tries++)
+    strcpy(settingspath + len, ext_cfg);
+    if (!load_settings_try(name, quiet))
     {
-        strcpy(settingspath + len, tries ? ext_usr : ext_cfg);
-        uii_load_config(settingspath);
-        if (uii_status[0] == '0' && uii_status[1] == '0')
-        {
-            if (!quiet)
-            {
-                asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
-                cwin_console_printf(&cw, cfg.colors.text, "Settings from %s.\n", linebuffer);
-            }
-            return;
-        }
-        if (uii_status[0] == '8' && uii_status[1] == '9')
-        {
-            // The reply is the firmware's log of the lines it couldn't
-            // apply: show its first 2 screen lines, newlines as spaces
-            asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
-            cwin_console_printf(&cw, cfg.colors.error, "Errors in %s:\n", linebuffer);
-            asc2pet_path(linebuffer, uii_data, 80);
-            for (x = 0; linebuffer[x]; x++)
-            {
-                if (linebuffer[x] < 0x20)
-                {
-                    linebuffer[x] = 0x20;
-                }
-            }
-            cwin_console_printf(&cw, cfg.colors.text, "%s\n", linebuffer);
-            delay(3);
-            return;
-        }
-        if (uii_status[0] != '8' || uii_status[1] != '8')
-        {
-            return; // Not 88 (no such file): firmware without the command, or another error
-        }
+        strcpy(settingspath + len, ext_usr);
+        load_settings_try(name, quiet);
     }
 }
 
@@ -812,6 +842,8 @@ static void apply_program_settings(void)
 // - a slot that mounts an image on drive A: <image name>.cfg next to it;
 // - a SoftIEC slot on UBoot64's root partition: <program>.cfg in the
 //   drive's host path (Slot.path is "cd:/" + that path, see pathconcat()).
+// A settings file chosen for the slot in the file browser (Slot.settings,
+// format v4) takes precedence over this lookup.
 // Other slots (real drives, drive emulation without an image) have no
 // Ultimate path. Firmware 3.15a can't open a settings file in the root of
 // a storage device (see apply_baseline_settings()), so an image directly in
@@ -823,6 +855,18 @@ static void apply_program_settings(void)
 
     if (!cfg.apply_cfg)
     {
+        return;
+    }
+
+    // The slot's own settings file, chosen in the file browser (format v4,
+    // step 3): used as it is, no .usr fallback
+    if (Slot.settings[0])
+    {
+        x = strlen(Slot.settings);
+        for (name = x; name && Slot.settings[name - 1] != 0x2f; name--) // after the last '/'
+            ;
+        strcpy(settingspath, Slot.settings);
+        load_settings_file_exact(name);
         return;
     }
 

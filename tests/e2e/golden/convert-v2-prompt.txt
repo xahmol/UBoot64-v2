@@ -5,7 +5,7 @@ Convert old files   ~~~~~~~~~~~~~~~~~~~~
 The configuration and slot files on     
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                         
-Convert them to the current format v3?  
+Convert them to the current format v4?  
 The old files are kept as               
 dmbcfg.v2 and dmbslt.v2.                
                                         

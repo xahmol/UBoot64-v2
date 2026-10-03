@@ -1302,6 +1302,23 @@ void dir_draw(unsigned char readdir)
 }
 
 #pragma optimize(push)
+static char is_settings_file(const char *name)
+// Whether an (ASCII) file name ends in .cfg or .usr, any case
+// Output: 1 = settings file
+{
+  unsigned l = strlen(name);
+  char a, b, c;
+
+  if (l < 5 || name[l - 4] != 0x2e) // '.'
+  {
+    return 0;
+  }
+  a = name[l - 3] | 0x20; // ASCII lower case
+  b = name[l - 2] | 0x20;
+  c = name[l - 1] | 0x20;
+  return (a == 0x63 && b == 0x66 && c == 0x67) || (a == 0x75 && b == 0x73 && c == 0x72); // cfg, usr
+}
+
 #pragma optimize(0)
 void browse_menu(void)
 // Draw the key-reference side panel; also shows current UCI/IEC, trace, comma1, and demo state
@@ -1332,6 +1349,7 @@ void browse_menu(void)
   {
     cwin_putat_string(&cw, 26, ++menuy, " AB Add mount", cfg.colors.text);
     cwin_putat_string(&cw, 26, ++menuy, "  M Run mount", cfg.colors.text);
+    cwin_putat_string(&cw, 26, ++menuy, "  S Settings", cfg.colors.text);
   }
   cwin_putat_string(&cw, 26, ++menuy, "  1 ,1 Load", cfg.colors.text);
   cwin_putat_string(&cw, 26, ++menuy, "  O Demo mode", cfg.colors.text);
@@ -2144,6 +2162,24 @@ void mainLoopBrowse(void)
           fb_selection_made = 1;
           done = 1;
         }
+      }
+      break;
+
+    case 's':
+      // The slot's own settings file (GitHub #22): a .cfg or .usr file,
+      // added to a slot like a drive B image (pickmenuslot(), addmountflag
+      // 3; path and name passed in imagebpath/imagebname). UCI mode only,
+      // where names and the path are the Ultimate's own (ASCII).
+      if (fb_uci_mode && presentdir.firstelement && is_settings_file(presentdirelement.name))
+      {
+        addmountflag = 3;
+        strncpy(imagebname, presentdirelement.name, MAXFILENAME);
+        imagebname[MAXFILENAME - 1] = 0;
+        uii_get_path();
+        strncpy(imagebpath, uii_data, MAXPATHLEN);
+        imagebpath[MAXPATHLEN - 1] = 0;
+        fb_selection_made = 1;
+        done = 1;
       }
       break;
 

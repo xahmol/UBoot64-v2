@@ -46,17 +46,18 @@
 extern int reudetected;
 
 // REU layout during the conversion (above the slot area, which ends at
-// SLOTS * sizeof(Slot) = 24480; the directory listing buffer there isn't
-// in use yet at start-up)
-#define CONV_OLDSLOTS 0x6000UL  // old slot file, up to 24480 bytes
-#define CONV_OLDCFG 0xC000UL    // old config file, up to 512 bytes
-#define CONV_VERIFY 0x10000UL   // read-back of a backup (needs a 128 KB REU)
-#define CONV_MAXREAD 0x6000UL   // largest old file accepted
+// SLOTS * sizeof(Slot) = 29088 for format v4; the directory listing buffer
+// there isn't in use yet at start-up). Needs a 128 KB REU.
+#define CONV_OLDSLOTS 0x8000UL  // old slot file (up to 32 KB: also a converted v4 file)
+#define CONV_OLDCFG 0x10000UL   // old config file, up to 512 bytes
+#define CONV_VERIFY 0x18000UL   // read-back of a backup, up to 32 KB
+#define CONV_MAXREAD 0x8000UL   // largest file accepted
 
 // Old file sizes
 #define V1_CFG_SIZE 86
 #define V1_SLOT_SIZE 488 // uboot_upd12's OldSlotStruct
 #define V2_CFG_SIZE 100
+#define V3_CFG_SIZE 263 // 264 with apply_cfg (v3.1.0 development builds)
 
 // Field offsets in a v1 slot (OldSlotStruct in uboot_upd12.c)
 #define V1_PATH 0          // char[100]
@@ -263,34 +264,49 @@ static void conv_slots_v1(void)
     }
 }
 
-static void conv_slots_v2(char alreadydone)
-// v2 slots have today's shape: copy them into the slot area. Unless they
-// were already converted (an interrupted earlier run), zero the partition
-// byte (v2 had "uboot64 x mol" filler there), and give REU slots their
-// reu_path. Rules from uboot_upd23's sanitize_slot_data().
-// Input: alreadydone - 1: the slot file already has the current format
+static void conv_slots_old(char version)
+// v2 and v3 slots (1360 bytes, V3_SLOT_SIZE) into the slot area: the fields
+// up to partition are today's; settings (format v4) starts empty. v2 also
+// gets its partition byte zeroed (v2 had "uboot64 x mol" filler there) and
+// REU slots their reu_path -- the rules of uboot_upd23's
+// sanitize_slot_data().
+// Input: version - 2 or 3
 {
     char x;
 
     for (x = 0; x < SLOTS; x++)
     {
-        uboot_reu_load(CONV_OLDSLOTS + (unsigned long)x * sizeof(Slot), (char *)&Slot, sizeof(Slot));
-        if (!alreadydone)
+        memset(&Slot, 0, sizeof(Slot));
+        uboot_reu_load(CONV_OLDSLOTS + (unsigned long)x * V3_SLOT_SIZE, (char *)&Slot, V3_SLOT_FIELDS);
+        if (version == 2)
         {
             Slot.partition = 0;
-            Slot.cfgvs = CFGVERSION;
             if ((Slot.command & COMMAND_REU) && !Slot.reu_path[0])
             {
                 strncpy(Slot.reu_path, Slot.image_a_path, MAXPATHLEN - 1);
                 Slot.reu_path[MAXPATHLEN - 1] = 0;
             }
         }
+        Slot.cfgvs = CFGVERSION;
+        strncpy(Slot.padding, "uboot64 x mol", 11); // As read_slotsfile() creates new slots
+        save_slot_to_reu(x);
+    }
+}
+
+static void conv_slots_current(void)
+// A slot file an interrupted earlier run already converted: copy as is
+{
+    char x;
+
+    for (x = 0; x < SLOTS; x++)
+    {
+        uboot_reu_load(CONV_OLDSLOTS + (unsigned long)x * sizeof(Slot), (char *)&Slot, sizeof(Slot));
         save_slot_to_reu(x);
     }
 }
 
 void convert_old_files(void)
-// Convert config and slot files of format v1 or v2 to the current format,
+// Convert config and slot files of format v1, v2 or v3 to the current format,
 // after asking. Called by mainloop() when cfg.version != CFGVERSION, after
 // REU detection. Returns when the new files are written; exits to BASIC
 // when the user declines or a step fails.
@@ -323,7 +339,7 @@ void convert_old_files(void)
     cwin_console_printf(&cw, cfg.colors.text, "%c\n", answer);
     if (answer == 78)
     {
-        errorexit("Not converted. To convert later, start\nUBoot64 again, or run uboot_upd12.prg\n(v1) or uboot_upd23.prg (v2).");
+        errorexit("Not converted. You are asked again at\nthe next start.");
     }
 
     if (reudetected < 2)
@@ -334,17 +350,18 @@ void convert_old_files(void)
     // Read both old files into the REU
     cwin_console_printf(&cw, cfg.colors.text, "\nReading the old files.\n");
     cfgsize = conv_read_to_reu(configfilename, CONV_OLDCFG);
-    if (cfgsize < (version == 1 ? V1_CFG_SIZE : V2_CFG_SIZE) || cfgsize > 512)
+    if (cfgsize < (version == 1 ? V1_CFG_SIZE : version == 2 ? V2_CFG_SIZE : V3_CFG_SIZE) || cfgsize > 512)
     {
         conv_fail("reading the configuration file", 1, version);
     }
     slotsize = conv_read_to_reu(slotfilename, CONV_OLDSLOTS);
-    expectslots = (version == 1) ? (unsigned long)V1_SLOT_SIZE * SLOTS : (unsigned long)sizeof(Slot) * SLOTS;
+    expectslots = (version == 1) ? (unsigned long)V1_SLOT_SIZE * SLOTS : (unsigned long)V3_SLOT_SIZE * SLOTS;
 
     // An earlier, interrupted conversion may have written the new slot
     // file already (the config file is written last): then its first
     // byte is the current version and its size the current one. A v1
-    // slot starts with its path, never with that byte.
+    // slot starts with its path, v2/v3 slots with 2/3, never with that
+    // byte.
     uboot_reu_load(CONV_OLDSLOTS, &firstbyte, 1);
     if (slotsize == (long)sizeof(Slot) * SLOTS && firstbyte == CFGVERSION)
     {
@@ -377,21 +394,24 @@ void convert_old_files(void)
     if (version == 1)
     {
         conv_config_v1();
-        if (slotsdone)
-        {
-            conv_slots_v2(1);
-        }
-        else
-        {
-            conv_slots_v1();
-        }
     }
     else
     {
-        // v2 config: today's layout minus the fields appended since,
-        // which keep the defaults mainloop() set
-        uboot_reu_load(CONV_OLDCFG, (char *)&cfg, (unsigned)cfgsize);
-        conv_slots_v2(slotsdone);
+        // v2/v3 config: today's layout, possibly without the fields
+        // appended since, which keep the defaults mainloop() set
+        uboot_reu_load(CONV_OLDCFG, (char *)&cfg, (cfgsize < (long)sizeof(cfg)) ? (unsigned)cfgsize : sizeof(cfg));
+    }
+    if (slotsdone)
+    {
+        conv_slots_current();
+    }
+    else if (version == 1)
+    {
+        conv_slots_v1();
+    }
+    else
+    {
+        conv_slots_old(version);
     }
     cfg.version = CFGVERSION;
 

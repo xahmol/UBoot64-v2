@@ -39,12 +39,13 @@ mismatch the run prints the rows that differ.
 
 ## Test data for the conversion
 
-`old_configs.py` generates synthetic v1 and v2 config/slot sets (a
+`old_configs.py` generates synthetic v1, v2 and v3 config/slot sets (a
 program slot, a REU slot and a mount slot), so no personal slot data is
 in the repository, and checks the converted files. The steps write them
 to the storage UBoot64 uses (SD first) and remove them, and the
-`.V1`/`.V2` backups, afterwards. If backups with those names already
-exist, the steps refuse to run instead of touching them.
+`.V1`/`.V2`/`.V3` backups, afterwards. Existing files with those backup
+names (a real conversion keeps them) are backed up and restored together
+with the config and slot files.
 
 ## Lost and slow key taps
 
@@ -87,10 +88,11 @@ checked against the product name from the REST API instead.
 | `convert-v2-prompt` | (start with a v2 set), N | Built-in conversion (#23) declined: exits to BASIC, files and no backups written |
 | `convert-v1-prompt`, `convert-v1-done`, `menu-converted-v1` | (start with a v1 set), Y, SPACE | v1 set converted; every converted field and the backups `DMBCFG.V1`/`DMBSLT.V1` checked byte for byte |
 | `convert-v2-done`, `menu-converted-v2` | (start with a v2 set), Y, SPACE | The same for v2, including the colours (the v2 test config has light blue text on purpose) |
+| `convert-v3-done`, `menu-converted-v3` | (start with a v3 set), Y, SPACE | The same for v3 (format v4 adds `settings`; v3 keeps its SoftIEC partition) |
 | `edit-after-changes`, `menu-after-edit` | F3: F1 0 Y (DEL…, "renamed", RETURN), F6 1, F5 2 Y, F7 | Slot editing on the converted slots: rename, default, delete; checked in the saved slot file |
 | | (slot file with a mount-and-run slot), 0 | Boots a generated D64 (`d64.py`, `10 PRINT"E2E BOOT OK"`) from `/<storage>/E2ETEST/` on drive A; expects the program's output. Drive A's mode and image are restored afterwards |
 | `browse-d64` | F1, cursor down to `E2ETEST`, RETURN, RETURN, F7 | File browser (UCI mode): enter a folder and a D64 (listed by the firmware), back to the menu |
-| | (`E2E.CFG`, `E2E.USR` next to the test D64), 0 | Program settings files (#22): `.cfg` applied, `.usr` fallback, an invalid value shows "Errors in" and changes nothing. Then the baseline file `uboot64/uboot64.cfg` on the config's storage, applied at start-up. The setting is the unused printer's ink density, read back over REST and restored |
+| | (`E2E.CFG`, `E2E.USR` next to the test D64), 0 | Program settings files (#22): `.cfg` applied, `.usr` fallback, an invalid value shows "Errors in" and changes nothing. Then `OWN.CFG` picked with S in the browser for slot 0 (format v4), which must win over `E2E.CFG`; then the baseline file `uboot64/uboot64.cfg` on the config's storage, applied at start-up. The setting is the unused printer's ink density, read back over REST and restored |
 | | (v1 config + already converted slots), Y | An interrupted conversion: config converted, slots kept and not backed up again |
 | | `uboot_upd12.prg`, `uboot_upd23.prg` | The standalone upgraders on the same v1/v2 sets, same field checks |
 | | F7 | Quit to BASIC (BASIC start screen) |

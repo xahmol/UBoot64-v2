@@ -16,7 +16,7 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 - [Installation](#installation)
 
-- [Upgrading from v1 or v2](#upgrading-from-v1-or-v2)
+- [Upgrading from an earlier version](#upgrading-from-an-earlier-version)
 
 - [First run](#first-run)
 
@@ -74,9 +74,9 @@ Version 3.1.0 - (in development):
 - The file browser's side menu shows **M** (run mount) in IEC mode inside a disk image.
 - Messages in the file browser no longer leave the last letter of the file type column on screen.
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
-- Old configuration and slot files (v1 and v2) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`). The separate upgrade tools are no longer needed (they still come with this release).
+- Old configuration and slot files (v1, v2 and v3) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`, `.v3`). The file format is now v4 (a settings file per slot). The separate upgrade tools are no longer needed (they still come with this release, for v1 and v2).
 - Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
-- Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+), and at every start a baseline file `uboot64/uboot64.cfg`. Switch it off with **C** in **F5**. See [Program settings files](#program-settings-files).
+- Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+), and at every start a baseline file `uboot64/uboot64.cfg`. A slot can also get its own settings file: **S** in the file browser. Switch it all off with **C** in **F5**. See [Program settings files](#program-settings-files).
 - **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
 - Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.2.1), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
 
@@ -94,7 +94,7 @@ Version 3.0.0 - 20260907:
 
 - Compatibility with Ultimate firmware 3.15+: UCI now auto-enables itself from the cartridge (no need to turn it on in the Ultimate menu beforehand), and the classic-IEC "go up one directory" command adapts to the rewritten SoftIEC DOS parser automatically, with no change in behaviour on older firmware.
 - SoftIEC partition support (firmware 3.15+ adds CMD-HD-style partitions to SoftIEC, and this works the same way on any IEC device that supports partitions, e.g. CMD-HD or SD2IEC): press **F4** while browsing in IEC mode to show a list of the device's partitions; select one to browse into it. Pressing **DEL** at a partition's own root returns to this list rather than trying to leave the device entirely. An opt-in "SoftIEC root partition" toggle (config menu, **F8**) auto-creates a partition exposing the whole filesystem at root the next time you switch to IEC mode (**F3**), without ever touching a partition you've configured yourself — turning it back off offers to remove that partition from the device too. This partition lives only in the Ultimate's memory until you save it via the Ultimate's own UI — see [F5: Configuration](#f5-configuration) for details. Menu slots can now record and restore a specific partition at boot.
-- Slot/config file format changed to add partition support — see [Upgrading from v1 or v2](#upgrading-from-v1-or-v2). Major version bumped to 3.0.0 to reflect this.
+- Slot/config file format changed to add partition support — see [Upgrading from an earlier version](#upgrading-from-an-earlier-version). Major version bumped to 3.0.0 to reflect this.
 
 Version 2.2.0 - 20260816:
 
@@ -233,21 +233,21 @@ ULTIP2 = 192.168.1.yy
 
 * Stop autostarting by deselecting the cartridge via the same procedure and choosing **None** or another image.
 
-### Upgrading from v1 or v2
+### Upgrading from an earlier version
 ([Back to contents](#contents))
 
-From v3.1.0 UBoot64 converts the configuration and slot files of v1 and v2 itself. When it finds files in an older format at start-up, it asks:
+From v3.1.0 UBoot64 converts the configuration and slot files of earlier versions itself: format v1 (UBoot64 v1), v2 (v2.x) and v3 (v3.0.x). v3.1.0 uses format v4, which adds a settings file per slot. When UBoot64 finds files in an older format at start-up, it asks:
 
 ![Asking to convert old configuration files](<Screenshots/UBoot64 - Convert prompt.png>)
 
-* **Y** first copies the old files to `dmbcfg.v1`/`dmbslt.v1` (or `.v2`) next to them and checks the copies, then writes the files in the new format and continues the start. Your slots, NTP server and time offset are kept; for v2 also the colours and other settings. REU preload slots get their REU image path in its own field.
-![Old configuration files converted](<Screenshots/UBoot64 - Convert done.png>)
-
+* **Y** first copies the old files to `dmbcfg.v1`/`dmbslt.v1` (or `.v2`, `.v3`) next to them and checks the copies, then writes the files in the new format and continues the start. Your slots and settings are kept (from v1: the slots, NTP server and time offset; v1 had no other settings). REU preload slots from v1 and v2 get their REU image path in its own field.
 * **N** changes nothing and exits to BASIC; you are asked again at the next start.
 * If a step fails, UBoot64 says which one. Before the new files are written your files are unchanged; after that, the copies hold the old files.
 * A REU of at least 128 KB is needed for the conversion (UBoot64 needs a REU anyway).
 
-The separate upgrade tools still work, for this release: `uboot_upd12.prg` (v1) and `uboot_upd23.prg` (v2) do the same conversion, without keeping copies. Run them from the Ultimate UI or a BASIC prompt before starting UBoot64.
+![Old configuration files converted](<Screenshots/UBoot64 - Convert done.png>)
+
+The separate upgrade tools still work, for this release: `uboot_upd12.prg` (v1) and `uboot_upd23.prg` (v2) convert to the current format too, without keeping copies. Run them from the Ultimate UI or a BASIC prompt before starting UBoot64. There is no tool for v3: the cartridge does it.
 
 ### First run
 ([Back to contents](#contents))
@@ -348,6 +348,7 @@ The filebrowser is based on and inspired by the DraBrowse program from <https://
 | **A** | Select highlighted image (`.Dxx`) to be mounted on drive A |
 | **B** | Select highlighted image (`.Dxx`) to be mounted on drive B |
 | **M** | Select highlighted program to run from the disk image on drive A |
+| **S** | UCI mode: select the highlighted settings file (`.cfg` or `.usr`) as the slot's own settings file, applied when the slot boots (see [Program settings files](#program-settings-files)) |
 | **1** | Toggle ,1 load |
 | **O** | Toggle demo mode |
 | **Q** or **F7** | Quit to main menu |
@@ -551,6 +552,8 @@ With firmware 3.15 or later the Ultimate applies `<program>.cfg` by itself when 
 
 * a slot that mounts a disk image on drive A: `<image name>.cfg` next to the image, e.g. `gdos64.cfg` next to `gdos64.d81`;
 * a slot on the Ultimate's SoftIEC drive (made with the SoftIEC root partition, see **F8**): `<program>.cfg` next to the program.
+
+You can also give a slot its own settings file: in the file browser (UCI mode), highlight a `.cfg` or `.usr` file, press **S** and pick the slot. That file is then used instead of the automatic lookup above, for any kind of slot, also one on a real drive. If it's missing at boot, UBoot64 says so and boots anyway.
 
 If there is no `.cfg`, UBoot64 tries `<name>.usr`, as the Ultimate does. The file can't be in the root of a USB stick or SD card: the Ultimate's firmware (3.15a) can't load settings files from there, so an image directly in `/usb0/` gets no settings. The settings are applied first, before the disk images are mounted, so they can change drive types. The boot screen shows "Settings from <file>." If the file has a line the Ultimate can't apply, UBoot64 shows the Ultimate's message for 3 seconds and boots anyway. No file, or older firmware without this function: nothing happens.
 

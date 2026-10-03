@@ -278,10 +278,10 @@ REU memory is divided into two logical zones:
 
 | Zone | REU address range | Size | Contents |
 |------|--------------------|------|----------|
-| Slot data | `0` – `SLOTS × sizeof(SlotStruct) - 1` | ~24.5 KB | 18 boot slot records |
+| Slot data | `0` – `SLOTS × sizeof(SlotStruct) - 1` | 29,088 bytes | 18 boot slot records |
 | Directory listing | `SLOTS × sizeof(SlotStruct)` onwards | Remaining REU | REU-backed doubly-linked list of directory entries |
 
-`SLOT_REU_START = 0` is the base address. `sizeof(SlotStruct)` ≈ 1360 bytes, so 18 slots occupy approximately 24,480 bytes (24 KB) at the start of REU.
+`SLOT_REU_START = 0` is the base address. `sizeof(SlotStruct)` = 1616 bytes (format v4), so 18 slots occupy 29,088 bytes at the start of REU.
 
 ### Slot Data in REU
 
@@ -430,11 +430,11 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 
 ### `SlotStruct` — one boot slot (`include/defines.h`)
 
-~1360 bytes per slot, 18 slots total, stored in REU.
+1616 bytes per slot (format v4; 1360 in v2/v3), 18 slots total, stored in REU.
 
 | Field | Type | Size | Purpose |
 |-------|------|------|---------|
-| `cfgvs` | char | 1 | Config version stamp — must equal `CFGVERSION` (0x03) |
+| `cfgvs` | char | 1 | Config version stamp — must equal `CFGVERSION` (0x04 since v3.1.0) |
 | `path` | char[256] | 256 | USB directory path for the boot file |
 | `menu` | char[31] | 31 | Display name in the boot menu |
 | `file` | char[51] | 51 | Boot filename |
@@ -453,7 +453,8 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 | `image_b_id` | char | 1 | IEC device ID for drive B image |
 | `isdefault` | char | 1 | 1 = this slot auto-boots after the configured timeout; compared strictly `== 1` since legacy slot files hold filler byte `'u'` (117) here |
 | `partition` | char | 1 | SoftIEC partition number to select (via `iec_select_partition()`) before boot, firmware 3.15+; 0 = don't send a partition-select command — the pre-3.15 behavior, which is also what every slot saved before this field existed reads back as. If this equals `RESERVED_ROOT_PARTITION` (254), `slotmenu.c`'s boot path calls `uii_add_partition(RESERVED_ROOT_PARTITION, UBOOT_PARTITION_NAME, "/")` again first (idempotent, see the "not persistent" note below) before selecting it, since a slot can boot straight from a fresh power-on with no prior `CH_F3` IEC-mode entry to have provisioned it that session. Any other nonzero value is a user-configured partition, assumed to already exist by whatever created it — UBoot64 never provisions those |
-| `padding` | char[11] | 11 | Reserved; pads struct size to multiple of 16 |
+| `settings` | char[256] | 256 | Format v4 (offset 1349): full Ultimate path (ASCII) of the slot's own settings file, chosen with **S** in the file browser (GitHub #22); empty = automatic `<image or program>.cfg` lookup |
+| `padding` | char[11] | 11 | Reserved; pads struct size to multiple of 16 (1616) |
 
 **Why `partition` needed a version bump, not just a byte carved out of `padding`:**
 repurposing one byte of the (formerly 12-byte) padding for `partition` looked
@@ -537,7 +538,7 @@ failure there is treated uniformly as "keep hunting."
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `version` | char | Config file version — must equal `CFGVERSION` (0x03) |
+| `version` | char | Config file version — must equal `CFGVERSION` (0x04 since v3.1.0; older versions are converted at start-up) |
 | `timeon` | char | NTP sync enabled: 0=off, 1=on |
 | `host` | char[81] | First NTP server hostname |
 | `secondsfromutc` | long | UTC offset in seconds (e.g. 3600 = UTC+1) |
@@ -837,7 +838,9 @@ Compiled separately as `uboot_upd12.prg`. A standalone C64 PRG (not a cartridge)
 - **Baseline (step 2):** `apply_baseline_settings()` (bank 1, called by `mainloop()` via `fc3_call(1, …)` after the conversion block, when `apply_cfg` is on) applies `<configpath>uboot64/uboot64.cfg` (else `.usr`) at every start, quietly unless start-up messages are on. In a folder because firmware 3.15a's `LOAD_CONFIG` can't open a file in the root of a storage device (`/sd/x.cfg` → 88, `/sd/dir/x.cfg` works; tested 2026-10-03) — the same limit applies to images in a storage root in step 1.
 - **Library 1.2.1 required:** `uii_load_config()` before 1.2.1 sent the name without its terminating 0, and the firmware reads it as a C string, so the name ran into leftover bytes of an earlier command (a second `LOAD_CONFIG` in one run failed with 88). Found here, fixed in the library.
 
-Tested by the E2E boot step: `.cfg` applied, `.usr` fallback, an invalid value (error shown, nothing changed), no file (silent), checked over REST with the printer's ink density.
+- **Per-slot file (step 3, format v4):** `Slot.settings`, chosen with **S** on a `.cfg`/`.usr` file in the file browser (UCI mode; `filebrowse.c` passes it to `pickmenuslot()` as `addmountflag = 3` in `imagebpath`/`imagebname`, so no new cross-bank globals). Applied instead of the automatic lookup, for any slot type; a missing file is reported (`load_settings_file_exact()`).
+
+Tested by the E2E boot step: `.cfg` applied, `.usr` fallback, an invalid value (error shown, nothing changed), no file (silent), a per-slot file picked with S winning over the automatic one, and the baseline file, checked over REST with the printer's ink density.
 
 ### Bank 3 — Conversion of old files (`bcode3`/`bdata3`)
 
@@ -845,14 +848,14 @@ Tested by the E2E boot step: `.cfg` applied, `.usr` fallback, an invalid value (
 
 1. rejects version 0 and versions newer than `CFGVERSION` (exits to BASIC with a message);
 2. asks "Convert? Y/N" (N exits to BASIC, nothing written);
-3. reads both old files into the REU above the slot area (old slots at `$6000`, old config at `$C000`; sizes checked: v1 86/8784 bytes, v2 100/24480);
-4. writes `dmbcfg.v<n>`/`dmbslt.v<n>` and verifies them by reading them back into the REU at `$10000` (hence a 128 KB REU minimum) and comparing;
-5. converts: v1 config parsed field by field (big-endian time offset, 80-byte host), v1 slots field by field from the 488-byte `OldSlotStruct` layout; v2 config copied over the defaults (same layout, shorter), v2 slots copied with `partition` zeroed and `reu_path` filled for REU slots — the rules of `uboot_upd12`/`uboot_upd23`;
+3. reads both old files into the REU above the slot area (old slots at `$8000`, old config at `$10000`; sizes checked: v1 86/8784 bytes, v2 100/24480, v3 263 or 264/24480);
+4. writes `dmbcfg.v<n>`/`dmbslt.v<n>` and verifies them by reading them back into the REU at `$18000` (hence a 128 KB REU minimum) and comparing;
+5. converts to format v4: v1 config parsed field by field (big-endian time offset, 80-byte host), v1 slots field by field from the 488-byte `OldSlotStruct` layout; v2/v3 config copied over the defaults (same layout, possibly shorter); v2/v3 slots (1360 bytes) copied up to `partition` (`V3_SLOT_FIELDS`), `settings` empty; v2 additionally gets `partition` zeroed and `reu_path` filled for REU slots — the rules of `uboot_upd12`/`uboot_upd23`;
 6. writes the slot file first and the config file last. An interrupted run therefore still finds the old config next time; it recognises an already converted slot file (first byte `CFGVERSION`, current size) and doesn't back it up or convert it again.
 
-`Slot` (1360 bytes) serves as the I/O buffer, so the module needs no RAM of its own beyond small locals. It uses `#include <petscii.h>` like the other modules: without it the string literals would show case-inverted. Size on 2026-10-02: $F53 bytes of the 16 KB bank.
+`Slot` (1616 bytes) serves as the I/O buffer, so the module needs no RAM of its own beyond small locals. It uses `#include <petscii.h>` like the other modules: without it the string literals would show case-inverted. Size on 2026-10-02: $F53 bytes of the 16 KB bank.
 
-The E2E suite (`tests/e2e`, `old_configs.py`) converts synthetic v1 and v2 sets and checks every converted field and the backups byte for byte, plus the declined path.
+The E2E suite (`tests/e2e`, `old_configs.py`) converts synthetic v1, v2 and v3 sets and checks every converted field and the backups byte for byte, plus the declined path.
 
 ---
 
