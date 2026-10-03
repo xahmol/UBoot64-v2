@@ -58,8 +58,10 @@ Elite), so the step waits longer instead of pressing the key twice.
 
 When an expected screen doesn't come, the failure message says whether
 the C64 still runs interrupts (jiffy clock at `$A0`), and gives the Kernal
-status (`$90`) and the IEC lines (`$DD00`); zero page and stack are saved
-as `build/e2e/<host>/timeout-<time>.bin`.
+status (`$90`) and the IEC lines (`$DD00`). Saved as
+`build/e2e/<host>/timeout-<time>.bin`: `$0000-$01FF` (zero page, stack),
+the CIA 1 and 2 registers (16 bytes each) and `$7F00-$7FFF` (Oscar64's
+function locals).
 
 ## Golden format
 

@@ -117,11 +117,14 @@ class DeviceRun:
             j2 = self.u.read_memory(0xA0, 3)
             zp = self.u.read_memory(0x0000, 0x200)
             dd00 = self.u.read_memory(0xDD00, 1)[0]
+            # CIA 1 and 2 (timers, as the Kernal's serial timeouts use them),
+            # and $7F00-$7FFF, where Oscar64 keeps function locals
+            extra = self.u.read_memory(0xDC00, 16) + self.u.read_memory(0xDD00, 16) + self.u.read_memory(0x7F00, 0x100)
             os.makedirs(self.capture_dir, exist_ok=True)
             name = os.path.join(self.capture_dir, "timeout-%s.bin" % time.strftime("%Y%m%d-%H%M%S"))
             with open(name, "wb") as f:
-                f.write(zp)
-            return "IRQ %s, $90=%02x, $DD00=%02x, $0000-$01FF in %s" % (
+                f.write(zp + extra)
+            return "IRQ %s, $90=%02x, $DD00=%02x, $0000-$01FF, CIAs, $7F00-$7FFF in %s" % (
                 "running" if j1 != j2 else "STOPPED", zp[0x90], dd00, os.path.relpath(name, REPO))
         except UltimateError as e:
             return "no diagnosis: %s" % e

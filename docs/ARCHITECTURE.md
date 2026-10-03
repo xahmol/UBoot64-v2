@@ -240,7 +240,7 @@ fc3_call(2, mainLoopBrowse);
 `fc3_call` is in the `fc3control` section, which resides at `$C000` in RAM throughout the session. It:
 1. Writes the target bank number to `$DFFF`
 2. Performs a JSR to the function address (valid in the target bank's ROM space)
-3. On return, restores the previous bank number at `$DFFF`
+3. Does **not** restore the previous bank on return: the called bank stays mapped at `$8000–$BFFF` until the next `fc3_call()`. (Earlier versions of this document said it restores the bank; the code never did.) Code that depends on a particular bank being mapped must select it itself.
 
 Bank 0 code runs from RAM (`$0900+`) and is always accessible regardless of which ROM bank is selected, so no `fc3_call` wrapper is needed for cross-module calls within bank 0.
 
