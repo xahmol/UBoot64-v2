@@ -63,7 +63,7 @@ Version 4.0.0 - (in development):
 - Loose `.prg` files can now be added to a slot from the file browser's UCI mode (**ENTER**): UBoot64 loads them through the REU, without a drive or disk image. See [Programs from UCI mode](#programs-from-uci-mode).
 - **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
 - Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
-- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.3.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
+- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.4.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
 - Known issues, see [Known issues](#known-issues): programs started from UBoot64 get no Ultimate Audio (#25).
 
 Fixes and smaller changes:
