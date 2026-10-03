@@ -75,4 +75,6 @@ Not yet tested:
 - Firmware 3.15b (Christian Gleissner's SoftIEC compatibility builds, GitHub #3).
 - An intermittent glitch seen once: right after entering a D64 on the SoftIEC drive, one listing line came through garbled (`1000          PRG`); correct after F1. Not reproduced in 6 further enter/leave rounds (2026-09-28). The garbled text is exactly what the parser makes of the line `1000  "BIG 1000"   PRG` without its opening quote (the name is then taken from after the closing quote), so most likely one byte was lost on the IEC bus, not a parser bug. Watch for it.
 
+- Known, parked (#24, 2026-10-03): on the Ultimate 64 Elite the start right after a built-in conversion (#23) hangs now and then in the IEC scan (`iec_present()`, Kernal LISTEN/SECOND, IRQ off; about 1 in 20 such starts; never in normal starts or on the U64-II). A restart gets past it. Because of it `make e2e` fails on the Elite about 1 run in 7; check the failure is this one (timeout after "Drive B: ... 1581", "IRQ STOPPED") before chasing it.
+
 Remove this section once these are done.
