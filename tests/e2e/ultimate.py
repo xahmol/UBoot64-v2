@@ -113,9 +113,20 @@ class Ultimate:
             events = [{"kind": "keyboard", "inputs": k if isinstance(k, list) else [k],
                        "transition": "tap"}
                       for k in keys[i:i + 64]]
-            self._json("POST", "/v1/machine:input",
-                       body=json.dumps({"events": events}).encode(),
-                       content_type="application/json")
+            try:
+                self._json("POST", "/v1/machine:input",
+                           body=json.dumps({"events": events}).encode(),
+                           content_type="application/json")
+            except UltimateError as e:
+                if "timed out" not in str(e):
+                    raise
+                # The REST interface sometimes stops answering for a while
+                # when it's busy: try once more (the first tap may have
+                # been executed after all)
+                time.sleep(2.0)
+                self._json("POST", "/v1/machine:input",
+                           body=json.dumps({"events": events}).encode(),
+                           content_type="application/json")
 
     # --- Video stream ---------------------------------------------------
 

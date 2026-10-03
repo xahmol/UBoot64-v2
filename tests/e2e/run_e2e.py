@@ -86,8 +86,11 @@ class DeviceRun:
 
     # --- Screen ---------------------------------------------------------
 
-    def screen(self):
-        return Screen(self.u.read_memory(0x0400, 1000), self.u.read_memory(0xD800, 1000))
+    def screen(self, colours=True):
+        """The text screen; colours=False skips the colour RAM read (half the
+        REST requests, for frequent polling)."""
+        return Screen(self.u.read_memory(0x0400, 1000),
+                      self.u.read_memory(0xD800, 1000) if colours else bytes(1000))
 
     def wait_for(self, check, what, timeout=15.0, stable=True):
         """Wait until check(screen) holds and, if stable is set, the
@@ -589,7 +592,11 @@ class DeviceRun:
                 if not self.screen().row(3).startswith(header + " uboot"):
                     self.keys([["left_shift", "f3"]], "Partitions", row=3, timeout=10.0)
                     self.walk_browser("uboot")
-                    self.keys(["return"], header + " uboot", row=3, timeout=10.0)
+                    # The header can stay blank here: the drive returns to
+                    # the partition's current directory, which an earlier
+                    # run may have deleted (E2ETEST); the root fixes that
+                    self.keys_until(["return"], lambda t: not t.contains("Partitions", 3),
+                                    "the partition change", timeout=10.0, stable=False)
                 self.keys_until(["arrow_up"], lambda t: any(self.browser_selected(t) == n for n in (st.lower(), "flash", "temp")),
                                 "the root directory", timeout=10.0, stable=False)
                 self.walk_browser(st.lower())
@@ -668,17 +675,34 @@ class DeviceRun:
             self.u.delete_file(folder + "/E2EUCI.CFG")
 
     def walk_browser(self, name):
-        """Move the browser's selection down to the entry `name`."""
+        """Move the browser's selection down to the entry `name`. A move is
+        a change of the selected row or of its name (two entries can look
+        alike when their names are cut off)."""
         selected = self.browser_selected
 
-        s = self.wait_for(lambda t: selected(t) != "", "the listing", 10.0, stable=False)
+        def where(s):
+            rows = [y for y in range(5, 24) if s.codes[y * 40 + 2] & 0x80]
+            return (rows[0] if rows else -1, selected(s))
+
+        def poll(check, what):
+            # Characters only, every 0.5 s: long walks otherwise flood the
+            # REST interface (it stopped answering once)
+            t = time.monotonic()
+            while time.monotonic() - t < 5.0:
+                scr = self.screen(colours=False)
+                if check(scr):
+                    return scr
+                time.sleep(0.5)
+            raise StepFailed("timed out waiting for %s" % what)
+
+        s = poll(lambda t: selected(t) != "", "the listing")
         for _ in range(80):
             if selected(s) == name:
                 return s
-            before = selected(s)
+            before = where(s)
             self.u.tap_keys(["cursor_up_down"])
             time.sleep(0.4)
-            s = self.wait_for(lambda t: selected(t) != before, "the selection to move", 5.0, stable=False)
+            s = poll(lambda t: where(t) != before, "the selection to move")
         raise StepFailed("browser: %s not found" % name)
 
     def restore_drive(self, name, state):
