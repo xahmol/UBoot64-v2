@@ -65,6 +65,7 @@
 #define COMMAND_REU 0x02
 #define COMMAND_IMGA 0x04
 #define COMMAND_IMGB 0x08
+#define COMMAND_UCIPRG 0x10 // Program from an Ultimate path (path/file in ASCII), loaded via the REU
 
 // Execute flag values
 #define EXEC_MOUNT 0x01

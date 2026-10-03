@@ -490,6 +490,7 @@ class DeviceRun:
                     self.log("ok settings %s: %s" % (name, "error shown, nothing changed" if watch else "applied (%s)" % value))
             self.slot_settings_step(folder)
             self.iec_settings_step(folder)
+            self.uci_prg_step(folder)
 
             # Baseline file uboot64/uboot64.cfg on the config's storage,
             # applied at every start (in a folder: the firmware can't load
@@ -627,6 +628,39 @@ class DeviceRun:
         self.u.tap_keys(["return"])
         time.sleep(0.5)
         self.wait_for(lambda s: self.browser_selected(s) not in ("", name), "the directory " + name, 10.0, stable=False)
+
+    def uci_prg_step(self, folder):
+        """A program from an Ultimate path (UCI mode slot): RETURN on a .prg
+        in the browser makes slot 1, which loads it via the REU at boot. A
+        40 KB program (copied over UBoot64's own RAM) printing a text, and
+        E2EUCI.CFG next to it, applied automatically."""
+        cat, item = "Printer Settings", "Ink density"
+        self.u.write_file(folder + "/E2EUCI.PRG", d64.big_basic_prg("E2E UCI OK", 40000))
+        self.u.write_file(folder + "/E2EUCI.CFG", b"[Printer Settings]\nInk density=Squares\n")
+        try:
+            self.start()
+            self.keys(["f1"], "Filebrowser", row=1, timeout=15.0)
+            self.walk_browser("E2ETEST")
+            self.enter_dir("E2ETEST")
+            self.walk_browser("E2EUCI.PRG")
+            self.keys(["return"], "Choose slot by pressing key:", timeout=10.0)
+            self.keys(["1"], "Choose name for slot:", timeout=10.0)
+            self.keys(["return"], "Make your choice.", row=24, timeout=20.0)
+            slots = self.slot_file(folder.strip("/").split("/")[0])
+            f = old_configs.slot_field
+            if f(slots, 1, "file").lower() != b"e2euci.prg" or not (f(slots, 1, "command") & 0x10):
+                self.fail("UCI program: slot 1 is %r, command %d" % (f(slots, 1, "file"), f(slots, 1, "command")))
+                return
+            self.keys_until(["1"], lambda s: not s.contains("Make your choice.", 24), "the boot", stable=False)
+            self.wait_for(lambda s: s.contains("e2e uci ok"), "the program's output", timeout=60.0, stable=False)
+            value = self.u.get_config(cat, item)
+            if value != "Squares":
+                self.fail("UCI program: %s is %r, expected 'Squares' (E2EUCI.CFG)" % (item, value))
+            else:
+                self.log("ok UCI program: 40 KB PRG from an Ultimate path ran, its .cfg applied")
+        finally:
+            self.u.delete_file(folder + "/E2EUCI.PRG")
+            self.u.delete_file(folder + "/E2EUCI.CFG")
 
     def walk_browser(self, name):
         """Move the browser's selection down to the entry `name`."""

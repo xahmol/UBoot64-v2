@@ -56,3 +56,12 @@ def build(prg_name, prg, disk_name="E2E TEST"):
     image[d + 5:d + 21] = _name(prg_name)
     image[d + 30:d + 32] = bytes([1, 0])  # 1 block
     return bytes(image)
+
+
+def big_basic_prg(text, size):
+    """10 PRINT"text" followed by filler up to `size` bytes in total: a
+    large program (the filler lies after BASIC's end marker)."""
+    prg = bytearray(basic_print_prg(text))
+    filler = bytes((i * 7 + 3) & 0xFF for i in range(size - len(prg)))
+    return bytes(prg) + filler
+

@@ -228,6 +228,17 @@ char *pathconcat()
   return concat;
 }
 
+__noinline void fc3_callret(char bank, void (*func)(), char back)
+// fc3_call() for a caller in a banked ROM: maps `back` again after the
+// call. Runs from RAM (bank 0), so switching banks here is safe -- hence
+// __noinline: inlined into a banked caller, the switch would run from
+// that caller's ROM and pull it away (ARCHITECTURE.md 12.2; it crashed).
+// Input: bank - bank of func; func - the function; back - caller's bank
+{
+  fc3_call(bank, func);
+  fc3 = back;
+}
+
 char getkey(char mask)
 // Function to wait for key within input validation mask
 // Mask values for input validation (adds up for combinations):

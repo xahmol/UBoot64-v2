@@ -78,6 +78,7 @@ Version 4.0.0 - (in development):
 - Old configuration and slot files (v1, v2 and v3) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`, `.v3`). The file format is now v4 (a settings file per slot). The separate upgrade tools are no longer needed (they still come with this release, for v1 and v2).
 - Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
 - Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+), and at every start a baseline file `uboot64/uboot64.cfg`. A slot can also get its own settings file: **S** in the file browser. Switch it all off with **C** in **F5**. See [Program settings files](#program-settings-files).
+- Loose `.prg` files can now be added to a slot from the file browser's UCI mode (**ENTER**): UBoot64 loads them through the REU, without a drive or disk image. See [Programs from UCI mode](#programs-from-uci-mode).
 - **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
 - Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.2.1), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
 
@@ -289,7 +290,8 @@ The separate upgrade tools still work, for this release: `uboot_upd12.prg` (v1) 
 
 ![Inside mount indicator in the file browser sidebar](<Screenshots/UBoot64 - Toggle inside mount.png>)
 
-* Press **ENTER** on a program file to select it for a menu slot. In UCI mode the associated drive A disk image is automatically included.
+* Press **ENTER** on a program file to select it for a menu slot. In IEC mode inside a disk image mounted from UCI mode, the associated drive A disk image is automatically included.
+* In UCI mode, press **ENTER** on a loose `.prg` file to add it to a slot as it is: no drive or disk image needed (see [Programs from UCI mode](#programs-from-uci-mode) below).
 * Press **A** or **B** on a disk image (`.Dxx`) to select it as the additional image to mount on drive A resp. B when starting from that slot.
 * Press **M** on a program file to select it to be run from the disk image already mounted on drive A.
 * To add a REU file: navigate to it and press **ENTER**, then select the target slot, choose REU size with **+** / **-**, and confirm with **ENTER**.
@@ -306,8 +308,16 @@ The separate upgrade tools still work, for this release: `uboot_upd12.prg` (v1) 
 * Press **0–9** or **A–Z** to choose the slot, enter a name and press **ENTER**.
 * Repeat until all desired slots are filled.
 * Important notes:
-  * For technical reasons, loose .PRG files in UCI mode can not be added to the start menu. Either add them via the SoftIEC in IEC mode, or use the Ultimate native UI for launching these applications. Reason is that launching a PRG from an UCI path is not supported via the Ultimate Command Interface (yet)
   * If you want to add a program, disk images and a REU image to the same slot, this needs to be done in separate steps for each file or image to add. Just choose the same slot again each time.
+
+#### Programs from UCI mode
+
+From v4.0.0 a loose `.prg` file in UCI mode can be added to a slot directly: highlight it, press **ENTER** and pick the slot. At boot UBoot64 loads the file through the Ultimate Command Interface into the REU, and copies it into C64 memory just before handing over to BASIC, then types `RUN`. No drive, disk image or IEC bus is involved, so this works on every Ultimate.
+
+* With **,1 Load** off the program goes to $0801, as `LOAD"NAME",8` would; with it on, to the address in the file, as `LOAD"NAME",8,1`.
+* A BASIC command of the slot (**F2** in the edit menu) is typed before `RUN`.
+* A settings file `<program>.cfg` next to the program is applied automatically (see [Program settings files](#program-settings-files)).
+* Limits: the program must not overlap $C000–$C0FF, where UBoot64's last bit of code runs while it copies the program. A REU of at least 128 KB is needed (the program is staged in the last 64 KB); a REU preload image that fills the whole REU can't be combined with such a program in one slot.
 
 #### Mount/command-only slots
 
@@ -335,7 +345,7 @@ The filebrowser is based on and inspired by the DraBrowse program from <https://
 | **F4** | Show the partition list (IEC mode only, on a device that supports partitions) |
 | **+** | Increase device number (IEC mode only) |
 | **-** | Decrease device number (IEC mode only) |
-| **RETURN** | Enter directory / run selected program (IEC mode) / select for slot |
+| **RETURN** | Enter directory / run selected program (IEC mode) / select for slot; on a `.prg` in UCI mode: add it to a slot as a program from UCI mode |
 | **CURSOR RIGHT** | Enter directory |
 | **DEL** | Go to parent directory |
 | **CURSOR LEFT** | Go to parent directory |

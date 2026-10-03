@@ -842,6 +842,18 @@ Compiled separately as `uboot_upd12.prg`. A standalone C64 PRG (not a cartridge)
 
 Tested by the E2E boot step: `.cfg` applied, `.usr` fallback, an invalid value (error shown, nothing changed), no file (silent), a per-slot file picked with S winning over the automatic one, and the baseline file, checked over REST with the printer's ink density.
 
+### Programs from UCI mode (bank 3, `src/uciprg.c`)
+
+A slot with `COMMAND_UCIPRG` (0x10) holds an Ultimate path (`Slot.path`, ASCII) and file (`Slot.file`). The file browser makes it from **RETURN** on a `.prg` in UCI mode (`addmountflag = 4`, via `imagebpath`/`imagebname`). At boot `runbootfrommenu()` (bank 1) calls `uciprg_boot()` with `fc3_callret(3, uciprg_boot, 1)`:
+
+1. `uciprg_stage()` reads the file through the UCI into the last 64 KB of the REU (`reu_read_file()`, shared with `src/convert.c`; deliberately not `uii_load_reu_at()`/`uii_file_size()`, which would have to be linked into the full bank 0). Checks: REU ≥ 128 KB, the slot's REU preload image must leave that 64 KB free, file 3..65538 bytes, destination ($0801, or the file's own address with ,1) must fit and must not overlap $C000–$C0FF.
+2. It fills `uciprg_dma[7]` (C64 address, REU address, length — the order of the REU registers $DF02–$DF08), `uciprg_end`, `uciprg_link` and sets `uciprg_go`; `uciprg_execute()` builds the keyboard commands (the slot's command, then `RUN`) and calls `fc3_exit()`.
+3. `fc3_exit()` (resident at $C000) does the REU→C64 DMA after the BASIC cold start, after the commands are on screen and in the keyboard buffer (`execute_commands` is in bss, which the copy may overwrite), sets $2D/$2E and $AE/$AF to the end, and calls LINKPRG ($A533) for a program at $0801. The parameters are initialized globals, so they live in the resident `fc3data` at $C000, not in bss. The `fc3control` region is now $FA of $100 bytes.
+
+`fc3_callret()` (bank 0, RAM) is `fc3_call()` that maps the caller's bank back afterwards, for calls from a banked ROM into another bank that return. It must be `__noinline`: inlined into the bank 1 caller, the bank switch ran from bank 1's ROM and crashed (§12.2).
+
+Tested by the E2E step "UCI program": a 40 KB BASIC program (copied over UBoot64's own RAM) added with RETURN in the browser, booted, its output checked, and its `.cfg` applied.
+
 ### Bank 3 — Conversion of old files (`bcode3`/`bdata3`)
 
 `src/convert.c` (GitHub issue #23). `convert_old_files()` runs once at start-up when the config file's first byte (`ConfigStruct.version`) is not `CFGVERSION`; `readconfigfile()` no longer exits on an old version. It:

@@ -7,6 +7,12 @@
 
 char execute_commands[200];
 char execute_keys[10];
+// Initialized, so they are in fc3data (resident at $C000), not in bss:
+// the copy can overwrite bss
+char uciprg_go = 0;
+char uciprg_dma[7] = {0};
+unsigned uciprg_end = 0;
+char uciprg_link = 0;
 char bootmsg[11] = {13, 'u', 'b', 'o', 'o', 't', '6', '4', '.', 13, 0};
 
 void fc3_bank(char bank)
@@ -95,6 +101,7 @@ fc3exit_loop1:
 	    ldx #$FB
 	    txs
 
+
 	    // Clear keyboard buffer
 	    lda #$00
         sta $C6     // $C6 = KEY_COUNT Number of keys in input buffer
@@ -130,6 +137,34 @@ fc3exit_next2:
         tax
         clc
         jsr $FFF0    // PLOT: C64 Kernal routine at $FFF0
+
+	    // Program from an Ultimate path: the slot boot loaded it into the
+	    // REU; copy it into place now that BASIC is set up and the commands
+	    // are on screen and in the keyboard buffer (execute_commands is in
+	    // bss, which the copy may overwrite), then set the end-of-program
+	    // pointers (and relink a BASIC program) as LOAD does
+	    lda uciprg_go
+	    beq fc3exit_noprg
+	    ldx #$06
+fc3exit_dma:
+	    lda uciprg_dma,x
+	    sta $DF02,x	// REU: C64 address, REU address, length
+	    dex
+	    bpl fc3exit_dma
+	    lda #$00
+	    sta $DF0A	// Both addresses count up
+	    lda #$91	// Execute now, REU -> C64
+	    sta $DF01
+	    lda uciprg_end
+	    sta $2D		// VARTAB: end of the program
+	    sta $AE
+	    lda uciprg_end+1
+	    sta $2E
+	    sta $AF
+	    lda uciprg_link
+	    beq fc3exit_noprg
+	    jsr $A533	// LINKPRG: relink the BASIC lines
+fc3exit_noprg:
 
 	    // Print adapted READY prompt.
 	    lda #<bootmsg

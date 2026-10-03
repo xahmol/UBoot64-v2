@@ -1604,6 +1604,12 @@ Oscar64 follows `#pragma compile("x.c")` automatically — only `#include "x.h"`
 ### Zero page for speed
 Use `__zeropage` for hot globals (loop counters, current pointers). The `-Oz` flag automates this. Remember: no initialization at startup, incompatible with kernal.
 
+### Inlined code lands in the caller's section (bank switching!)
+When Oscar64 inlines a function, the code goes into the section of the *call site*, not into the section active where the function is defined. For cartridge projects with ROM banks that is fatal for any helper that switches banks: inlined into a caller in banked ROM, the bank switch runs from that ROM and pulls it away under the CPU. Mark such helpers `__noinline` so they stay in the RAM/common section they were written for. Seen twice in UBoot64-v2 (`mainloop()`, and a `fc3_callret(bank, func, back)` helper in 2026-10: inlined into bank-1 code, the switch to bank 3 crashed). Also check the `.map`: an inlined function has no entry of its own.
+
+### Uninitialized vs initialized globals choose the section
+Inside `#pragma data(x)`, an *initialized* global goes into data section `x`, but an *uninitialized* array/variable goes into the default `bss`. To keep a variable in a specific (e.g. resident) region, give it an initializer (`char buf[7] = {0};`). Found in UBoot64-v2's resident exit routine, whose parameters ended up in bss, which the program copy later overwrote.
+
 ### Volatile for hardware registers
 Always declare hardware-mapped pointers as `volatile unsigned char *`. The compiler will otherwise optimize away repeated reads.
 
@@ -1969,6 +1975,75 @@ targets.
 ### Named asm blocks conflict with C prototypes
 
 `__asm funcname { }` defines a function named `funcname`. If a C prototype `void funcname(void);` also exists, Oscar64 raises "Duplicate definition". Remove the prototype — named asm functions are directly callable from C without a prototype (the symbol is visible in the same translation unit).
+
+### Patching code by label, and inline-asm result handling (mandelbrot-upic, 2026-09-21)
+
+Findings from the 48 MHz support in `upic_viewer.c`, all checked in
+the `-g` `.asm` listing. `-g` does not change the PRG: the output was
+byte-identical to the non-`-g` build.
+
+- **Labels inside a named asm block are addressable from other code.**
+  With `__asm render_frame { ... dly: ldx #$87 ... rts }`, another
+  function's inline asm can write `sta render_frame.dly + 1` to patch
+  the immediate operand. This is the same `block.label` form `crt.c`
+  uses (`divmod.DM8`, `startup.exec`). This does not work for labels
+  inside a plain C function's inline `__asm { }`, so a routine whose
+  operands are patched has to become a named block.
+  - Converting a C function that held only an inline asm body into a
+    named block emitted the same bytes, once a trailing `rts` was
+    added by hand.
+  - Callers use `__asm { jsr render_frame }`.
+  - Converting it can change the order of objects in the region;
+    `render_frame` moved after `render_line_pixels`. Recheck the
+    `.map`, and check that any timing-critical branch still doesn't
+    cross a page.
+- **Taking a function's address as a data pointer:**
+  `(char *)(unsigned)fn` works. `(char *)fn` and `(char *)(void *)fn`
+  both fail with error 3012, "Cannot assign incompatible types".
+- **An inline asm loop wrapped in C control flow can be duplicated.**
+  A `for (;;) { __asm { ...; sta static_var } if (static_var ...) break; }`
+  compiled into three copies of the asm body, one for each loop state.
+  The first copy read `static_var` before any asm had written it.
+  Moving the whole loop, including its exit test, into a single
+  `__asm { }` block produced exactly one copy. Keep loops whose body
+  is inline asm entirely in asm.
+- **A static written only by asm and read by C stays a real load**,
+  even when it has a C initializer (`static unsigned char x = 2;`):
+  `lda x / bne` was emitted, not constant-folded. The initializer
+  replaced an asm `lda #2 / sta x` and saved 5 bytes.
+- **"Cannot place stack section" / "Cannot place heap section"**
+  means the default region (`main`) overflowed, not that the stack is
+  too small. To measure by how much, build a scratch copy with the
+  region widened (and any region above it moved up) and compare
+  `BSSEnd` with the original stack start. "Static stack usage exceeds
+  stack segment" is the separate error when `stacksize` is below the
+  statically computed need. Bisect `stacksize` to find the minimum.
+
+### Two -O2 code-generation traps (ultimate-uci-oscar64 Upic module, 2026-10-02, Oscar64 1.32.273)
+
+Both found on real hardware; both checked in the `.asm` listing.
+
+- **An inlined function returning `(char *)(integer expression)` can be
+  folded to a null pointer.** A helper such as
+  `char *col(char c) { return (char *)(0x1000 + ((unsigned)c << 8)); }`
+  compiled at `-O2` to a constant 0 at every inlined call site -- with a
+  constant argument (`col(0)`, `col(16)`) and even with a runtime one --
+  in all six formulations tried (`(char *)BASE + ...`, `* 256`, via an
+  `unsigned` local, `unsigned` parameter). `-O1` and `-O0` were correct,
+  and a function returning `unsigned` instead of a pointer was correct.
+  A warning "nullptr dereferenced" at a use of the result is the hint.
+  In the Upic module `uii_upic_column(0)` became 0, so a file read wrote
+  its data over the zero page, including the CPU port `$01`: I/O was
+  switched off and the UCI "disappeared" (status register `$FF`).
+  **Fix: declare such a helper `__noinline`** -- a real call computed the
+  right address for every argument.
+- **A discarded `volatile` read can be dropped.**
+  `(void)*(volatile char *)0xdc0d;` (acknowledging a pending CIA1
+  interrupt) produced no `LDA $DC0D` at all. The unacknowledged interrupt
+  kept the IRQ line low, so after every `RTI` the CPU re-entered the
+  raster handler and the main program never ran. **Fix: do register
+  reads whose only purpose is the side effect in inline assembly**
+  (`__asm { lda $dc0d }`), or store the value somewhere.
 
 ### Memory layout for Oric Atmos
 

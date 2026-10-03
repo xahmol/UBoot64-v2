@@ -52,7 +52,8 @@ There is no automated test suite; testing is on the real U64 through c64bridge (
 | `src/time.c` | 1 | NTP sync, colour editor, config UI |
 | `src/splash.c` | 1 | Startup splash screen |
 | `src/filebrowse.c` | 2 | File browser, REU-backed directory listing |
-| `src/convert.c` | 3 | Built-in conversion of v1/v2 config and slot files at start-up (#23) |
+| `src/convert.c` | 3 | Built-in conversion of v1/v2/v3 config and slot files at start-up (#23) |
+| `src/uciprg.c` | 3 | Slots that start a .prg from an Ultimate path via the REU (UCI mode) |
 | `src/uboot_upd12.c` | — | Standalone v1→v2 config upgrade utility |
 | `lib/ultimate-uci-oscar64/` | 0 | UCI library (git submodule, never edit here; manual in its `docs/UCILIB_MANUAL.md`) |
 | `include/fc3.c/h` | 0 | FC3 cartridge banking control |

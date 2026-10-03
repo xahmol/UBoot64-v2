@@ -73,34 +73,41 @@ extern int reudetected;
 #define V1_IMAGE_B_FILE 467 // char[20]
 #define V1_IMAGE_B_ID 487
 
-static long conv_read_to_reu(char *name, unsigned long addr)
-// Read a whole file into the REU.
-// Input:  name - file name in configpath
+long reu_read_file(char *dir, char *name, unsigned long addr, unsigned long max)
+// Read a whole file into the REU, through the UCI (also used by
+// src/uciprg.c; bank 3, so only already linked UCI functions are used: the
+// library code goes into the full bank 0).
+// Input:  dir  - folder (Ultimate path, ASCII)
+//         name - file name in it
 //         addr - REU address
+//         max  - largest size accepted
 // Output: number of bytes read, -1 if the file can't be opened or read,
-//         or is larger than CONV_MAXREAD
+//         or is larger than max
 {
     unsigned long count = 0;
+    unsigned long ask;
     unsigned got;
     unsigned bytesread;
 
-    uii_change_dir(configpath);
+    uii_change_dir(dir);
     uii_open_file(0x01, name);
     if (!UII_SUCCESS)
     {
         return -1;
     }
 
-    // Ask for one byte more than allowed, so an oversized file shows
+    // Ask for one byte more than allowed, so an oversized file shows; at
+    // most 32 KB per request (the length is 16 bit)
     do
     {
         got = 0;
-        uii_read_file((unsigned)(CONV_MAXREAD + 1 - count));
+        ask = max + 1 - count;
+        uii_read_file((unsigned)(ask > 0x8000UL ? 0x8000UL : ask));
         while (uii_isdataavailable() || uii_ismoredataavailable())
         {
             bytesread = uii_readdata();
             uii_accept();
-            if (count + bytesread > CONV_MAXREAD)
+            if (count + bytesread > max)
             {
                 uii_close_file();
                 return -1;
@@ -109,10 +116,17 @@ static long conv_read_to_reu(char *name, unsigned long addr)
             count += bytesread;
             got += bytesread;
         }
-    } while (got && count <= CONV_MAXREAD);
+    } while (got && count <= max);
 
     uii_close_file();
     return (long)count;
+}
+
+static long conv_read_to_reu(char *name, unsigned long addr)
+// Read a whole old config/slot file (in configpath) into the REU
+// Output: as reu_read_file(), up to CONV_MAXREAD bytes
+{
+    return reu_read_file(configpath, name, addr, CONV_MAXREAD);
 }
 
 static char conv_write_from_reu(char *name, unsigned long addr, unsigned long length)

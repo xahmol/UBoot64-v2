@@ -73,6 +73,7 @@
 #include "ultimate_dos_lib.h"
 #include "ultimate_time_lib.h"
 #include "ultimate_network_lib.h"
+#include "uciprg.h"
 #include "core.h"
 #include "fileio.h"
 #include "slotmenu.h"
@@ -446,7 +447,9 @@ void pickmenuslot()
             {
                 if (addmountflag == 1)
                 {
-                    if (strlen(Slot.file) != 0)
+                    // (A program from an Ultimate path doesn't come from
+                    // drive A, so it stays)
+                    if (strlen(Slot.file) != 0 && !(Slot.command & COMMAND_UCIPRG))
                     {
                         cwin_console_printf(&cw, cfg.colors.text, "Slot boots a program from drive A.\n");
                         cwin_console_printf(&cw, cfg.colors.text, "Replace with this mount? Y/N ");
@@ -462,6 +465,7 @@ void pickmenuslot()
                             strcpy(Slot.path, "");
                             Slot.runboot = 0;
                             Slot.device = 0;
+                            Slot.command &= ~COMMAND_UCIPRG;
                         }
                     }
 
@@ -471,6 +475,34 @@ void pickmenuslot()
                     strncpy(Slot.image_a_file, imageaname, MAXFILENAME - 1);
                     Slot.image_a_file[MAXFILENAME - 1] = 0;
                     Slot.command = Slot.command | COMMAND_IMGA; // Set image A bit in command flags
+                }
+                else if (addmountflag == 4)
+                {
+                    // A program from an Ultimate path (UCI mode), loaded via
+                    // the REU at boot; the browser passes it in imagebpath/
+                    // imagebname (ASCII). Replaces a program from a drive.
+                    if (strlen(Slot.file) != 0 && !(Slot.command & COMMAND_UCIPRG))
+                    {
+                        cwin_console_printf(&cw, cfg.colors.text, "Slot boots a program from a drive.\n");
+                        cwin_console_printf(&cw, cfg.colors.text, "Replace it? Y/N ");
+                        yesno = getkey(128);
+                        cwin_console_printf(&cw, cfg.colors.text, "%c", yesno);
+                        if (yesno == 78)
+                        {
+                            proceed = 0;
+                        }
+                    }
+                    if (proceed)
+                    {
+                        strncpy(Slot.file, imagebname, MAXFILENAME - 1);
+                        Slot.file[MAXFILENAME - 1] = 0;
+                        strncpy(Slot.path, imagebpath, MAXPATHLEN - 1);
+                        Slot.path[MAXPATHLEN - 1] = 0;
+                        Slot.runboot = pathrunboot & ~EXEC_MOUNT;
+                        Slot.device = 0;
+                        Slot.partition = 0;
+                        Slot.command = Slot.command | COMMAND_UCIPRG;
+                    }
                 }
                 else if (addmountflag == 3)
                 {
@@ -520,6 +552,7 @@ void pickmenuslot()
             }
             strncpy(Slot.file, pathfile, MAXFILENAME - 1);
             Slot.file[MAXFILENAME - 1] = 0;
+            Slot.command &= ~COMMAND_UCIPRG; // A program from a drive now
 
             if (runmountflag || fb_uci_mode)
             {
@@ -870,7 +903,18 @@ static void apply_program_settings(void)
         return;
     }
 
-    if (Slot.command & COMMAND_IMGA)
+    if (Slot.command & COMMAND_UCIPRG)
+    {
+        // A program from an Ultimate path: <program>.cfg next to it
+        if (strlen(Slot.path) + strlen(Slot.file) + 5 > MAXPATHLEN)
+        {
+            return;
+        }
+        strcpy(settingspath, Slot.path);
+        name = strlen(settingspath);
+        strcat(settingspath, Slot.file);
+    }
+    else if (Slot.command & COMMAND_IMGA)
     {
         if (strlen(Slot.image_a_path) + strlen(Slot.image_a_file) + 5 > MAXPATHLEN)
         {
@@ -970,6 +1014,15 @@ void runbootfrommenu(char select)
         }
         load_reu_with_reroute(Slot.reu_path, Slot.reu_image, Slot.reusize);
         ErrorCheckMmounting();
+    }
+
+    // Program from an Ultimate path (UCI mode slot): via the REU
+    if (Slot.command & COMMAND_UCIPRG)
+    {
+        // In bank 3 (src/uciprg.c); returns only when it can't start the
+        // program, so bank 1 is mapped back for this code
+        fc3_callret(3, uciprg_boot, 1);
+        return;
     }
 
     // Enter correct directory path on correct device number

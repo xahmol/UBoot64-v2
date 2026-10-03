@@ -1319,6 +1319,16 @@ static char is_settings_file(const char *name)
   return (a == 0x63 && b == 0x66 && c == 0x67) || (a == 0x75 && b == 0x73 && c == 0x72); // cfg, usr
 }
 
+static char is_prg_file(const char *name)
+// Whether an (ASCII) file name ends in .prg, any case
+// Output: 1 = program file
+{
+  unsigned l = strlen(name);
+
+  return l >= 5 && name[l - 4] == 0x2e && (name[l - 3] | 0x20) == 0x70 &&
+         (name[l - 2] | 0x20) == 0x72 && (name[l - 1] | 0x20) == 0x67; // .prg
+}
+
 #pragma optimize(0)
 void browse_menu(void)
 // Draw the key-reference side panel; also shows current UCI/IEC, trace, comma1, and demo state
@@ -2250,6 +2260,22 @@ void mainLoopBrowse(void)
           dir_draw(0);
           browse_menu();
         }
+        break;
+      }
+      // UCI mode: a .prg file becomes a slot that loads it from this
+      // Ultimate path via the REU (pickmenuslot(), addmountflag 4; path and
+      // name in imagebpath/imagebname, ASCII)
+      if (fb_uci_mode && presentdir.firstelement && is_prg_file(presentdirelement.name))
+      {
+        addmountflag = 4;
+        strncpy(imagebname, presentdirelement.name, MAXFILENAME);
+        imagebname[MAXFILENAME - 1] = 0;
+        uii_get_path();
+        strncpy(imagebpath, uii_data, MAXPATHLEN);
+        imagebpath[MAXPATHLEN - 1] = 0;
+        pathrunboot = comma1 * EXEC_COMMA1 + demomode * EXEC_DEMO;
+        fb_selection_made = 1;
+        done = 1;
         break;
       }
       // Executable PRG?
