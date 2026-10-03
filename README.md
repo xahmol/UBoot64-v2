@@ -57,6 +57,17 @@ Link to latest build:
 
 Version 4.0.0 - (in development):
 
+- Major version 4: the configuration and slot file format changed again (format v4, a settings file per slot). Version 4.0.0 converts the files of all earlier versions itself (see below).
+- Old configuration and slot files (v1, v2 and v3) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`, `.v3`). The file format is now v4 (a settings file per slot). The separate upgrade tools are no longer needed (they still come with this release, for v1 and v2).
+- Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+), and at every start a baseline file `uboot64/uboot64.cfg`. A slot can also get its own settings file: **S** in the file browser. Switch it all off with **C** in **F5**. See [Program settings files](#program-settings-files).
+- Loose `.prg` files can now be added to a slot from the file browser's UCI mode (**ENTER**): UBoot64 loads them through the REU, without a drive or disk image. See [Programs from UCI mode](#programs-from-uci-mode).
+- **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
+- Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
+- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.3.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
+- Known issues, see [Known issues](#known-issues): programs started from UBoot64 get no Ultimate Audio (#25).
+
+Fixes and smaller changes:
+
 - Directory block sizes in IEC mode are no longer shown modulo 256 (a 300-block file showed as 44).
 - IEC directory listings: locked files (`PRG<`) and file types UBoot64 does not know no longer replace the disk name at the top of the listing; they show as normal entries.
 - Slot editor: an earlier change is no longer lost when a later action in the same session changes nothing.
@@ -76,13 +87,6 @@ Version 4.0.0 - (in development):
 - The file browser's side menu shows **M** (run mount) in IEC mode inside a disk image.
 - Messages in the file browser no longer leave the last letter of the file type column on screen.
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
-- Major version 4: the configuration and slot file format changed again (format v4, a settings file per slot). Version 4.0.0 converts the files of all earlier versions itself (see below).
-- Old configuration and slot files (v1, v2 and v3) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`, `.v3`). The file format is now v4 (a settings file per slot). The separate upgrade tools are no longer needed (they still come with this release, for v1 and v2).
-- Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
-- Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+), and at every start a baseline file `uboot64/uboot64.cfg`. A slot can also get its own settings file: **S** in the file browser. Switch it all off with **C** in **F5**. See [Program settings files](#program-settings-files).
-- Loose `.prg` files can now be added to a slot from the file browser's UCI mode (**ENTER**): UBoot64 loads them through the REU, without a drive or disk image. See [Programs from UCI mode](#programs-from-uci-mode).
-- **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
-- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.3.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
 
 Version 3.0.1 - 20260913:
 
