@@ -489,6 +489,7 @@ class DeviceRun:
                 else:
                     self.log("ok settings %s: %s" % (name, "error shown, nothing changed" if watch else "applied (%s)" % value))
             self.slot_settings_step(folder)
+            self.iec_settings_step(folder)
 
             # Baseline file uboot64/uboot64.cfg on the config's storage,
             # applied at every start (in a folder: the firmware can't load
@@ -547,11 +548,89 @@ class DeviceRun:
             self.u.delete_file(folder + "/OWN.CFG")
             self.u.delete_file(folder + "/E2E.CFG")
 
+    def iec_settings_step(self, folder):
+        """S in IEC mode on the SoftIEC drive (#22): own.cfg (listed as SEQ
+        under its full name) and x.usr (listed as "x", type USR) picked for
+        slot 0; the stored paths are checked, then a boot applies x.usr.
+        Uses the SoftIEC root partition (F8 in F5), so F3 opens the whole
+        file system. Skipped when the SoftIEC drive is off."""
+        softiec = self.u.softiec_id()
+        if not softiec:
+            self.log("skip IEC settings: the SoftIEC drive is off")
+            return
+        header = "[%02d]" % softiec
+        st = folder.strip("/").split("/")[0]
+        cat, item = "Printer Settings", "Ink density"
+        self.u.write_file(folder + "/OWN.CFG", b"[Printer Settings]\nInk density=High\n")
+        self.u.write_file(folder + "/X.USR", b"[Printer Settings]\nInk density=Low\n")
+        try:
+            self.start()
+            self.keys(["f5"], "Back to main menu")
+            self.keys([["left_shift", "f7"]], "SoftIEC root partition (fw 3.15+): On", retry=False)
+            self.keys(["f7"], "Make your choice.", row=24, timeout=15.0)
+            results = {}
+            for entry, expect in (("own.cfg", b"/e2etest/own.cfg"), ("x", b"/e2etest/x.usr")):
+                self.start()  # the browser opens in UCI mode again
+                self.keys(["f1"], "Filebrowser", row=1, timeout=15.0)
+                self.keys(["f3"], "IEC mode", timeout=20.0)
+                # +/- cycles the devices: go to the SoftIEC drive
+                for _ in range(25):
+                    s = self.screen()
+                    if s.row(3).startswith(header):
+                        break
+                    self.keys_until(["plus"], lambda t, r=s.row(3): t.row(3) != r and t.row(3).startswith("["),
+                                    "the next device", timeout=10.0, stable=False)
+                else:
+                    raise StepFailed("IEC settings: SoftIEC drive %s not reached with +" % header)
+                # The drive keeps its current directory between starts: go
+                # to the root (of UBoot64's root partition) first
+                self.keys_until(["arrow_up"], lambda t: any(self.browser_selected(t) == n for n in (st.lower(), "flash", "temp")),
+                                "the root directory", timeout=10.0, stable=False)
+                self.walk_browser(st.lower())
+                self.enter_dir(st.lower())
+                self.walk_browser("e2etest")
+                self.enter_dir("e2etest")
+                self.walk_browser(entry)
+                self.keys(["s"], "Choose slot by pressing key:", timeout=10.0)
+                self.keys(["0"], "Edit? Y/N")
+                self.keys_until(["y"], lambda s: s.contains("Choose name for slot:"), "the name input", stable=False)
+                self.keys(["return"], "Make your choice.", row=24, timeout=20.0)
+                got = old_configs.slot_field(self.slot_file(st), 0, "settings")
+                results[entry] = got
+                self.log("IEC settings: S on %s stored %r" % (entry, got))
+                if not got.lower().endswith(expect):
+                    self.fail("IEC settings %s: slot 0 has %r, expected ...%r" % (entry, got, expect))
+                    return
+            self.boot_slot0()
+            value = self.u.get_config(cat, item)
+            if value != "Low":
+                self.fail("IEC settings: %s is %r after boot, expected 'Low' (x.usr)" % (item, value))
+            else:
+                self.log("ok IEC settings: own.cfg and x.usr picked with S, x.usr applied")
+        finally:
+            self.u.delete_file(folder + "/OWN.CFG")
+            self.u.delete_file(folder + "/X.USR")
+
+    @staticmethod
+    def browser_selected(s):
+        """Name of the selected browser entry (UCI mode: the name starts the
+        row; IEC mode: block count, then the name), "" if none."""
+        rows = [y for y in range(5, 24) if s.codes[y * 40 + 2] & 0x80]
+        if not rows:
+            return ""
+        text = s.row(rows[0])[:21].strip()
+        first, _, rest = text.partition(" ")
+        return rest.strip() if first.isdigit() and rest else text
+
+    def enter_dir(self, name):
+        """RETURN on the selected directory `name`; waits for the new listing."""
+        self.u.tap_keys(["return"])
+        time.sleep(0.5)
+        self.wait_for(lambda s: self.browser_selected(s) not in ("", name), "the directory " + name, 10.0, stable=False)
+
     def walk_browser(self, name):
         """Move the browser's selection down to the entry `name`."""
-        def selected(s):
-            rows = [y for y in range(5, 25) if s.codes[y * 40 + 2] & 0x80]
-            return s.row(rows[0])[:22].rstrip() if rows else ""
+        selected = self.browser_selected
 
         s = self.wait_for(lambda t: selected(t) != "", "the listing", 10.0, stable=False)
         for _ in range(80):

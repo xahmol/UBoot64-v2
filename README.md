@@ -349,7 +349,7 @@ The filebrowser is based on and inspired by the DraBrowse program from <https://
 | **A** | Select highlighted image (`.Dxx`) to be mounted on drive A |
 | **B** | Select highlighted image (`.Dxx`) to be mounted on drive B |
 | **M** | Select highlighted program to run from the disk image on drive A |
-| **S** | UCI mode: select the highlighted settings file (`.cfg` or `.usr`) as the slot's own settings file, applied when the slot boots (see [Program settings files](#program-settings-files)) |
+| **S** | Select the highlighted settings file (`.cfg` or `.usr`) as a slot's own settings file, applied when the slot boots (see [Program settings files](#program-settings-files)). UCI mode, and IEC mode on the Ultimate's SoftIEC drive (firmware 3.15+) |
 | **1** | Toggle ,1 load |
 | **O** | Toggle demo mode |
 | **Q** or **F7** | Quit to main menu |
@@ -554,7 +554,7 @@ With firmware 3.15 or later the Ultimate applies `<program>.cfg` by itself when 
 * a slot that mounts a disk image on drive A: `<image name>.cfg` next to the image, e.g. `gdos64.cfg` next to `gdos64.d81`;
 * a slot on the Ultimate's SoftIEC drive (made with the SoftIEC root partition, see **F8**): `<program>.cfg` next to the program.
 
-You can also give a slot its own settings file: in the file browser (UCI mode), highlight a `.cfg` or `.usr` file, press **S** and pick the slot. That file is then used instead of the automatic lookup above, for any kind of slot, also one on a real drive. If it's missing at boot, UBoot64 says so and boots anyway.
+You can also give a slot its own settings file: in the file browser, highlight a `.cfg` or `.usr` file, press **S** and pick the slot. This works in UCI mode, and in IEC mode on the Ultimate's SoftIEC drive (firmware 3.15+; there a `.usr` file is listed without its extension, as a USR file). So you can make a slot in IEC mode and add its settings file without switching modes. That file is then used instead of the automatic lookup above, for any kind of slot, also one on a real drive. If it's missing at boot, UBoot64 says so and boots anyway.
 
 If there is no `.cfg`, UBoot64 tries `<name>.usr`, as the Ultimate does. The file can't be in the root of a USB stick or SD card: the Ultimate's firmware (3.15a) can't load settings files from there, so an image directly in `/usb0/` gets no settings. The settings are applied first, before the disk images are mounted, so they can change drive types. The boot screen shows "Settings from <file>." If the file has a line the Ultimate can't apply, UBoot64 shows the Ultimate's message for 3 seconds and boots anyway. No file, or older firmware without this function: nothing happens.
 

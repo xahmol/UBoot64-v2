@@ -169,6 +169,15 @@ class Ultimate:
             out.update({k: v for k, v in entry.items() if k in ("a", "b")})
         return out
 
+    def softiec_id(self):
+        """Bus ID of the Ultimate's SoftIEC drive ("IEC Drive"), or 0 when
+        it is off."""
+        for entry in self._json("GET", "/v1/drives").get("drives", []):
+            if "IEC Drive" in entry:
+                d = entry["IEC Drive"]
+                return d.get("bus_id", 0) if d.get("enabled") else 0
+        return 0
+
     def drive_mount(self, drive, image):
         self._json("PUT", "/v1/drives/%s:mount" % drive, {"image": image})
 

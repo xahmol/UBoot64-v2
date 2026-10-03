@@ -1356,11 +1356,17 @@ void browse_menu(void)
   cwin_putat_string(&cw, 26, ++menuy, " F7 Quit", cfg.colors.text);
 
   // In IEC mode inside a disk image (mounted from UCI mode, or entered on
-  // the SoftIEC drive): M makes a mount-and-run slot. Takes the place of
-  // the blank line, so the panel still fits 25 rows with "Inside mount".
+  // the SoftIEC drive): M makes a mount-and-run slot; elsewhere on the
+  // SoftIEC drive, S picks a settings file. Either takes the place of the
+  // blank line, so the panel still fits 25 rows with "Inside mount".
   if (!fb_uci_mode && (inside_mount || iec_inimage))
   {
     cwin_putat_string(&cw, 26, ++menuy, "  M Run mount", cfg.colors.text);
+  }
+  else if (!fb_uci_mode && iec_hostpaths)
+  {
+    // SoftIEC drive (firmware 3.15+): S picks a settings file (#22)
+    cwin_putat_string(&cw, 26, ++menuy, "  S Settings", cfg.colors.text);
   }
   else
   {
@@ -2168,19 +2174,49 @@ void mainLoopBrowse(void)
     case 's':
       // The slot's own settings file (GitHub #22): a .cfg or .usr file,
       // added to a slot like a drive B image (pickmenuslot(), addmountflag
-      // 3; path and name passed in imagebpath/imagebname). UCI mode only,
-      // where names and the path are the Ultimate's own (ASCII).
-      if (fb_uci_mode && presentdir.firstelement && is_settings_file(presentdirelement.name))
+      // 3; path and name passed in imagebpath/imagebname, ASCII).
+      if (!presentdir.firstelement)
       {
-        addmountflag = 3;
+        break;
+      }
+      if (fb_uci_mode)
+      {
+        // UCI mode: the names and the path are the Ultimate's own
+        if (!is_settings_file(presentdirelement.name))
+        {
+          break;
+        }
         strncpy(imagebname, presentdirelement.name, MAXFILENAME);
         imagebname[MAXFILENAME - 1] = 0;
         uii_get_path();
         strncpy(imagebpath, uii_data, MAXPATHLEN);
         imagebpath[MAXPATHLEN - 1] = 0;
-        fb_selection_made = 1;
-        done = 1;
       }
+      else
+      {
+        // IEC mode on the SoftIEC drive (firmware 3.15+): the drive tells
+        // the host path and the name (iec_fatpath()). The drive lists
+        // name.cfg as SEQ under its full name, but name.usr as "name" with
+        // type USR (a CBM file type), so .usr is added back for USR files.
+        if (!iec_hostpaths || iec_inimage ||
+            !iec_fatpath(presentdirelement.name, imagebpath, imagebname))
+        {
+          break;
+        }
+        if (presentdirelement.meta.type == CBM_T_USR && !is_settings_file(imagebname) &&
+            strlen(imagebname) + 5 <= MAXFILENAME)
+        {
+          static const char ext_usr[] = {0x2e, 0x75, 0x73, 0x72, 0x00}; // ".usr" in ASCII
+          strcat(imagebname, ext_usr);
+        }
+        if (!is_settings_file(imagebname))
+        {
+          break;
+        }
+      }
+      addmountflag = 3;
+      fb_selection_made = 1;
+      done = 1;
       break;
 
     case 'm':
