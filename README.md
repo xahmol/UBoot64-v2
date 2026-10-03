@@ -38,6 +38,8 @@ Boot menu for C64 Ultimate enabled devices — v2 (Oscar64 rebuild)
 
 - [F7: Quit to BASIC](#f7-quit-to-basic)
 
+[Known issues](#known-issues)
+
 [Credits](#credits)
 
 ![Splash](<Screenshots/UBoot64 - Splash.png>)
@@ -576,6 +578,13 @@ The settings are not saved: they last until the Ultimate is switched off, or unt
 ([Back to contents](#contents))
 
 Exit the boot menu to the BASIC Ready prompt. Memory is erased on exit.
+
+## Known issues
+([Back to contents](#contents))
+
+* **No Ultimate Audio for programs started from UBoot64.** A program that uses Ultimate Audio ($DF20–$DFFF) doesn't find it when started from a UBoot64 slot, even with "Map Ultimate Audio $DF20-DFFF" enabled in the Ultimate's settings (or in a program settings file). The Ultimate switches Ultimate Audio off as long as a cartridge of UBoot64's type (Final Cartridge III) is plugged in, and that holds until the C64 is reset without it. Start such programs from the Ultimate's own file browser instead. Under investigation: [GitHub issue #25](https://github.com/xahmol/UBoot64-v2/issues/25).
+* **Rare hang at start-up.** Very occasionally the start stops after the drive list (before "IDs needing manual power switching"), seen in automated tests right after old configuration files were converted. Restarting UBoot64 gets past it. [GitHub issue #24](https://github.com/xahmol/UBoot64-v2/issues/24).
+* **Settings files in the root of a storage device** can't be loaded by the Ultimate's firmware (3.15a), so a disk image or program directly in `/usb0/` or `/sd/` gets no automatic settings file, and the baseline file lives in a folder (`uboot64/uboot64.cfg`). See [Program settings files](#program-settings-files).
 
 ## Credits
 
