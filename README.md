@@ -323,7 +323,7 @@ From v4.0.0 a loose `.prg` file in UCI mode can be added to a slot directly: hig
 * With **,1 Load** off the program goes to $0801, as `LOAD"NAME",8` would; with it on, to the address in the file, as `LOAD"NAME",8,1`.
 * A BASIC command of the slot (**F2** in the edit menu) is typed before `RUN`.
 * A settings file `<program>.cfg` next to the program is applied automatically (see [Program settings files](#program-settings-files)).
-* Limits: the program must not overlap $C000–$C0FF, where UBoot64's last bit of code runs while it copies the program. A REU of at least 128 KB is needed (the program is staged in the last 64 KB); a REU preload image that fills the whole REU can't be combined with such a program in one slot.
+* Programs of up to 64 KB work, also ones that fill memory up to the top like Mandelbrot Upic: the program is copied into RAM with the REU while all memory is switched to RAM, as the Ultimate's own loader does. Limits: the program must load at $0800 or higher (UBoot64's last few bytes of code, the keyboard buffer and the screen are below that). A REU of at least 128 KB is needed (the program is staged in the last 64 KB); a REU preload image that fills the whole REU can't be combined with such a program in one slot.
 
 #### Mount/command-only slots
 
@@ -572,7 +572,7 @@ With firmware 3.15 or later the Ultimate applies `<program>.cfg` by itself when 
 
 You can also give a slot its own settings file: in the file browser, highlight a `.cfg` or `.usr` file, press **S** and pick the slot. This works in UCI mode, and in IEC mode on the Ultimate's SoftIEC drive (firmware 3.15+; there a `.usr` file is listed without its extension, as a USR file). So you can make a slot in IEC mode and add its settings file without switching modes. That file is then used instead of the automatic lookup above, for any kind of slot, also one on a real drive. If it's missing at boot, UBoot64 says so and boots anyway.
 
-If there is no `.cfg`, UBoot64 tries `<name>.usr`, as the Ultimate does. The file can't be in the root of a USB stick or SD card: the Ultimate's firmware (3.15a) can't load settings files from there, so an image directly in `/usb0/` gets no settings. The settings are applied first, before the disk images are mounted, so they can change drive types. The boot screen shows "Settings from <file>." If the file has a line the Ultimate can't apply, UBoot64 shows the Ultimate's message for 3 seconds and boots anyway. No file, or older firmware without this function: nothing happens.
+If there is no `.cfg`, UBoot64 tries `<name>.usr`, as the Ultimate does. Lines that don't apply on this Ultimate (for example a `Turbo Control` line for another model, in a file made for several) are skipped, as the Ultimate's own browser does; the boot screen says how many. The file can't be in the root of a USB stick or SD card: the Ultimate's firmware (3.15a) can't load settings files from there, so an image directly in `/usb0/` gets no settings. The settings are applied first, before the disk images are mounted, so they can change drive types. The boot screen shows "Settings from <file>." No file, or older firmware without this function: nothing happens.
 
 The settings are not saved: they last until the Ultimate is switched off, or until something changes them again, like the settings applied by the Ultimate's own browser. Slots on a real drive, or on drive emulation without an image, have no Ultimate path, so no settings file is looked for.
 

@@ -10,11 +10,11 @@ extern char execute_keys[10];
 // Program from an Ultimate path (UCI mode slots): set by the slot boot
 // before fc3_exit(), which then copies the program from the REU into C64
 // memory after the BASIC cold start. uciprg_dma is written as-is to the
-// REU registers $DF02-$DF08: C64 address (2), REU address (3), length (2).
+// REU registers $DF02-$DF08: C64 address (2), REU address (3), length (2);
+// uciprg_stub is the routine that finishes the start from $033C (fc3.c).
 extern char uciprg_go;
 extern char uciprg_dma[7];
-extern unsigned uciprg_end;
-extern char uciprg_link;
+extern char uciprg_stub[31];
 
 // Function prototypes
 void fc3_bank(char bank);

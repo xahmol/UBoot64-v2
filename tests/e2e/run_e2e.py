@@ -470,7 +470,7 @@ class DeviceRun:
             cases = (
                 ("E2E.CFG", b"[Printer Settings]\nInk density=High\n", "High", None),
                 ("E2E.USR", b"[Printer Settings]\nInk density=Low\n", "Low", None),
-                ("E2E.CFG", b"[Printer Settings]\nInk density=Nonsense\n", "Low", "Errors in"),
+                ("E2E.CFG", b"[Printer Settings]\nInk density=Nonsense\n", "Low", "(1 line skipped)"),
             )
             for name, content, expect, watch in cases:
                 for old in ("E2E.CFG", "E2E.USR"):
@@ -487,7 +487,7 @@ class DeviceRun:
                 elif watch and not seen:
                     self.fail("settings %s: %r not shown at boot" % (name, watch))
                 else:
-                    self.log("ok settings %s: %s" % (name, "error shown, nothing changed" if watch else "applied (%s)" % value))
+                    self.log("ok settings %s: %s" % (name, "skipped line reported, nothing changed" if watch else "applied (%s)" % value))
             self.slot_settings_step(folder)
             self.iec_settings_step(folder)
             self.uci_prg_step(folder)
@@ -583,8 +583,13 @@ class DeviceRun:
                                     "the next device", timeout=10.0, stable=False)
                 else:
                     raise StepFailed("IEC settings: SoftIEC drive %s not reached with +" % header)
-                # The drive keeps its current directory between starts: go
-                # to the root (of UBoot64's root partition) first
+                # The drive keeps its partition and directory between starts
+                # (and other users change them): select UBoot64's root
+                # partition with F4, then go to its root
+                if not self.screen().row(3).startswith(header + " uboot"):
+                    self.keys([["left_shift", "f3"]], "Partitions", row=3, timeout=10.0)
+                    self.walk_browser("uboot")
+                    self.keys(["return"], header + " uboot", row=3, timeout=10.0)
                 self.keys_until(["arrow_up"], lambda t: any(self.browser_selected(t) == n for n in (st.lower(), "flash", "temp")),
                                 "the root directory", timeout=10.0, stable=False)
                 self.walk_browser(st.lower())

@@ -52,8 +52,8 @@ static char uciprg_stage(void)
 // it into C64 memory after the BASIC cold start. Staged in the last 64 KB
 // of the REU, so a REU preload image of the slot (loaded before this)
 // stays intact unless it fills the whole REU. Loaded at $0801 as a plain
-// LOAD would, or at its own address with ",1"; it must not overlap the
-// resident exit routine at $C000-$C0FF.
+// LOAD would, or at its own address with ",1"; anywhere from $0800 up
+// (the copy runs in all-RAM mode from the cassette buffer, see fc3.c).
 // Output: 1 = staged, 0 = error (reported)
 {
     long lsize;
@@ -95,9 +95,11 @@ static char uciprg_stage(void)
     {
         return uciprg_fail("Program doesn't fit in memory.");
     }
-    if (dest < 0xc100 && dest + len > 0xc000)
+    if (dest < 0x0800)
     {
-        return uciprg_fail("Program overlaps $C000-$C0FF,\nwhich UBoot64 needs to start it.");
+        // The finishing stub ($033C), the keyboard buffer and the screen
+        // line with RUN are below $0800
+        return uciprg_fail("Programs below $0800 can't be\nstarted this way.");
     }
 
     uciprg_dma[0] = dest & 0xff;
@@ -107,8 +109,9 @@ static char uciprg_stage(void)
     uciprg_dma[4] = ((reuaddr + 2) >> 16) & 0xff;
     uciprg_dma[5] = len & 0xff;
     uciprg_dma[6] = len >> 8;
-    uciprg_end = dest + len;
-    uciprg_link = (dest == 0x0801);
+    uciprg_stub[14] = (dest + len) & 0xff;  // lda #<end
+    uciprg_stub[20] = (dest + len) >> 8;    // lda #>end
+    uciprg_stub[25] = (dest == 0x0801) ? 0x20 : 0x2c; // jsr LINKPRG, or bit as a no-op
     uciprg_go = 1;
     return 1;
 }

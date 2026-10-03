@@ -807,20 +807,21 @@ static char load_settings_try(unsigned name, char quiet)
     }
     if (uii_status[0] == '8' && uii_status[1] == '9')
     {
-        // The reply is the firmware's log of the lines it couldn't
-        // apply: show its first 2 screen lines, newlines as spaces
-        asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
-        cwin_console_printf(&cw, cfg.colors.error, "Errors in %s:\n", linebuffer);
-        asc2pet_path(linebuffer, uii_data, 80);
-        for (x = 0; linebuffer[x]; x++)
+        // Some lines didn't apply; the others did. Common for a .cfg made
+        // for several Ultimate models (e.g. a Turbo Control line for both
+        // the Ultimate 64 and the C64 Ultimate): the Ultimate's own browser
+        // skips them silently. Count them in the firmware's log (one
+        // "Line n: ..." entry each) and say so in one line.
+        unsigned skipped = 0;
+        for (x = 0; uii_data[x]; x++)
         {
-            if (linebuffer[x] < 0x20)
+            if (uii_data[x] == 0x4c && uii_data[x + 1] == 0x69 && uii_data[x + 2] == 0x6e && uii_data[x + 3] == 0x65) // "Line"
             {
-                linebuffer[x] = 0x20;
+                skipped++;
             }
         }
-        cwin_console_printf(&cw, cfg.colors.text, "%s\n", linebuffer);
-        delay(3);
+        asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
+        cwin_console_printf(&cw, cfg.colors.text, "Settings from %s\n(%u line%s skipped).\n", linebuffer, skipped, (skipped == 1) ? "" : "s");
         return 1;
     }
     // 88 (no such file); anything else, such as firmware without the

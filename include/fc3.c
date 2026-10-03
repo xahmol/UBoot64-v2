@@ -7,12 +7,38 @@
 
 char execute_commands[200];
 char execute_keys[10];
-// Initialized, so they are in fc3data (resident at $C000), not in bss:
-// the copy can overwrite bss
+// Program from an Ultimate path: in bank 0's data (RAM from $0900),
+// initialized so they are not in bss. fc3_exit() reads all of them before
+// the REU transfer, which may overwrite that RAM; the resident fc3data at
+// $C000 has no room for them.
+#pragma data(data)
 char uciprg_go = 0;
 char uciprg_dma[7] = {0};
-unsigned uciprg_end = 0;
-char uciprg_link = 0;
+// The last part of the start, copied to the cassette buffer at $033C and
+// run there, so the program may cover all RAM from $0800 up, this routine
+// at $C000 and the I/O area included: with $01 = $34 (all RAM) the armed
+// REU transfer is started by a write to $FF00, then I/O comes back, the
+// end-of-program pointers are set (bytes 14 and 20, patched by
+// src/uciprg.c), BASIC is relinked (byte 25: $20 JSR, or $2C BIT as a
+// no-op for a program not at $0801) and READY. is printed.
+char uciprg_stub[31] = {
+    0x78,             // sei
+    0xa9, 0x34,       // lda #$34
+    0x85, 0x01,       // sta $01        all RAM
+    0x8d, 0x00, 0xff, // sta $ff00      start the REU transfer
+    0xa9, 0x37,       // lda #$37
+    0x85, 0x01,       // sta $01        I/O, BASIC and Kernal back
+    0x58,             // cli
+    0xa9, 0x00,       // lda #<end      (operand: byte 14)
+    0x85, 0x2d,       // sta $2d        VARTAB
+    0x85, 0xae,       // sta $ae
+    0xa9, 0x00,       // lda #>end      (operand: byte 20)
+    0x85, 0x2e,       // sta $2e
+    0x85, 0xaf,       // sta $af
+    0x20, 0x33, 0xa5, // jsr $a533      LINKPRG (25: or $2c, bit)
+    0x4c, 0x74, 0xa4  // jmp $a474      READY.
+};
+#pragma data(fc3data)
 char bootmsg[11] = {13, 'u', 'b', 'o', 'o', 't', '6', '4', '.', 13, 0};
 
 void fc3_bank(char bank)
@@ -139,10 +165,10 @@ fc3exit_next2:
         jsr $FFF0    // PLOT: C64 Kernal routine at $FFF0
 
 	    // Program from an Ultimate path: the slot boot loaded it into the
-	    // REU; copy it into place now that BASIC is set up and the commands
-	    // are on screen and in the keyboard buffer (execute_commands is in
-	    // bss, which the copy may overwrite), then set the end-of-program
-	    // pointers (and relink a BASIC program) as LOAD does
+	    // REU. Now that BASIC is set up and the commands are on screen and
+	    // in the keyboard buffer, arm the REU transfer and finish from the
+	    // stub in the cassette buffer (see uciprg_stub), since the program
+	    // may overwrite this routine and the I/O area.
 	    lda uciprg_go
 	    beq fc3exit_noprg
 	    ldx #$06
@@ -153,17 +179,15 @@ fc3exit_dma:
 	    bpl fc3exit_dma
 	    lda #$00
 	    sta $DF0A	// Both addresses count up
-	    lda #$91	// Execute now, REU -> C64
+	    ldx #30
+fc3exit_stub:
+	    lda uciprg_stub,x
+	    sta $033C,x
+	    dex
+	    bpl fc3exit_stub
+	    lda #$81	// Execute on a write to $FF00, REU -> C64
 	    sta $DF01
-	    lda uciprg_end
-	    sta $2D		// VARTAB: end of the program
-	    sta $AE
-	    lda uciprg_end+1
-	    sta $2E
-	    sta $AF
-	    lda uciprg_link
-	    beq fc3exit_noprg
-	    jsr $A533	// LINKPRG: relink the BASIC lines
+	    jmp $033C
 fc3exit_noprg:
 
 	    // Print adapted READY prompt.
