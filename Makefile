@@ -48,6 +48,9 @@ UCILIB = lib/ultimate-uci-oscar64
 UCILIB_SRCS = $(wildcard $(UCILIB)/include/*.c $(UCILIB)/include/*.h)
 
 # Common compile flags
+# UII_NETWORK_*: the library's section hook (1.3.0) puts its network module
+# into cartridge bank 1: only the NTP code there (src/time.c) uses it, and
+# bank 0 is full.
 CFLAGS  = -i=include \
           -i=$(UCILIB)/include \
           -tm=$(SYS) \
@@ -58,7 +61,9 @@ CFLAGS  = -i=include \
           -O2 \
           -dNOFLOAT \
           -dHEAPCHECK \
-          -dVERSION="\"$(VERSION)\""
+          -dVERSION="\"$(VERSION)\"" \
+          -dUII_NETWORK_CODE=bcode1 \
+          -dUII_NETWORK_DATA=bdata1
 
 CFLAGSUPD = -i=include \
             -i=$(UCILIB)/include \

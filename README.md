@@ -80,7 +80,7 @@ Version 4.0.0 - (in development):
 - Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+), and at every start a baseline file `uboot64/uboot64.cfg`. A slot can also get its own settings file: **S** in the file browser. Switch it all off with **C** in **F5**. See [Program settings files](#program-settings-files).
 - Loose `.prg` files can now be added to a slot from the file browser's UCI mode (**ENTER**): UBoot64 loads them through the REU, without a drive or disk image. See [Programs from UCI mode](#programs-from-uci-mode).
 - **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
-- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.2.1), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
+- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.3.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
 
 Version 3.0.1 - 20260913:
 
