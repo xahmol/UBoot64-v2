@@ -617,7 +617,9 @@ Built using:
   https://github.com/drmortalwombat/oscar64
 
 Additionally uses code from:
-- Ultimate 64/II+ Command Library
+- ultimate-uci-oscar64, the Ultimate Command Interface library
+  https://github.com/xahmol/ultimate-uci-oscar64
+  Based on the Ultimate 64/II+ Command Library
   Scott Hutter, Francesco Sblendorio
   https://github.com/xlar54/ultimateii-dos-lib
 - ntp2ultimate by MaxPlap
@@ -635,6 +637,10 @@ https://ultimate64.com/
 
 Bart van Leeuwen: For suggesting the default boot slot with
 configurable auto-boot timeout feature.
+
+Christian Gleissner: For finding and fixing a start-up hang in the
+Ultimate Command Interface library (now in ultimate-uci-oscar64), and for
+the end-to-end test approach this project's test suite is modelled on.
 
 Licensed under the GNU General Public License v3.0
 

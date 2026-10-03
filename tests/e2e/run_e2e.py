@@ -619,7 +619,7 @@ class DeviceRun:
         rows = [y for y in range(5, 24) if s.codes[y * 40 + 2] & 0x80]
         if not rows:
             return ""
-        text = s.row(rows[0])[:21].strip()
+        text = s.row(rows[0])[:21].strip().replace("\u251f", "_")  # "_" shows as the left arrow, screen code 31
         first, _, rest = text.partition(" ")
         return rest.strip() if first.isdigit() and rest else text
 
