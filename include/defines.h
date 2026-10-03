@@ -78,7 +78,7 @@
 // padding[] array), so cfgvs<3 must be sanitized by a migration tool
 // (uboot_upd23) rather than trusted as-is -- see project memory
 // project_uci315_compat.md.
-// Bumped 3->4 (v3.1.0) for SlotStruct.settings (GitHub #22): the slot grew
+// Bumped 3->4 (v4.0.0) for SlotStruct.settings (GitHub #22): the slot grew
 // from 1360 to 1616 bytes. The cartridge converts v1, v2 and v3 files at
 // start-up (src/convert.c).
 #define CFGVERSION 0x04
@@ -197,10 +197,10 @@ struct ConfigStruct
                               // safe for old config files, which read this back as 0 via readconfigfile()'s
                               // memset+min-copy load.
     char host2[MAXHOSTLENGTH]; // Second NTP server, tried when the first fails; empty = off.
-    char host3[MAXHOSTLENGTH]; // Third NTP server. Both appended in v3.1.0: an older, shorter config
+    char host3[MAXHOSTLENGTH]; // Third NTP server. Both appended in v4.0.0: an older, shorter config
                                // file keeps the defaults set in mainloop() (see readconfigfile()).
     char apply_cfg;            // 1 = apply <program>.cfg/.usr when booting a slot (GitHub #22, firmware
-                               // 3.15+). Appended in v3.1.0; default 1, kept for older, shorter files.
+                               // 3.15+). Appended in v4.0.0; default 1, kept for older, shorter files.
 };
 extern struct ConfigStruct cfg;
 extern char imagename[MAXFILENAME];

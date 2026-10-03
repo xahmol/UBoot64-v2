@@ -91,7 +91,7 @@ char resolve_storage_path(void)
 // present come from one listing of the Ultimate's root directory
 // (uii_scan_media(): every "sd*" and "usb*" entry, as lower case ASCII
 // paths such as "/usb0/"), tried SD first, then the USB devices in
-// listing order. Before v3.1.0 this tried the fixed list /sd/, /usb0/,
+// listing order. Before v4.0.0 this tried the fixed list /sd/, /usb0/,
 // /usb1/, /usb2/ with a change_dir each, and missed other USB names.
 // Sets configpath to the first device where the config file already
 // exists, or -- if none has it -- the first device present, so callers

@@ -53,7 +53,7 @@ Link to latest build:
 
 [Latest build](https://github.com/xahmol/UBoot64-v2/releases/latest)
 
-Version 3.1.0 - (in development):
+Version 4.0.0 - (in development):
 
 - Directory block sizes in IEC mode are no longer shown modulo 256 (a 300-block file showed as 44).
 - IEC directory listings: locked files (`PRG<`) and file types UBoot64 does not know no longer replace the disk name at the top of the listing; they show as normal entries.
@@ -74,6 +74,7 @@ Version 3.1.0 - (in development):
 - The file browser's side menu shows **M** (run mount) in IEC mode inside a disk image.
 - Messages in the file browser no longer leave the last letter of the file type column on screen.
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
+- Major version 4: the configuration and slot file format changed again (format v4, a settings file per slot). Version 4.0.0 converts the files of all earlier versions itself (see below).
 - Old configuration and slot files (v1, v2 and v3) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`, `.v3`). The file format is now v4 (a settings file per slot). The separate upgrade tools are no longer needed (they still come with this release, for v1 and v2).
 - Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
 - Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+), and at every start a baseline file `uboot64/uboot64.cfg`. A slot can also get its own settings file: **S** in the file browser. Switch it all off with **C** in **F5**. See [Program settings files](#program-settings-files).
@@ -236,7 +237,7 @@ ULTIP2 = 192.168.1.yy
 ### Upgrading from an earlier version
 ([Back to contents](#contents))
 
-From v3.1.0 UBoot64 converts the configuration and slot files of earlier versions itself: format v1 (UBoot64 v1), v2 (v2.x) and v3 (v3.0.x). v3.1.0 uses format v4, which adds a settings file per slot. When UBoot64 finds files in an older format at start-up, it asks:
+From v4.0.0 UBoot64 converts the configuration and slot files of earlier versions itself: format v1 (UBoot64 v1), v2 (v2.x) and v3 (v3.0.x). v4.0.0 uses format v4, which adds a settings file per slot. When UBoot64 finds files in an older format at start-up, it asks:
 
 ![Asking to convert old configuration files](<Screenshots/UBoot64 - Convert prompt.png>)
 

@@ -12,6 +12,7 @@ Usage:
     tests/e2e/screenshot.py --device 192.168.1.148 info convert
 
 Shots:
+    startup  the start-up messages ("Startup")
     info     F2 information screen (with the Hardware line)
     config   F5 configuration screen ("NTP menu")
     browser  F1 file browser, UCI mode ("filebrowser")
@@ -71,6 +72,23 @@ def shot_info(run):
     run.keys(["space"], "Make your choice.", row=24)
 
 
+def shot_startup(run):
+    """The start-up messages, held with "Show messages + wait": the fresh
+    config gets verbose = 2 (ConfigStruct offset 87), then UBoot64 starts
+    again."""
+    run.start()
+    st = run.first_storage()
+    cfg = bytearray(run.u.read_file("/%s/DMBCFG.CFG" % st))
+    cfg[87] = 2  # VERBOSE_WAIT
+    run.u.write_file("/%s/DMBCFG.CFG" % st, bytes(cfg))
+    run.start(until="Press a key to continue.", row=None)
+    time.sleep(1.0)
+    grab(run, "Startup")
+    run.keys(["space"], "Make your choice.", row=24, timeout=20.0)
+    cfg[87] = 1
+    run.u.write_file("/%s/DMBCFG.CFG" % st, bytes(cfg))
+
+
 def shot_config(run):
     """F5 configuration screen (with the C line), saved as 'NTP menu'."""
     run.start()
@@ -114,7 +132,7 @@ def main():
     p.add_argument("--device", required=True)
     p.add_argument("--crt", default=os.path.join(REPO, "build", "uboot64.crt"))
     p.add_argument("--password", default=os.environ.get("ULTIMATE_PASSWORD"))
-    p.add_argument("shots", nargs="+", choices=["info", "config", "browser", "convert"])
+    p.add_argument("shots", nargs="+", choices=["startup", "info", "config", "browser", "convert"])
     args = p.parse_args()
     args.update = args.restore = False
     run = DeviceRun(args.device, args)
@@ -123,7 +141,7 @@ def main():
     run.backup()
     try:
         for shot in args.shots:
-            {"info": shot_info, "config": shot_config, "browser": shot_browser,
+            {"startup": shot_startup, "info": shot_info, "config": shot_config, "browser": shot_browser,
              "convert": shot_convert}[shot](run)
     except Exception as e:
         run.fail("%s: %s" % (type(e).__name__, e))

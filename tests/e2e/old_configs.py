@@ -26,7 +26,7 @@ COMMAND_IMGB = 0x08
 V1_SLOT = 488
 OLD_SLOT = 1360  # v2 and v3 SlotStruct
 CUR_SLOT = 1616  # format v4: settings[256] added (GitHub #22)
-CUR_CONFIG = 264  # 263 + apply_cfg (v3.1.0, GitHub #22)
+CUR_CONFIG = 264  # 263 + apply_cfg (4.0.0, GitHub #22)
 
 # Field offsets of today's SlotStruct (include/defines.h)
 SLOT = {
@@ -139,7 +139,7 @@ V3_HOST = b"V3.NTP.TEST"
 
 
 def v3_files():
-    """(config, slots) of a v3 set (v3.0.x and v3.1.0 development builds):
+    """(config, slots) of a v3 set (v3.0.x, and 4.0.0 development builds that reported v3.1.0):
     264 and 24480 bytes. The slots carry a SoftIEC partition, which v3
     keeps (v2 zeroes it)."""
     cfg = bytearray(264)

@@ -32,11 +32,12 @@ UPD12 = uboot_upd12
 UPD23 = uboot_upd23
 
 # Build versioning
-# Major bumped for the v3 slot/config save format (SlotStruct.partition,
-# ConfigStruct.iec_root_partition; see CFGVERSION in defines.h and the
-# uboot_upd23 migration tool).
-VERSION_MAJOR = 3
-VERSION_MINOR = 1
+# The major version follows the slot/config save format: 3 for format v3
+# (SlotStruct.partition, ConfigStruct.iec_root_partition), 4 for format v4
+# (SlotStruct.settings, GitHub #22; the cartridge converts older files,
+# src/convert.c). See CFGVERSION in defines.h.
+VERSION_MAJOR = 4
+VERSION_MINOR = 0
 VERSION_PATCH = 0
 VERSION_TIMESTAMP = $(shell date "+%Y%m%d-%H%M")
 VERSION = v$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)-$(VERSION_TIMESTAMP)

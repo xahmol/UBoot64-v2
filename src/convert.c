@@ -57,7 +57,7 @@ extern int reudetected;
 #define V1_CFG_SIZE 86
 #define V1_SLOT_SIZE 488 // uboot_upd12's OldSlotStruct
 #define V2_CFG_SIZE 100
-#define V3_CFG_SIZE 263 // 264 with apply_cfg (v3.1.0 development builds)
+#define V3_CFG_SIZE 263 // 264 with apply_cfg (development builds of 4.0.0, which reported v3.1.0)
 
 // Field offsets in a v1 slot (OldSlotStruct in uboot_upd12.c)
 #define V1_PATH 0          // char[100]

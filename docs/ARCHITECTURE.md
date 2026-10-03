@@ -324,7 +324,7 @@ value `2`). If no device has an existing config, the first device present
 is used instead, so a fresh install creates files there (return value `1`).
 Return value `0` means no device was found at all. `configpath` holds ASCII,
 so it is converted to PETSCII (`asc2pet_path()`) before it is shown. Until
-v3.1.0 the function tried the fixed list `storagepaths[]` (`/sd/`, `/usb0/`,
+v4.0.0 the function tried the fixed list `storagepaths[]` (`/sd/`, `/usb0/`,
 `/usb1/`, `/usb2/`) with one `uii_change_dir()` each; `storagepaths[]` is
 still used by the USB reroute in `mountimage()` and
 `load_reu_with_reroute()`.
@@ -434,13 +434,13 @@ All fixed-size structures — no dynamic allocation. Maximum 18 slots, 256-char 
 
 | Field | Type | Size | Purpose |
 |-------|------|------|---------|
-| `cfgvs` | char | 1 | Config version stamp — must equal `CFGVERSION` (0x04 since v3.1.0) |
+| `cfgvs` | char | 1 | Config version stamp — must equal `CFGVERSION` (0x04 since v4.0.0) |
 | `path` | char[256] | 256 | USB directory path for the boot file |
 | `menu` | char[31] | 31 | Display name in the boot menu |
 | `file` | char[51] | 51 | Boot filename |
 | `cmd` | char[81] | 81 | Optional BASIC command to execute before boot |
 | `reu_image` | char[51] | 51 | REU image filename to preload |
-| `reu_path` | char[256] | 256 | USB path to the REU image. Stored since v3.1.0; before that the REU was loaded from `image_a_path`. Slots with an empty `reu_path` fall back to `image_a_path` at boot and are written back with the path filled in; `uboot_upd12`/`uboot_upd23` fill it during migration |
+| `reu_path` | char[256] | 256 | USB path to the REU image. Stored since v4.0.0; before that the REU was loaded from `image_a_path`. Slots with an empty `reu_path` fall back to `image_a_path` at boot and are written back with the path filled in; `uboot_upd12`/`uboot_upd23` fill it during migration |
 | `reusize` | char | 1 | REU size index (0–7, maps into `reusizelist`) |
 | `runboot` | char | 1 | Bitmask of `EXEC_*` flags for boot mode |
 | `device` | char | 1 | IEC device ID for boot (8–30) |
@@ -538,7 +538,7 @@ failure there is treated uniformly as "keep hunting."
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `version` | char | Config file version — must equal `CFGVERSION` (0x04 since v3.1.0; older versions are converted at start-up) |
+| `version` | char | Config file version — must equal `CFGVERSION` (0x04 since v4.0.0; older versions are converted at start-up) |
 | `timeon` | char | NTP sync enabled: 0=off, 1=on |
 | `host` | char[81] | First NTP server hostname |
 | `secondsfromutc` | long | UTC offset in seconds (e.g. 3600 = UTC+1) |
@@ -546,7 +546,7 @@ failure there is treated uniformly as "keep hunting."
 | `colors` | ColorPalette | Embedded UI colour palette |
 | `timeoutidx` | char | Index into `timeoutlist[]`/`timeoutseconds[]` (`src/main.c`); 0 = auto-boot timeout off |
 | `iec_root_partition` | char | Firmware 3.15+: 0=off (default), 1=auto-create/select `RESERVED_ROOT_PARTITION` (254, root path `/`) whenever entering IEC mode on a SoftIEC device, so browsing sees the whole filesystem without the user having to configure a partition themselves first. Never overwrites a partition the user already configured at that index (see `src/filebrowse.c`'s `CH_F3` conflict check). Toggled via **F8** in `edittimeconfig()`; appended at the end of `ConfigStruct`, so old config files (shorter than `sizeof(cfg)`) load with this `== 0`, same zero-fill mechanism as `timeoutidx` above — no version bump needed for this field specifically |
-| `host2`, `host3` | char[81] each | Second and third NTP server (v3.1.0, appended). `get_ntp_time()` tries `host`, `host2`, `host3` in order, skipping empty ones, until one answers (as in DMBoot v5). Old config files keep the defaults set in `mainloop()` (`time.windows.com`, `pool.ntp.org`) |
+| `host2`, `host3` | char[81] each | Second and third NTP server (v4.0.0, appended). `get_ntp_time()` tries `host`, `host2`, `host3` in order, skipping empty ones, until one answers (as in DMBoot v5). Old config files keep the defaults set in `mainloop()` (`time.windows.com`, `pool.ntp.org`) |
 
 **Auto-boot timeout:** when `cfg.timeoutidx != 0` and one slot has
 `isdefault == 1`, `mainmenu()` (`src/slotmenu.c`) calls `autobootcountdown()`
@@ -577,7 +577,7 @@ field existed are shorter than `sizeof(cfg)`; `readconfigfile()`
 (`src/fileio.c`) copies only the bytes actually read (`uii_readdata()`'s
 return count) over the defaults `mainloop()` set just before, so old files
 load with `timeoutidx == 0` (off) with no version bump or upgrade tool
-required. (Until v3.1.0 it zeroed `cfg` first; since then the tail fields
+required. (Until v4.0.0 it zeroed `cfg` first; since then the tail fields
 keep their defaults, which the NTP servers 2 and 3 need.)
 
 ### `ColorPalette` — UI colour scheme (nested in `ConfigStruct`)
@@ -609,7 +609,7 @@ These structures are local to `filebrowse.c`. `next`/`prev` fields are raw REU b
 | `type` | Entry type: `CBM_T_PRG`, `CBM_T_DIR`, `CBM_T_FREE`, etc. |
 | `length` | Filename length in bytes (including null) |
 | `select` | Selection flag: 0=unselected, 1=selected |
-| `size` | Size in 256-byte blocks (IEC only), `unsigned` (16 bit; a `char` before v3.1.0 showed sizes modulo 256). For a partition-list entry: the partition number |
+| `size` | Size in 256-byte blocks (IEC only), `unsigned` (16 bit; a `char` before v4.0.0 showed sizes modulo 256). For a partition-list entry: the partition number |
 | `access` | Access flags: `CBM_A_RO`=1 (locked file, `<` after the type), `CBM_A_RW`=3 |
 | `stub[4]` | Reserved (one byte went to `size`, so the record stays 16 bytes) |
 
@@ -832,7 +832,7 @@ Compiled separately as `uboot_upd12.prg`. A standalone C64 PRG (not a cartridge)
 
 - **Which file:** a slot with `COMMAND_IMGA` uses `<image_a_file without extension>.cfg` in `image_a_path`; a SoftIEC slot on the root partition (`Slot.partition == RESERVED_ROOT_PARTITION`, `Slot.path` = `"cd:/" + host path`) uses `<Slot.file>.cfg` in the host path, converted from PETSCII to ASCII (`pet2asc_copy()`, inverse of `asc2pet_path()`). Other slots have no Ultimate path. `.usr` is tried after `.cfg` (status 88).
 - **Status:** `00` applied ("Settings from …"), `88` no such file (silent), `89` errors (the reply data is the firmware's parse log; shown for 3 s), anything else (e.g. no such command on older firmware) skipped.
-- **Switch:** `ConfigStruct.apply_cfg` (offset 263, appended in v3.1.0, default 1), **C** in F5.
+- **Switch:** `ConfigStruct.apply_cfg` (offset 263, appended in v4.0.0, default 1), **C** in F5.
 - **Side effect handled:** the firmware re-applies ("effectuates") every settings store with pending changes after loading the file. If the drive store is among them, the drive emulation restarts and a mount right after answers `90,DRIVE NOT PRESENT`; `mountimage()` therefore waits up to 5 × 1 s on status 90 before giving up.
 - The path buffer `settingspath[MAXPATHLEN]` is a static in plain RAM (bss), not the bank 0 data segment.
 - **Baseline (step 2):** `apply_baseline_settings()` (bank 1, called by `mainloop()` via `fc3_call(1, …)` after the conversion block, when `apply_cfg` is on) applies `<configpath>uboot64/uboot64.cfg` (else `.usr`) at every start, quietly unless start-up messages are on. In a folder because firmware 3.15a's `LOAD_CONFIG` can't open a file in the root of a storage device (`/sd/x.cfg` → 88, `/sd/dir/x.cfg` works; tested 2026-10-03) — the same limit applies to images in a storage root in step 1.
@@ -952,7 +952,7 @@ Not gated to a specific devicetype — `F4` and the partition-list logic key off
 
 **Deletion (`SOFTIEC_CMD_DEL_PARTITION`) does not work in practice.** `uii_del_partition()` was implemented (matching firmware's documented wire format exactly) and wired to the F8 "turn root partition option off" prompt in v3.0.1, but confirmed on real hardware -- even from a clean power-cycle state -- that it does not actually remove the partition from the live table, despite firmware's `IecFileSystem::RemovePartition()` looking structurally correct on inspection. Since the wrapper served no other purpose and there's no way to distinguish "confirmed broken" from "some other precondition we're missing" without firmware-side debugging, `uii_del_partition()` was removed entirely rather than left as dead/misleading code. This is not a loss in practice: UBoot64's partitions are never persisted to flash regardless (see above), so a power cycle already clears them -- the F8-off prompt is gone too, since there's nothing it could reliably do.
 
-### SoftIEC Host Paths and Root-Partition Slots (firmware 3.15+, v3.1.0)
+### SoftIEC Host Paths and Root-Partition Slots (firmware 3.15+, v4.0.0)
 
 Ported from DMBoot v5 (`src/browse.c`), GitHub #14-#17, verified on an Ultimate 64-II with firmware 3.15a (2026-09-28):
 
@@ -1061,7 +1061,7 @@ This suppresses the optimisation and forces the compiler to re-read or re-write 
 
 **Location:** `src/filebrowse.c`, all `reu_load` / `reu_store` call sites (~12 occurrences).
 
-**Since v3.1.0 (GitHub issue #18): slot and directory transfers go through `uboot_reu_load()` / `uboot_reu_store()`** (`src/core.c`, bank 0), `__noinline` wrappers with a barrier access. `volatile` alone did not stop the optimiser from moving reads of loaded data before an inlined DMA (seen in DMBoot v5). `__noinline` alone was not enough either: Oscar64 analyses the wrapper body, sees only REU register writes, and in `dir_read()`'s insert-in-between branch moved the write of `bufferdir.meta.next` byte 0 *before* the `uboot_reu_load()` of that struct, so the DMA overwrote it. The barrier (`dp[0] = dp[0];` after the load, a volatile read of `sp[0]` before the store) tells the optimiser the call writes/reads the buffer; verified in the `.asm`. The REU size probes (`main.c` and both upgraders) keep the inline library calls: with register parameters, a loop calling the same function with a multi-byte address can skip setting a parameter byte (DMBoot v5, see `docs/OSCAR64_MANUAL.md`).
+**Since v4.0.0 (GitHub issue #18): slot and directory transfers go through `uboot_reu_load()` / `uboot_reu_store()`** (`src/core.c`, bank 0), `__noinline` wrappers with a barrier access. `volatile` alone did not stop the optimiser from moving reads of loaded data before an inlined DMA (seen in DMBoot v5). `__noinline` alone was not enough either: Oscar64 analyses the wrapper body, sees only REU register writes, and in `dir_read()`'s insert-in-between branch moved the write of `bufferdir.meta.next` byte 0 *before* the `uboot_reu_load()` of that struct, so the DMA overwrote it. The barrier (`dp[0] = dp[0];` after the load, a volatile read of `sp[0]` before the store) tells the optimiser the call writes/reads the buffer; verified in the `.asm`. The REU size probes (`main.c` and both upgraders) keep the inline library calls: with register parameters, a loop calling the same function with a multi-byte address can skip setting a parameter byte (DMBoot v5, see `docs/OSCAR64_MANUAL.md`).
 
 ---
 
