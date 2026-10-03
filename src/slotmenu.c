@@ -745,30 +745,81 @@ static void pet2asc_copy(char *dst, const char *src, unsigned size)
     dst[x] = 0;
 }
 
-static void apply_program_settings(void)
-// Apply the slot's program settings file, as the Ultimate's own file
-// browser does when it starts a program (firmware 3.15+,
-// ConfigIO::S_load_associated_config): <name>.cfg, else <name>.usr, next
-// to the program, through CTRL_CMD_LOAD_CONFIG (uii_load_config()). The
-// firmware doesn't do this itself here, since UBoot64 starts programs from
-// BASIC. Only items in the file change; they last until power-off.
-// Where the file is looked for (GitHub #22, step 1):
-// - a slot that mounts an image on drive A: <image name>.cfg next to it;
-// - a SoftIEC slot on UBoot64's root partition: <program>.cfg in the
-//   drive's host path (Slot.path is "cd:/" + that path, see pathconcat()).
-// Other slots (real drives, drive emulation without an image) have no
-// Ultimate path. Status: 00 applied (shown), 88 no such file (silent,
-// tries .usr), 89 the file had errors (the firmware's log is shown);
-// anything else, such as firmware without the command, is skipped.
+static void load_settings_file(unsigned len, unsigned name, char quiet)
+// Apply a settings file through CTRL_CMD_LOAD_CONFIG (uii_load_config(),
+// firmware 3.15+): settingspath[0..len) is the path without extension,
+// tried with ".cfg", then ".usr" (as the firmware's own browser does).
+// Status: 00 applied ("Settings from ...", unless quiet), 88 no such file
+// (silent, next extension), 89 the file had errors (the reply is the
+// firmware's log: shown for 3 s); anything else, such as firmware without
+// the command, is skipped silently.
+// Input: len   - length of the path without extension
+//        name  - offset of the file name in settingspath (for messages)
+//        quiet - 1: no message when applied
 {
     // ".cfg" and ".usr" as ASCII bytes: the petscii.h charmap would change
     // the letters of a string literal
     static const char ext_cfg[] = {0x2e, 0x63, 0x66, 0x67, 0x00};
     static const char ext_usr[] = {0x2e, 0x75, 0x73, 0x72, 0x00};
+    unsigned x;
+    char tries;
+
+    for (tries = 0; tries < 2; tries++)
+    {
+        strcpy(settingspath + len, tries ? ext_usr : ext_cfg);
+        uii_load_config(settingspath);
+        if (uii_status[0] == '0' && uii_status[1] == '0')
+        {
+            if (!quiet)
+            {
+                asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
+                cwin_console_printf(&cw, cfg.colors.text, "Settings from %s.\n", linebuffer);
+            }
+            return;
+        }
+        if (uii_status[0] == '8' && uii_status[1] == '9')
+        {
+            // The reply is the firmware's log of the lines it couldn't
+            // apply: show its first 2 screen lines, newlines as spaces
+            asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
+            cwin_console_printf(&cw, cfg.colors.error, "Errors in %s:\n", linebuffer);
+            asc2pet_path(linebuffer, uii_data, 80);
+            for (x = 0; linebuffer[x]; x++)
+            {
+                if (linebuffer[x] < 0x20)
+                {
+                    linebuffer[x] = 0x20;
+                }
+            }
+            cwin_console_printf(&cw, cfg.colors.text, "%s\n", linebuffer);
+            delay(3);
+            return;
+        }
+        if (uii_status[0] != '8' || uii_status[1] != '8')
+        {
+            return; // Not 88 (no such file): firmware without the command, or another error
+        }
+    }
+}
+
+static void apply_program_settings(void)
+// Apply the slot's program settings file, as the Ultimate's own file
+// browser does when it starts a program (firmware 3.15+,
+// ConfigIO::S_load_associated_config). The firmware doesn't do this itself
+// here, since UBoot64 starts programs from BASIC. Only items in the file
+// change; they last until power-off. Where the file is looked for
+// (GitHub #22, step 1):
+// - a slot that mounts an image on drive A: <image name>.cfg next to it;
+// - a SoftIEC slot on UBoot64's root partition: <program>.cfg in the
+//   drive's host path (Slot.path is "cd:/" + that path, see pathconcat()).
+// Other slots (real drives, drive emulation without an image) have no
+// Ultimate path. Firmware 3.15a can't open a settings file in the root of
+// a storage device (see apply_baseline_settings()), so an image directly in
+// /usb0/ gets no settings. See load_settings_file() for the status handling.
+{
     unsigned len;
     unsigned name;
     unsigned x;
-    char tries;
 
     if (!cfg.apply_cfg)
     {
@@ -811,40 +862,26 @@ static void apply_program_settings(void)
             break;
         }
     }
+    load_settings_file(len, name, 0);
+}
 
-    for (tries = 0; tries < 2; tries++)
-    {
-        strcpy(settingspath + len, tries ? ext_usr : ext_cfg);
-        uii_load_config(settingspath);
-        if (uii_status[0] == '0' && uii_status[1] == '0')
-        {
-            asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
-            cwin_console_printf(&cw, cfg.colors.text, "Settings from %s.\n", linebuffer);
-            return;
-        }
-        if (uii_status[0] == '8' && uii_status[1] == '9')
-        {
-            // The reply is the firmware's log of the lines it couldn't
-            // apply: show its first 2 screen lines, newlines as spaces
-            asc2pet_path(linebuffer, settingspath + name, sizeof(linebuffer));
-            cwin_console_printf(&cw, cfg.colors.error, "Errors in %s:\n", linebuffer);
-            asc2pet_path(linebuffer, uii_data, 80);
-            for (x = 0; linebuffer[x]; x++)
-            {
-                if (linebuffer[x] < 0x20)
-                {
-                    linebuffer[x] = 0x20;
-                }
-            }
-            cwin_console_printf(&cw, cfg.colors.text, "%s\n", linebuffer);
-            delay(3);
-            return;
-        }
-        if (uii_status[0] != '8' || uii_status[1] != '8')
-        {
-            return; // Not 88 (no such file): firmware without the command, or another error
-        }
-    }
+void apply_baseline_settings(void)
+// Apply the baseline settings file uboot64/uboot64.cfg (else .usr) on the
+// storage device of the config file, at every start (GitHub #22, step 2):
+// settings applied by a program's own settings file last until power-off,
+// so this file can set them back. In a folder, not next to dmbcfg.cfg:
+// firmware 3.15a's CTRL_CMD_LOAD_CONFIG can't open a file in the root of a
+// storage device ("/sd/x.cfg" gives 88, "/sd/dir/x.cfg" works; tested
+// 2026-10-03). Called from mainloop() via fc3_call(1, ...) when
+// cfg.apply_cfg is on. Quiet unless start-up messages are on.
+{
+    // "uboot64/uboot64" as ASCII bytes (see load_settings_file())
+    static const char base[] = {0x75, 0x62, 0x6f, 0x6f, 0x74, 0x36, 0x34, 0x2f,
+                                0x75, 0x62, 0x6f, 0x6f, 0x74, 0x36, 0x34, 0x00};
+
+    strcpy(settingspath, configpath);
+    strcat(settingspath, base);
+    load_settings_file(strlen(settingspath), strlen(configpath), !cfg.verbose);
 }
 
 void runbootfrommenu(char select)

@@ -76,9 +76,9 @@ Version 3.1.0 - (in development):
 - Internal: fixed functions returning pointers to temporary buffers, and made the REU transfers of the slot and directory data safe against compiler reordering.
 - Old configuration and slot files (v1 and v2) are converted at start-up, after asking, with copies of the old files kept as `dmbcfg.v1`/`dmbslt.v1` (or `.v2`). The separate upgrade tools are no longer needed (they still come with this release).
 - Start-up: the storage device for the configuration and slot files is now found from one listing of the Ultimate's root directory, so any SD or USB device counts (before: only `/sd/`, `/usb0/`, `/usb1/` and `/usb2/` were tried). The search order is still SD first, then USB; the upgrade tools search the same way.
-- Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+). Switch it off with **C** in **F5**. See [Program settings files](#program-settings-files).
+- Program settings files: when a slot boots, UBoot64 applies the program's own Ultimate settings file (`<image or program>.cfg`, else `.usr`), as the Ultimate's own file browser does (firmware 3.15+), and at every start a baseline file `uboot64/uboot64.cfg`. Switch it off with **C** in **F5**. See [Program settings files](#program-settings-files).
 - **F2** (information) shows the Ultimate's product name (for example "Ultimate 64 Elite"), or "unknown" if the firmware doesn't report it.
-- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.2.0), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
+- Internal: the Ultimate Command Interface library is now [ultimate-uci-oscar64](https://github.com/xahmol/ultimate-uci-oscar64) (v1.2.1), included as a git submodule. It brings a fix for a hang at start-up found by Christian Gleissner: a command sent while the interface was still busy could leave it waiting for ever.
 
 Version 3.0.1 - 20260913:
 
@@ -552,9 +552,11 @@ With firmware 3.15 or later the Ultimate applies `<program>.cfg` by itself when 
 * a slot that mounts a disk image on drive A: `<image name>.cfg` next to the image, e.g. `gdos64.cfg` next to `gdos64.d81`;
 * a slot on the Ultimate's SoftIEC drive (made with the SoftIEC root partition, see **F8**): `<program>.cfg` next to the program.
 
-If there is no `.cfg`, UBoot64 tries `<name>.usr`, as the Ultimate does. The settings are applied first, before the disk images are mounted, so they can change drive types. The boot screen shows "Settings from <file>." If the file has a line the Ultimate can't apply, UBoot64 shows the Ultimate's message for 3 seconds and boots anyway. No file, or older firmware without this function: nothing happens.
+If there is no `.cfg`, UBoot64 tries `<name>.usr`, as the Ultimate does. The file can't be in the root of a USB stick or SD card: the Ultimate's firmware (3.15a) can't load settings files from there, so an image directly in `/usb0/` gets no settings. The settings are applied first, before the disk images are mounted, so they can change drive types. The boot screen shows "Settings from <file>." If the file has a line the Ultimate can't apply, UBoot64 shows the Ultimate's message for 3 seconds and boots anyway. No file, or older firmware without this function: nothing happens.
 
 The settings are not saved: they last until the Ultimate is switched off, or until something changes them again, like the settings applied by the Ultimate's own browser. Slots on a real drive, or on drive emulation without an image, have no Ultimate path, so no settings file is looked for.
+
+**Baseline settings:** to set things back after a program, put a settings file `uboot64.cfg` in a folder `uboot64` on the device that holds UBoot64's configuration (e.g. `/usb0/uboot64/uboot64.cfg`). UBoot64 applies it at every start, before the menu.
 
 ### F7: Quit to BASIC
 ([Back to contents](#contents))

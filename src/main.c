@@ -374,6 +374,12 @@ __noinline void mainloop(void)
 		fc3_call(3, convert_old_files);
 	}
 
+	// Baseline settings file uboot64.cfg next to the config (GitHub #22)
+	if (cfg.apply_cfg)
+	{
+		fc3_call(1, apply_baseline_settings);
+	}
+
 	// Read slots file
 	read_slotsfile(1);
 

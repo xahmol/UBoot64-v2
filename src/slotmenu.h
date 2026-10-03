@@ -18,6 +18,7 @@ char autobootcountdown();
 void editmenuoptions();
 void information();
 void runbootfrommenu(char select);
+void apply_baseline_settings(void);
 
 #pragma compile("slotmenu.c")
 

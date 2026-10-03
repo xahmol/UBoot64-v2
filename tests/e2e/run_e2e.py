@@ -454,7 +454,11 @@ class DeviceRun:
                 seen[0] = True
             return s.contains("e2e boot ok")
 
-        self.keys_until(["0"], lambda s: not s.contains("Make your choice.", 24), "the boot", stable=False)
+        def booting(s):
+            check(s)  # the message can already show while the boot starts
+            return not s.contains("Make your choice.", 24)
+
+        self.keys_until(["0"], booting, "the boot", stable=False)
         self.wait_for(check, "the program's output", timeout=30.0, stable=False)
         return seen[0]
 
@@ -488,6 +492,29 @@ class DeviceRun:
                     self.fail("settings %s: %r not shown at boot" % (name, watch))
                 else:
                     self.log("ok settings %s: %s" % (name, "error shown, nothing changed" if watch else "applied (%s)" % value))
+            # Baseline file uboot64/uboot64.cfg on the config's storage,
+            # applied at every start (in a folder: the firmware can't load
+            # a settings file from the root of a storage device)
+            st = folder.strip("/").split("/")[0]
+            base = "/%s/UBOOT64" % st
+            had_folder = any(n.upper() == "UBOOT64" for n in self.u.list_dir("/" + st) or [])
+            if had_folder and any(n.lower() in ("uboot64.cfg", "uboot64.usr") for n in self.u.list_dir(base) or []):
+                self.fail("settings: the user has a uboot64/uboot64.cfg; baseline case skipped")
+            else:
+                try:
+                    if not had_folder:
+                        self.u.make_dir(base)
+                    self.u.write_file(base + "/UBOOT64.CFG", b"[Printer Settings]\nInk density=Squares\n")
+                    self.start()
+                    value = self.u.get_config(cat, item)
+                    if value != "Squares":
+                        self.fail("settings uboot64.cfg: %s is %r, expected 'Squares'" % (item, value))
+                    else:
+                        self.log("ok settings uboot64/uboot64.cfg: applied at start-up")
+                finally:
+                    self.u.delete_file(base + "/UBOOT64.CFG")
+                    if not had_folder:
+                        self.u.remove_dir(base)
         finally:
             self.u.set_config(cat, item, original)
 
