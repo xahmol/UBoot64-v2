@@ -93,3 +93,21 @@ checked against the product name from the REST API instead.
 | | (v1 config + already converted slots), Y | An interrupted conversion: config converted, slots kept and not backed up again |
 | | `uboot_upd12.prg`, `uboot_upd23.prg` | The standalone upgraders on the same v1/v2 sets, same field checks |
 | | F7 | Quit to BASIC (BASIC start screen) |
+
+## Screenshots for README.md
+
+`screenshot.py` drives UBoot64 to a screen and saves a frame of the
+Ultimate's VIC video stream as `Screenshots/UBoot64 - <name>.png`, in the
+style of the existing OBS captures (1920x1080, the frame scaled to 1080
+lines, Ultimate 64 default palette). The stream code is Christian
+Gleissner's `VicStream` from mandelbrot-upic; on WSL2 it needs the
+firewall rules from mandelbrot-upic's `tests/e2e/README.md`.
+
+```
+tests/e2e/screenshot.py --device 192.168.1.148 info convert
+```
+
+`info` is the F2 screen; `convert` shows the conversion prompt and
+result for a synthetic v1 set (the user's files are backed up and
+restored). Add a function per new screen.
+

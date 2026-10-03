@@ -1,9 +1,10 @@
 """Minimal client for the Ultimate firmware's REST API and FTP server.
 
 Based on mandelbrot-upic's tests/e2e/ultimate.py by Christian Gleissner
-(https://github.com/xahmol/mandelbrot-upic, PR #2). Adapted: the video
-stream is left out (UBoot64's screens are text, read from C64 memory),
-run_crt and FTP file access added.
+(https://github.com/xahmol/mandelbrot-upic, PR #2). Adapted: run_crt,
+drive control and FTP file access added. The video stream (VicStream) is
+his, unchanged: the test reads text screens from memory, screenshot.py
+uses the stream.
 
 Python 3 standard library only. Covers what the end-to-end test needs:
 read the product name, start a cartridge image, read and write C64 memory, press
@@ -14,6 +15,8 @@ device's storage (for the config and slot files).
 import ftplib
 import io
 import json
+import socket
+import struct
 import time
 import urllib.error
 import urllib.parse
@@ -105,6 +108,18 @@ class Ultimate:
                        body=json.dumps({"events": events}).encode(),
                        content_type="application/json")
 
+    # --- Video stream ---------------------------------------------------
+
+    def local_address(self):
+        """This host's address on the route to the device."""
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect((socket.gethostbyname(self.host), 80))
+            return s.getsockname()[0]
+
+    def video_stream(self, port):
+        return VicStream(self, port)
+
+
     # --- Files (FTP) ----------------------------------------------------
 
     def _ftp(self):
@@ -157,3 +172,103 @@ class Ultimate:
     def delete_file(self, path):
         with self._ftp() as ftp:
             ftp.delete(path)
+
+
+class VicStream:
+    """Receives the VIC video stream as complete frames of colour indexes.
+
+    Each UDP packet carries a 12-byte little-endian header
+        u16 sequence, u16 frame, u16 line (bit 15 = last packet of the
+        frame), u16 pixels per line (384), u8 lines per packet (4),
+        u8 bits per pixel (4), u16 encoding
+    followed by 4 lines of 384 pixels, two pixels per byte, the left
+    pixel in the low nibble. A PAL frame is 272 lines.
+
+    The stream goes to a multicast group, as the firmware's own default
+    does: a unicast destination needs the device to resolve this host's
+    address first, which fails intermittently with "Network Host
+    Resolve Error". Each device is given its own port, and packets from
+    any other source address are ignored, so two devices streaming at
+    the same time can't mix their frames.
+    """
+
+    WIDTH = 384
+    HEADER = 12
+    GROUP = "239.0.1.64"
+
+    def __init__(self, ultimate, port):
+        self.u = ultimate
+        self.port = port
+        self.source = socket.gethostbyname(ultimate.host)
+        self.sock = None
+
+    def __enter__(self):
+        local = self.u.local_address()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 << 20)
+        self.sock.bind(("", self.port))
+        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
+                             socket.inet_aton(self.GROUP) + socket.inet_aton(local))
+        self.sock.settimeout(2.0)
+        self.u._json("PUT", "/v1/streams/video:start", {"ip": "%s:%d" % (self.GROUP, self.port)})
+        return self
+
+    def __exit__(self, *exc):
+        try:
+            self.u._json("PUT", "/v1/streams/video:stop")
+        finally:
+            self.sock.close()
+
+    def frames(self, count, timeout=10.0):
+        """Return `count` consecutive complete frames as lists of rows.
+
+        Each row is a bytes object of 384 colour indexes (0-15). A frame
+        with a missing packet is discarded rather than returned
+        incomplete, and so is the first, partially received one.
+        """
+        self._drain()
+        deadline = time.monotonic() + timeout
+        frames = []
+        current, lines, started = None, {}, False
+        while len(frames) < count:
+            if time.monotonic() > deadline:
+                raise UltimateError("%s: got %d of %d video frames" % (self.u.host, len(frames), count))
+            data, addr = self.sock.recvfrom(2048)
+            if addr[0] != self.source or len(data) < self.HEADER:
+                continue
+            _, frame, line, width, per_packet, bpp, _ = struct.unpack_from("<HHHHBBH", data)
+            if width != self.WIDTH or bpp != 4:
+                continue
+            last = bool(line & 0x8000)
+            line &= 0x7FFF
+            if frame != current:
+                current, lines = frame, {}
+            payload = data[self.HEADER:]
+            row_bytes = self.WIDTH // 2
+            for i in range(per_packet):
+                lines[line + i] = payload[i * row_bytes:(i + 1) * row_bytes]
+            if last:
+                height = line + per_packet
+                if started and len(lines) == height:
+                    frames.append([_unpack_row(lines[y]) for y in range(height)])
+                started = True
+                current, lines = None, {}
+        return frames
+
+    def _drain(self):
+        self.sock.setblocking(False)
+        try:
+            while True:
+                self.sock.recv(2048)
+        except BlockingIOError:
+            pass
+        finally:
+            self.sock.settimeout(2.0)
+
+
+def _unpack_row(packed):
+    row = bytearray(len(packed) * 2)
+    row[0::2] = bytes(b & 0x0F for b in packed)
+    row[1::2] = bytes(b >> 4 for b in packed)
+    return bytes(row)

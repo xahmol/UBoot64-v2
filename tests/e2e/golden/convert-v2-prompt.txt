@@ -1,6 +1,6 @@
 [text]
 UBoot64:  Boot Menu for Ultimate devices
-Configuration update~~~~~~~~~~~~~~~~~~~~
+Convert old files   ~~~~~~~~~~~~~~~~~~~~
                                         
 The configuration and slot files on     
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

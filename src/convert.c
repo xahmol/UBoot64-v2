@@ -305,7 +305,7 @@ void convert_old_files(void)
     char firstbyte;
 
     cwin_clear(&cw);
-    headertext("Configuration update", 0);
+    headertext("Convert old files", 0); // At most 19 characters: the version follows at column 20
     cwin_cursor_move(&cw, 0, 3);
 
     if (version == 0 || version > CFGVERSION)

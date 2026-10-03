@@ -235,18 +235,11 @@ ULTIP2 = 192.168.1.yy
 
 From v3.1.0 UBoot64 converts the configuration and slot files of v1 and v2 itself. When it finds files in an older format at start-up, it asks:
 
-```
-The configuration and slot files on
-/usb0/ have the old format v2.
-
-Convert them to the current format v3?
-The old files are kept as
-dmbcfg.v2 and dmbslt.v2.
-
-Convert? Y/N
-```
+![Asking to convert old configuration files](<Screenshots/UBoot64 - Convert prompt.png>)
 
 * **Y** first copies the old files to `dmbcfg.v1`/`dmbslt.v1` (or `.v2`) next to them and checks the copies, then writes the files in the new format and continues the start. Your slots, NTP server and time offset are kept; for v2 also the colours and other settings. REU preload slots get their REU image path in its own field.
+![Old configuration files converted](<Screenshots/UBoot64 - Convert done.png>)
+
 * **N** changes nothing and exits to BASIC; you are asked again at the next start.
 * If a step fails, UBoot64 says which one. Before the new files are written your files are unchanged; after that, the copies hold the old files.
 * A REU of at least 128 KB is needed for the conversion (UBoot64 needs a REU anyway).
@@ -257,7 +250,7 @@ The separate upgrade tools still work, for this release: `uboot_upd12.prg` (v1) 
 ([Back to contents](#contents))
 
 * At first run, no configuration file is present yet, so UBoot64 creates configuration files with an empty start menu and default settings.
-* UBoot64 looks for existing configuration files in this order: SD card, then USB0, USB1, USB2. The first one where they're found is used; if none have them, they're created on the first of those that's actually present (same order). The files are `DMBCFG.CFG` (configuration data) and `DMBSLT.CFG` (menu slot data), always at the root of that device.
+* UBoot64 looks for existing configuration files on the SD card first, then on the USB storage devices (every device the Ultimate lists, such as USB0, USB1). The first one where they're found is used; if none have them, they're created on the first of those that's actually present (same order). The files are `DMBCFG.CFG` (configuration data) and `DMBSLT.CFG` (menu slot data), always at the root of that device.
 * On startup a splash screen is shown briefly. Press any key to proceed to the main menu.
 * The empty start menu looks like this:
 
@@ -442,7 +435,7 @@ Loose `.PRG` files on the native UCI file system cannot be added to a menu slot 
 ### F2: Information
 ([Back to contents](#contents))
 
-Shows first the splash screen, and after pressing any key, the information and credits screen. Press any key to return to the main menu.
+Shows first the splash screen, and after pressing any key, the information and credits screen, with the UBoot64 version and the Ultimate it runs on (the product name the firmware reports, or "unknown"). Press any key to return to the main menu.
 
 ![Splash](<Screenshots/UBoot64 - Splash.png>)
 
